@@ -3,26 +3,45 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import axios from 'axios'
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  
+  const [error, setError] = useState('')
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
-    // Giả lập login thành công sau 1 giây
-    setTimeout(() => {
-      // Trong thực tế, đây sẽ là API call đến backend
-      console.log('Logging in with:', email, password)
-      setLoading(false)
+    setError('')
+
+    try {
+      const response = await axios.post('https://my-backend-app-vkiq.onrender.com/auth/login', {
+        username: email, // 👈 nếu backend đang nhận field "username"
+        password: password,
+      })
+
+      const data = response.data
+
+      if (data.token) {
+        localStorage.setItem('token', data.token)
+      }
+
       router.push('/home')
-    }, 1000)
+    } catch (err: any) {
+      console.error('Login error:', err)
+      if (err.response) {
+        setError(err.response.data.message || 'Đăng nhập thất bại')
+      } else {
+        setError('Không thể kết nối đến server')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
-  
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
@@ -37,6 +56,13 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="-space-y-px rounded-md shadow-sm">
             <div>
@@ -45,8 +71,8 @@ export default function LoginPage() {
               </label>
               <input
                 id="email-address"
-                name="email"
-                type="email"
+                name="username"
+                type="text"
                 autoComplete="email"
                 required
                 className="relative block w-full rounded-t-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
@@ -106,4 +132,4 @@ export default function LoginPage() {
       </div>
     </div>
   )
-} 
+}
