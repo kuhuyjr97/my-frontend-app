@@ -44,9 +44,9 @@ export default function NotesPage() {
       })
       setNotes(response.data)
       setError('')
-    } catch (err: any) {
-      console.error('Error fetching notes:', err)
-      setError(err.response?.data?.message || 'Failed to fetch notes')
+    } catch (err: unknown) {
+      console.error("Error fetching notes:", err);
+      setError( 'Failed to fetch notes')
     } finally {
       setLoading(false)
     }
@@ -65,9 +65,9 @@ console.log(token)
       })
       setNewNote({ title: '', content: '', type: 1 })
       fetchNotes()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating note:', err)
-      setError(err.response?.data?.message || 'Failed to create note')
+      setError( 'Failed to create note')
     }
   }
 

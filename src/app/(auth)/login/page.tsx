@@ -1,47 +1,46 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import axios from 'axios'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import axios from "axios";
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
-      const response = await axios.post('https://my-backend-app-vkiq.onrender.com/auth/login', {
-        username: username, 
-        password: password,
-      })
+      const response = await axios.post(
+        "https://my-backend-app-vkiq.onrender.com/auth/login",
+        {
+          username: username,
+          password: password,
+        }
+      );
 
-      const token  =await response.data.accessToken
+      const token = await response.data.accessToken;
 
       if (token) {
-        localStorage.setItem('token', token)
-        router.push('/home')
+        localStorage.setItem("token", token);
+        router.push("/home");
       } else {
-        setError('No token received from server')
+        setError("No token received from server");
       }
-    } catch (err: any) {
-      console.error('Login error:', err)
-      if (err.response) {
-        setError(err.response.data.message || 'Login Failed')
-      } else {
-        setError('Cannot connect to server')
-      }
+    } catch (err: unknown) {
+      console.error("Login error:", err);
+      setError("Cannot connect to server");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -51,8 +50,11 @@ export default function LoginPage() {
             Login to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="#" className="font-medium text-blue-600 hover:text-blue-500">
+            Or{" "}
+            <Link
+              href="#"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
               Register a new account
             </Link>
           </p>
@@ -108,13 +110,19 @@ export default function LoginPage() {
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+              <label
+                htmlFor="remember-me"
+                className="ml-2 block text-sm text-gray-900"
+              >
                 Remember me
               </label>
             </div>
 
             <div className="text-sm">
-              <Link href="#" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link
+                href="#"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -126,11 +134,11 @@ export default function LoginPage() {
               disabled={loading}
               className="group relative flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-blue-400"
             >
-              {loading ? 'Processing...' : 'Login'}
+              {loading ? "Processing..." : "Login"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }
