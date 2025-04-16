@@ -16,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body className={inter.className}>
+      <body className={`${inter.className} flex min-h-screen flex-col`}>
         {children}
       </body>
     </html>

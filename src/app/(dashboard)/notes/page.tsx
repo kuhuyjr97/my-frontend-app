@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AppBar } from '@/components/dashboard/app-bar'
 import { StatusBar } from '@/components/dashboard/status-bar'
 import axios from 'axios'
 
@@ -159,7 +158,6 @@ export default function NotesPage() {
 
   return (
     <div className="flex h-screen">
-      <AppBar />
       
       <div className="flex-1 bg-gray-100">
         <StatusBar title="Ghi chú" />
