@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Calendar, Home, Inbox, LogOut, Search, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -29,25 +29,50 @@ const items = [
   },
   {
     title: "Plans",
-    url: "#",
+    url: "/plans",
     icon: Calendar,
   },
   {
     title: "Reports",
-    url: "#",
+    url: "/reports",
     icon: Search,
   },
   {
     title: "Tasks",
-    url: "#",
+    url: "/tasks",
     icon: Settings,
+  },
+  {
+    title: "Savings",
+    url: "/savings",
+    icon: Settings,
+  },
+  {
+    title: "Types",
+    url: "/types",
+    icon: Settings,
+    data: {
+      type: "",
+      subtype: "",
+      description: ""
+    }
   },
 ];
 
 export function AppSidebar() {
   const router = useRouter();
 
-  
+  const handleLogout = () => {
+    // Remove authentication token from localStorage
+    localStorage.removeItem("authToken");
+    
+    // Clear any other auth-related data
+    sessionStorage.removeItem("user");
+    
+    // Redirect to login page
+    router.push("/login");
+  };
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -72,7 +97,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <button 
           className="flex items-center w-full p-4 gap-3 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md"
-          // onClick={handleLogout}
+          onClick={handleLogout}
         >
           <LogOut className="h-5 w-5" />
           <span className="font-medium">Log Out</span>

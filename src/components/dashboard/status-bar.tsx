@@ -13,7 +13,6 @@ import {
 
 import { useRouter } from "next/navigation";
 
-
 interface StatusBarProps {
   title: string;
 }
@@ -22,13 +21,8 @@ export function StatusBar({ title }: StatusBarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
-    // Remove authentication token from localStorage
     localStorage.removeItem("token");
-    
-    // Clear any other auth-related data
-    sessionStorage.removeItem("user");
-    
-    // Redirect to login page
+
     router.push("/login");
   };
 
@@ -44,11 +38,13 @@ export function StatusBar({ title }: StatusBarProps) {
                 <NavigationMenuItem>
                   <NavigationMenuTrigger>Helloasdsad !</NavigationMenuTrigger>
                   <NavigationMenuContent>
-                  {/* <button 
+                    {/* <button 
           className="flex items-center w-full p-4 gap-3 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md"
           onClick={handleLogout}
         > */}
-                    <NavigationMenuLink onClick={handleLogout}>Log out</NavigationMenuLink>
+                    <NavigationMenuLink onClick={handleLogout}>
+                      Log out
+                    </NavigationMenuLink>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
               </NavigationMenuList>
