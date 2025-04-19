@@ -4,11 +4,11 @@ import { StatusBar } from "@/components/dashboard/status-bar";
 
 export default function HomePage() {
   return (
-    <div className="flex h-screen">
+    <div className="flex  h-screen">
       {/* Main Content */}
       <div className="flex-1 bg-gray-100">
         {/* Top Status Bar */}
-        <StatusBar title="Trang chủ" />
+        {/* <StatusBar title="Trang chủ" /> */}
 
         {/* Dashboard Content */}
         <div className="p-6">

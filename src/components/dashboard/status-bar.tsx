@@ -27,7 +27,7 @@ export function StatusBar({ title }: StatusBarProps) {
   };
 
   return (
-    <div className="bg-white p-4 w-full shadow">
+    <div className="ml-10 bg-white p-4 w-full shadow">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">{title}</h1>
         <div className="flex items-center">

@@ -11,28 +11,36 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-// Menu items.
-const items = [
+// Application items.
+const applicationItems = [
   {
     title: "Home",
     url: "#",
     icon: Home,
   },
   {
-    title: "Inbox",
-    url: "#",
+    title: "Notes",
+    url: "/notes",
     icon: Inbox,
   },
   {
-    title: "Calendar",
-    url: "#",
+    title: "Tasks",
+    url: "/tasks",
     icon: Calendar,
   },
   {
-    title: "Search",
-    url: "#",
+    title: "Plans",
+    url: "/plans",
     icon: Search,
   },
+  {
+    title: "Settings",
+    url: "#",
+    icon: Settings,
+  },
+]
+
+const settingItems = [
   {
     title: "Settings",
     url: "#",
@@ -43,12 +51,32 @@ const items = [
 export function AppSidebar() {
   return (
     <Sidebar>
+      {/* application group */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {applicationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <hr className="border-gray-400" />
+        {/* setting group */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Setting</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {settingItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a href={item.url}>
@@ -62,6 +90,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      
     </Sidebar>
   )
 }
