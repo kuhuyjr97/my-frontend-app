@@ -1,15 +1,10 @@
 "use client";
 
-import { StatusBar } from "@/components/dashboard/status-bar";
-
 export default function HomePage() {
   return (
     <div className="flex  h-screen">
       {/* Main Content */}
       <div className="flex-1 bg-gray-100">
-        {/* Top Status Bar */}
-        {/* <StatusBar title="Trang chủ" /> */}
-
         {/* Dashboard Content */}
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
