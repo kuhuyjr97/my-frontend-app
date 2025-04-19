@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const baseUrl =  process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,12 +19,12 @@ export default function LoginPage() {
     setError("");
 
 
-    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`
-    console.log('urlasd', url)
+    console.log('urlasd', baseUrl)
+
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
+        `${baseUrl}/auth/login`,
         {
           username: username,
           password: password,
