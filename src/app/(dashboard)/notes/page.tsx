@@ -29,9 +29,11 @@ export default function NotesPage() {
   const [editedNote, setEditedNote] = useState<Note | null>(null)
   const [showMenu, setShowMenu] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
   useEffect(() => {
     fetchNotes()
+    console.log('baseUrl', baseUrl)
   }, [selectedType])
 
   const fetchNotes = async () => {
