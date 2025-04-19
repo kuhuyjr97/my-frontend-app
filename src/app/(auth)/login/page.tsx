@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     try {
       const response = await axios.post(
-        "https://my-backend-app-vkiq.onrender.com/auth/login",
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
         {
           username: username,
           password: password,

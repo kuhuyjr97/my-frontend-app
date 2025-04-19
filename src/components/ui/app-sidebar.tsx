@@ -1,7 +1,4 @@
-"use client";
-
-import { Calendar, Home, Inbox, LogOut, Search, Settings } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
 
 import {
   Sidebar,
@@ -12,8 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/sidebar"
 
 // Menu items.
 const items = [
@@ -23,56 +19,28 @@ const items = [
     icon: Home,
   },
   {
-    title: "Notes",
-    url: "/notes",
+    title: "Inbox",
+    url: "#",
     icon: Inbox,
   },
   {
-    title: "Plans",
-    url: "/plans",
+    title: "Calendar",
+    url: "#",
     icon: Calendar,
   },
   {
-    title: "Reports",
-    url: "/reports",
+    title: "Search",
+    url: "#",
     icon: Search,
   },
   {
-    title: "Tasks",
-    url: "/tasks",
+    title: "Settings",
+    url: "#",
     icon: Settings,
   },
-  {
-    title: "Savings",
-    url: "/savings",
-    icon: Settings,
-  },
-  {
-    title: "Types",
-    url: "/types",
-    icon: Settings,
-    data: {
-      type: "",
-      subtype: "",
-      description: ""
-    }
-  },
-];
+]
 
 export function AppSidebar() {
-  const router = useRouter();
-
-  const handleLogout = () => {
-    // Remove authentication token from localStorage
-    localStorage.removeItem("authToken");
-    
-    // Clear any other auth-related data
-    sessionStorage.removeItem("user");
-    
-    // Redirect to login page
-    router.push("/login");
-  };
-
   return (
     <Sidebar>
       <SidebarContent>
@@ -94,15 +62,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <button 
-          className="flex items-center w-full p-4 gap-3 text-left hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-5 w-5" />
-          <span className="font-medium">Log Out</span>
-        </button>
-      </SidebarFooter>
     </Sidebar>
-  );
+  )
 }
