@@ -1,0 +1,1 @@
+export const backendUrl = 'https://my-backend-app-vkiq.onrender.com'

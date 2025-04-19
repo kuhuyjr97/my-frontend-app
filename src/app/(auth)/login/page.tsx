@@ -4,36 +4,25 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
-
+import { backendUrl } from "@/app/baseUrl";
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const baseUrl =  process.env.NEXT_PUBLIC_BACKEND_URL;
-  const baseUrlasd =  process.env.NEXT_PUBLIC_BACKEND_URLASD;
-  console.log('urlasd', baseUrl)
-  console.log('urlasd', baseUrlasd)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-
-    console.log('urlasd', baseUrl)
-    console.log('urlasd', baseUrlasd)
-
+    console.log("backendUrl", process.env.NODE_ENV);
 
     try {
-      const response = await axios.post(
-        `${baseUrl}/auth/login`,
-        {
-          username: username,
-          password: password,
-        }
-      );
+      const response = await axios.post(`${backendUrl}/auth/login`, {
+        username: username,
+        password: password,
+      });
 
       const token = await response.data.accessToken;
 
