@@ -1,4 +1,4 @@
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, HelpCircle, Wallet, List, MemoryStick, FileText } from "lucide-react";
 
 import {
   Sidebar,
@@ -9,7 +9,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Application items.
 const applicationItems = [
@@ -21,24 +28,24 @@ const applicationItems = [
   {
     title: "Notes",
     url: "/notes",
-    icon: Inbox,
+    icon: FileText,
   },
   {
     title: "Tasks",
     url: "/tasks",
-    icon: Calendar,
+    icon: List,
   },
   {
     title: "Plans",
     url: "/plans",
-    icon: Search,
+    icon: Calendar,
   },
   {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
+    title: "Savings",
+    url: "/savings",
+    icon: Wallet,
   },
-]
+];
 
 const settingItems = [
   {
@@ -46,7 +53,12 @@ const settingItems = [
     url: "#",
     icon: Settings,
   },
-]
+  {
+    title: "Help",
+    url: "#",
+    icon: HelpCircle,
+  },
+];
 
 export function AppSidebar() {
   return (
@@ -71,26 +83,27 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <hr className="border-gray-400" />
+
         {/* setting group */}
         <SidebarGroup>
-          <SidebarGroupLabel>Setting</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton>Setting</SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
+                  {settingItems.map((item) => (
+                    <DropdownMenuItem key={item.title}>
                       <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      
     </Sidebar>
-  )
+  );
 }
