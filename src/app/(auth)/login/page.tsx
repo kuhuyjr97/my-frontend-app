@@ -11,15 +11,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const baseUrl = backendUrl();
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    console.log("backendUrl", process.env.NODE_ENV);
-
     try {
-      const response = await axios.post(`${backendUrl}/auth/login`, {
+      console.log("env", process.env.NODE_ENV);
+      const response = await axios.post(`${baseUrl}/auth/login`, {
         username: username,
         password: password,
       });
