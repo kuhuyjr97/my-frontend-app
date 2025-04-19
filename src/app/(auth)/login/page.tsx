@@ -17,6 +17,10 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+
+    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`
+    console.log('urlasd', url)
+
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
