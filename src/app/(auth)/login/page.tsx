@@ -33,7 +33,11 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       console.error("Login error:", err);
-      setError("Cannot connect to server");
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("An error occurred during login");
+      }
     } finally {
       setLoading(false);
     }
