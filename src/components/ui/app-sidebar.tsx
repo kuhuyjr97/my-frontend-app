@@ -49,8 +49,8 @@ const applicationItems = [
 
 const settingItems = [
   {
-    title: "Settings",
-    url: "#",
+    title: "Types",
+    url: "/settings/type",
     icon: Settings,
   },
   {
@@ -95,7 +95,9 @@ export function AppSidebar() {
                 <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
                   {settingItems.map((item) => (
                     <DropdownMenuItem key={item.title}>
-                      <span>{item.title}</span>
+                      <a href={item.url}>
+                        <span>{item.title}</span>
+                      </a>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

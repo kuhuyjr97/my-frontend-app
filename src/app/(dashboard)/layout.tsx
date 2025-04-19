@@ -16,7 +16,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <div className=" flex flex-row fixed top-5 ">
                 <SidebarTrigger />
               </div>
-              <div className="bg-red-500 ">{children}</div>
+              <div>{children}</div>
             </main>
           </div>
         </SidebarProvider>
