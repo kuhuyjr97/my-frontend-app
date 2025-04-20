@@ -38,6 +38,9 @@ export default function SavingsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [subtypes, setSubtypes] = useState<Subtype[]>([]);
+  const [createSelectedMonth, setCreateSelectedMonth] = useState(
+    format(new Date(), "yyyy-MM-dd")
+  );
   const [formData, setFormData] = useState({
     type: Types.EXPENSE.toString(),
     subtype: "",
@@ -53,7 +56,10 @@ export default function SavingsPage() {
   useEffect(() => {
     fetchTransactions(selectedMonth);
     fetchSubtypes(Number(formData.type));
-  }, [selectedMonth]);
+    console.log("createSelectedMonth", createSelectedMonth);
+  }, [selectedMonth, createSelectedMonth
+
+  ]);
 
   const fetchTransactions = async (yearMonth: string) => {
     const token = localStorage.getItem("token");
@@ -109,6 +115,7 @@ export default function SavingsPage() {
           subType: Number(formData.subtype),
           amount: Number(formData.amount),
           description: formData.description,
+          createdAt: createSelectedMonth,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -194,6 +201,12 @@ export default function SavingsPage() {
         <h2 className="text-xl font-semibold mb-4 text-white">
           Create New Record
         </h2>
+        <Input
+          type="date"
+          value={createSelectedMonth}
+          onChange={(e) => setCreateSelectedMonth(e.target.value)}
+          className="mb-4 bg-white max-w-[200px]"
+        />
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex gap-4">
