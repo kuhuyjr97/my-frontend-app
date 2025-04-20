@@ -16,6 +16,9 @@ import { Types, TypeLabels } from "@/app/enums/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InfoCard } from "@/components/common/infoCard";
+import { toast } from "sonner";
+
+import { DialogComponent } from "@/components/common/dialog";
 interface Type {
   id: string;
   type: string;
@@ -86,7 +89,6 @@ export default function TypeSettingsPage() {
         });
       }
 
-      console.log("response", response.data);
       setTypes(response.data);
     } catch (err) {
       console.error("Error fetching types:", err);
@@ -100,13 +102,12 @@ export default function TypeSettingsPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    console.log("selectedType", selectedType, description);
     try {
       await axios.post(
         `${baseUrl}/types`,
         {
-          type: 1,
-          description: "123",
+          type: Number(selectedType),
+          description: description,
         },
         {
           headers: {
@@ -114,10 +115,11 @@ export default function TypeSettingsPage() {
           },
         }
       );
+      toast.success("Type has been created successfully!");
       fetchTypes();
     } catch (err) {
       console.error("Error creating type:", err);
-      setError("Failed to create type");
+      toast.error("Failed to create type. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -128,6 +130,21 @@ export default function TypeSettingsPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDelete = async (id: string) => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`${baseUrl}/types/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      fetchTypes();
+    } catch (err) {
+      console.error("Error deleting type:", err);
+      setError("Failed to delete type");
+    }
   };
 
   // Group types by their main type
@@ -141,6 +158,7 @@ export default function TypeSettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <DialogComponent title="Type Settings" description="Type Settings" />
       <h1 className="text-2xl font-bold mb-6">Type Settings</h1>
 
       {/* Display Section */}
@@ -180,10 +198,10 @@ export default function TypeSettingsPage() {
       <br />
 
       {/* asdsadasd */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className=" bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold mb-4">Existing Types</h2>
         {/* button for filter types */}
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 ">
           {[
             { label: "All", value: null },
             { label: TypeLabels[Types.NOTE], value: Types.NOTE },
@@ -202,31 +220,14 @@ export default function TypeSettingsPage() {
           ))}
         </div>
 
-        {/*  */}
-        {/* {Object.entries(groupedTypes).map(([type, subtypes]) => (
-          <div key={type} className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {subtypes.map((subtype) => (
-                <div key={subtype.id} className="border rounded-lg p-4">
-                  <h4 className="font-medium text-gray-800">
-                    {subtype.subtype}
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {subtype.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))} */}
-        <div className="flex flex-wrap gap-3">
+        <div className=" flex flex-wrap gap-3 mt-4">
           {types.map((type) => (
             <div key={type.id} className="p-2">
               <InfoCard
                 title={TypeLabels[type.type as unknown as Types]}
                 content={type.description}
                 onEdit={() => console.log("Edit clicked")}
-                onDelete={() => console.log("Delete clicked")}
+                onDelete={() => handleDelete(type.id)}
               />
             </div>
           ))}

@@ -37,7 +37,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({ title, content, onEdit, onDe
 
       {/* Nội dung card */}
       <CardContent className="space-y-2">
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        <h3 className=" font-semibold text-gray-500">{title}</h3>
         <p className="text-sm text-gray-600">{content}</p>
       </CardContent>
     </Card>
