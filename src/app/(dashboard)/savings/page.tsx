@@ -27,9 +27,17 @@ interface Transaction {
   createdAt: string;
 }
 
+interface Subtype {
+  id: number;
+  name: string;
+  description: string;
+  subType: number;
+}
+
 export default function SavingsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [subtypes, setSubtypes] = useState<Subtype[]>([]);
   const [formData, setFormData] = useState({
     type: Types.EXPENSE.toString(),
     subtype: "",
@@ -44,17 +52,16 @@ export default function SavingsPage() {
 
   useEffect(() => {
     fetchTransactions();
+    fetchSubtypes(Number(formData.type));
   }, [selectedMonth]);
 
   const fetchTransactions = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        `${baseUrl}/transactions?month=${selectedMonth}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get(`${baseUrl}/savings`, {
+        params: { yearMonth: selectedMonth },
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setTransactions(response.data);
     } catch (err) {
       console.error("Error fetching transactions:", err);
@@ -62,9 +69,39 @@ export default function SavingsPage() {
     }
   };
 
+  const fetchSubtypes = async (type: number) => {
+    const token = localStorage.getItem("token");
+    try {
+      console.log("type", type);
+      const response = await axios.get(`${baseUrl}/types/${type}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("response", response.data);
+      setSubtypes(response.data);
+      // Reset subtype when type changes
+      setFormData((prev) => ({ ...prev, subtype: "" }));
+    } catch (err) {
+      console.error("Error fetching subtypes:", err);
+      toast.error("Failed to fetch subtypes");
+    }
+  };
+
+  const handleTypeChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, type: value }));
+    fetchSubtypes(Number(value));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
+    if (
+      formData.subtype === "" ||
+      formData.amount === "" ||
+      formData.description === ""
+    ) {
+      toast.error("Please fill all the fields");
+      return;
+    }
     try {
       await axios.post(
         `${baseUrl}/savings`,
@@ -102,18 +139,8 @@ export default function SavingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center">
         <h1 className="text-2xl text-white font-bold mb-6">Savings</h1>
-        <div className="flex gap-4">
-          <Input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-white max-w-[200px]"
-        />
-        <Button className="bg-blue-600 hover:bg-blue-700">All</Button>
-       </div>
-      </div>
+       
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -171,12 +198,7 @@ export default function SavingsPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex gap-4">
-              <Select
-                value={formData.type}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, type: value }))
-                }
-              >
+              <Select value={formData.type} onValueChange={handleTypeChange}>
                 <SelectTrigger className="bg-white w-32">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
@@ -202,12 +224,14 @@ export default function SavingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="salary">Salary</SelectItem>
-                    <SelectItem value="bonus">Bonus</SelectItem>
-                    <SelectItem value="food">Food</SelectItem>
-                    <SelectItem value="transport">Transport</SelectItem>
-                    <SelectItem value="entertainment">Entertainment</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {subtypes.map((subtype) => (
+                      <SelectItem
+                        key={subtype.id}
+                        value={subtype.id.toString()}
+                      >
+                        {subtype.description}
+                      </SelectItem>
+                    ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -216,6 +240,7 @@ export default function SavingsPage() {
               <Input
                 type="number"
                 placeholder="Amount"
+                required
                 value={formData.amount}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, amount: e.target.value }))
@@ -225,6 +250,7 @@ export default function SavingsPage() {
               <Input
                 type="text"
                 placeholder="Description"
+                required
                 value={formData.description}
                 onChange={(e) =>
                   setFormData((prev) => ({
@@ -235,7 +261,11 @@ export default function SavingsPage() {
                 className="bg-white flex-1"
               />
             </div>
-            <Button type="submit" onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               Add Record
             </Button>
           </div>
@@ -247,12 +277,16 @@ export default function SavingsPage() {
         <h2 className="text-xl font-semibold mb-4 text-white">
           Transaction History
         </h2>
-        <Input
+     <div className="flex gap-4">
+     <Input
           type="month"
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
+          onClick={fetchTransactions}
           className="mb-4 bg-white max-w-[200px]"
         />
+        <Button onClick={() => setSelectedMonth('2099-99')} variant={"outline"}>All</Button>
+     </div>
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-purple-200">
             <TabsTrigger
