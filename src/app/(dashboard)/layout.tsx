@@ -8,7 +8,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <StatusBar title="Trang chủ" />
 
       {/* Phần thân chia ngang: Sidebar + Content */}
-      <div className="flex flex-row flex-1 overflow-hidden">
+      <div className="flex bg-[#303a42] flex-row flex-1 overflow-hidden">
         <SidebarProvider>
           <AppSidebar />
           <div className="w-full  mx-auto overflow-y-auto">

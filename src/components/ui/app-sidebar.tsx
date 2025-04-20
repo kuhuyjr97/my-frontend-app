@@ -1,4 +1,12 @@
-import { Calendar, Home, Settings, HelpCircle, Wallet, List, FileText } from "lucide-react";
+import {
+  Calendar,
+  Home,
+  Settings,
+  HelpCircle,
+  Wallet,
+  List,
+  FileText,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -62,9 +70,8 @@ const settingItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar>
-      {/* application group */}
-      <SidebarContent>
+    <Sidebar className="">
+      <SidebarContent className=" bg-[#1c1e25] text-white w-64">
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
