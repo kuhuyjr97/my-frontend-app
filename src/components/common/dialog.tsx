@@ -11,7 +11,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function DialogComponent(title: string, description: string) {
+interface DialogComponentProps {
+  title: string;
+  description: string;
+}
+
+export function DialogComponent({ title, description }: DialogComponentProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>

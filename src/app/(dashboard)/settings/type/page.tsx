@@ -19,6 +19,7 @@ import { InfoCard } from "@/components/common/infoCard";
 import { toast } from "sonner";
 
 import { DialogComponent } from "@/components/common/dialog";
+import { SheetSide } from "@/components/common/sheet";
 interface Type {
   id: string;
   type: string;
@@ -125,11 +126,19 @@ export default function TypeSettingsPage() {
     }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleEdit = async (id: string, description: string) => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.patch(`${baseUrl}/types/${id}`, { description }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      fetchTypes();
+    } catch (err) {
+      console.error("Error deleting type:", err);
+      setError("Failed to delete type");
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -141,6 +150,7 @@ export default function TypeSettingsPage() {
         },
       });
       fetchTypes();
+      toast.success("Type has been deleted ");
     } catch (err) {
       console.error("Error deleting type:", err);
       setError("Failed to delete type");
@@ -223,12 +233,7 @@ export default function TypeSettingsPage() {
         <div className=" flex flex-wrap gap-3 mt-4">
           {types.map((type) => (
             <div key={type.id} className="p-2">
-              <InfoCard
-                title={TypeLabels[type.type as unknown as Types]}
-                content={type.description}
-                onEdit={() => console.log("Edit clicked")}
-                onDelete={() => handleDelete(type.id)}
-              />
+              <SheetSide handleEdit={(newDescription) => handleEdit(type.id, newDescription)} title={TypeLabels[type.type as unknown as Types]} description={type.description} handleDelete={() => handleDelete(type.id)}/>
             </div>
           ))}
         </div>
