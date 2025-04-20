@@ -51,15 +51,14 @@ export default function SavingsPage() {
   const baseUrl = backendUrl();
 
   useEffect(() => {
-    fetchTransactions();
+    fetchTransactions(selectedMonth);
     fetchSubtypes(Number(formData.type));
   }, [selectedMonth]);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (yearMonth: string) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(`${baseUrl}/savings`, {
-        params: { yearMonth: selectedMonth },
+      const response = await axios.get(`${baseUrl}/savings/${yearMonth}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTransactions(response.data);
@@ -120,7 +119,7 @@ export default function SavingsPage() {
         amount: "",
         description: "",
       });
-      fetchTransactions();
+      fetchTransactions(selectedMonth);
     } catch (err) {
       console.error("Error creating transaction:", err);
       toast.error("Failed to create transaction");
@@ -282,7 +281,7 @@ export default function SavingsPage() {
           type="month"
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
-          onClick={fetchTransactions}
+          onClick={() => fetchTransactions(selectedMonth)}
           className="mb-4 bg-white max-w-[200px]"
         />
         <Button onClick={() => setSelectedMonth('2099-99')} variant={"outline"}>All</Button>
