@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { StatusBar } from '@/components/dashboard/status-bar'
-import axios from 'axios'
-import { Plus, Maximize2, Minimize2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from "react";
+import { StatusBar } from "@/components/dashboard/status-bar";
+import axios from "axios";
+import { Plus, Maximize2, Minimize2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,177 +12,172 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { backendUrl } from '@/app/baseUrl'
+} from "@/components/ui/dialog";
+import { backendUrl } from "@/app/baseUrl";
 
 interface Note {
-  id: number
-  title: string
-  content: string
-  type: number
-  createdAt: string
+  id: number;
+  title: string;
+  content: string;
+  type: number;
+  createdAt: string;
 }
 
 export default function NotesPage() {
-  const [notes, setNotes] = useState<Note[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [selectedType, setSelectedType] = useState<number | null>(null)
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedType, setSelectedType] = useState<number | null>(null);
   const [newNote, setNewNote] = useState({
-    title: '',
-    content: '',
-    type: 1
-  })
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedNote, setEditedNote] = useState<Note | null>(null)
-  const [showMenu, setShowMenu] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isCreateModalExpanded, setIsCreateModalExpanded] = useState(false)
-  const [isEditModalExpanded, setIsEditModalExpanded] = useState(false)
-  const baseUrl = backendUrl()
+    title: "",
+    content: "",
+    type: 1,
+  });
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedNote, setEditedNote] = useState<Note | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateModalExpanded, setIsCreateModalExpanded] = useState(false);
+  const [isEditModalExpanded, setIsEditModalExpanded] = useState(false);
+  const baseUrl = backendUrl();
 
   useEffect(() => {
-    fetchNotes()
-    console.log('baseUrl', baseUrl)
-  }, [selectedType])
+    fetchNotes();
+    console.log("baseUrl", baseUrl);
+  }, [selectedType]);
 
   const fetchNotes = async () => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem("token");
     try {
-      setLoading(true)
-      const url = selectedType 
+      setLoading(true);
+      const url = selectedType
         ? `${baseUrl}/notes/type/${selectedType}`
-        : `${baseUrl}/notes`
-      
+        : `${baseUrl}/notes`;
+
       const response = await axios.get(url, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setNotes(response.data)
-      setError('')
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setNotes(response.data);
+      setError("");
     } catch (err: unknown) {
-      console.error("Error fetching notes:", err)
-      setError('Failed to fetch notes')
+      console.error("Error fetching notes:", err);
+      setError("Failed to fetch notes");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCreateNote = async (e: React.FormEvent) => {
-    const token = localStorage.getItem("token")
-    e.preventDefault()
+    const token = localStorage.getItem("token");
+    e.preventDefault();
     try {
       await axios.post(`${baseUrl}/notes`, newNote, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setNewNote({ title: '', content: '', type: 1 })
-      fetchNotes()
-      setIsCreateModalOpen(false)
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setNewNote({ title: "", content: "", type: 1 });
+      fetchNotes();
+      setIsCreateModalOpen(false);
     } catch (err: unknown) {
-      console.error('Error creating note:', err)
-      setError('Failed to create note')
+      console.error("Error creating note:", err);
+      setError("Failed to create note");
     }
-  }
+  };
 
   const handleDeleteNote = async (noteId: number) => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     try {
       await axios.delete(`${baseUrl}/notes/${noteId}`, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      closeModal()
-      fetchNotes()
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      closeModal();
+      fetchNotes();
     } catch (err: unknown) {
-      console.error('Error deleting note:', err)
-      setError('Failed to delete note')
+      console.error("Error deleting note:", err);
+      setError("Failed to delete note");
     }
-  }
+  };
 
   const handleEditNote = async () => {
-    if (!editedNote) return
-    
-    const token = localStorage.getItem("token")
+    if (!editedNote) return;
+
+    const token = localStorage.getItem("token");
     try {
-      setIsSaving(true)
-      await axios.patch(`${baseUrl}/notes/${editedNote.id}`, {
-        title: editedNote.title,
-        content: editedNote.content,
-        type: editedNote.type
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      setIsSaving(true);
+      await axios.patch(
+        `${baseUrl}/notes/${editedNote.id}`,
+        {
+          title: editedNote.title,
+          content: editedNote.content,
+          type: editedNote.type,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      })
-      
-      // Fetch updated note
-      const response = await axios.get(`${baseUrl}/notes/${editedNote.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      
+      );
+
       // Close current modal
-      closeModal()
-      
+      closeModal();
+
       // Fetch all notes to update the list
-      await fetchNotes()
-      
-      // Open new modal with fresh data
-      openNoteModal(response.data)
+      await fetchNotes();
+
+
     } catch (err: unknown) {
-      console.error('Error editing note:', err)
-      setError('Failed to edit note')
+      console.error("Error editing note:", err);
+      setError("Failed to edit note");
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const openNoteModal = (note: Note) => {
-    setSelectedNote(note)
-    setEditedNote({...note})
-    setIsModalOpen(true)
-    setIsExpanded(false)
-    setIsEditing(false)
-    setShowMenu(false)
-  }
+    setSelectedNote(note);
+    setEditedNote({ ...note });
+    setIsModalOpen(true);
+    setIsExpanded(false);
+    setIsEditing(false);
+    setShowMenu(false);
+  };
 
   const closeModal = () => {
-    setIsModalOpen(false)
-    setSelectedNote(null)
-    setEditedNote(null)
-    setIsExpanded(false)
-    setIsEditing(false)
-    setShowMenu(false)
-  }
+    setIsModalOpen(false);
+    setSelectedNote(null);
+    setEditedNote(null);
+    setIsExpanded(false);
+    setIsEditing(false);
+    setShowMenu(false);
+  };
 
   const toggleExpand = () => {
-    setIsExpanded(!isExpanded)
-  }
+    setIsExpanded(!isExpanded);
+  };
 
   const startEditing = () => {
-    setIsEditing(true)
-    setShowMenu(false)
-  }
+    setIsEditing(true);
+    setShowMenu(false);
+  };
 
   return (
     <div className="flex h-screen">
-      
       <div className="flex-1 bg-gray-100">
         <StatusBar title="Ghi chú" />
-        
+
         <div className="p-6">
           {/* Create Note Button */}
           <div className="flex justify-end mb-6">
-            <Button 
+            <Button
               onClick={() => setIsCreateModalOpen(true)}
               className="bg-blue-600 hover:bg-blue-700"
             >
@@ -197,9 +192,9 @@ export default function NotesPage() {
               <button
                 onClick={() => setSelectedType(null)}
                 className={`px-4 py-2 rounded transition-all duration-300 ${
-                  selectedType === null 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                  selectedType === null
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 Tất cả
@@ -207,9 +202,9 @@ export default function NotesPage() {
               <button
                 onClick={() => setSelectedType(1)}
                 className={`px-4 py-2 rounded transition-all duration-300 ${
-                  selectedType === 1 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                  selectedType === 1
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 Type 1
@@ -217,9 +212,9 @@ export default function NotesPage() {
               <button
                 onClick={() => setSelectedType(2)}
                 className={`px-4 py-2 rounded transition-all duration-300 ${
-                  selectedType === 2 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                  selectedType === 2
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 Type 2
@@ -239,17 +234,19 @@ export default function NotesPage() {
           ) : (
             <div className="space-y-2">
               {notes.map((note) => (
-                <div 
-                  key={note.id} 
+                <div
+                  key={note.id}
                   className="flex justify-between items-center p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50"
                   onClick={() => openNoteModal(note)}
                 >
                   <div className="flex items-center gap-4">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      note.type === 1 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-red-100 text-red-800"
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        note.type === 1
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
                       {note.type === 1 ? "Type 1" : "Type 2"}
                     </span>
                     <div>
@@ -271,7 +268,11 @@ export default function NotesPage() {
 
       {/* Create Note Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className={`sm:max-w-[425px] ${isCreateModalExpanded ? 'sm:max-w-[800px]' : ''}`}>
+        <DialogContent
+          className={`sm:max-w-[425px] ${
+            isCreateModalExpanded ? "sm:max-w-[800px]" : ""
+          }`}
+        >
           <DialogHeader>
             <div className="flex justify-between items-center">
               <div>
@@ -302,7 +303,9 @@ export default function NotesPage() {
               <input
                 type="text"
                 value={newNote.title}
-                onChange={(e) => setNewNote({...newNote, title: e.target.value})}
+                onChange={(e) =>
+                  setNewNote({ ...newNote, title: e.target.value })
+                }
                 className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -313,9 +316,11 @@ export default function NotesPage() {
               </label>
               <textarea
                 value={newNote.content}
-                onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                onChange={(e) =>
+                  setNewNote({ ...newNote, content: e.target.value })
+                }
                 className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isCreateModalExpanded ? 'h-[400px]' : 'h-[100px]'
+                  isCreateModalExpanded ? "h-[400px]" : "h-[100px]"
                 }`}
                 required
               />
@@ -326,7 +331,9 @@ export default function NotesPage() {
               </label>
               <select
                 value={newNote.type}
-                onChange={(e) => setNewNote({...newNote, type: parseInt(e.target.value)})}
+                onChange={(e) =>
+                  setNewNote({ ...newNote, type: parseInt(e.target.value) })
+                }
                 className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value={1}>Type 1</option>
@@ -345,9 +352,9 @@ export default function NotesPage() {
       {/* Edit Note Modal */}
       {isModalOpen && selectedNote && (
         <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-[1px] flex items-center justify-center z-50">
-          <div 
+          <div
             className={`bg-white rounded-lg p-6 mx-4 transform transition-all duration-300 animate-fadeIn shadow-xl ${
-              isEditModalExpanded ? 'w-[90%] h-[90vh]' : 'max-w-lg w-full'
+              isEditModalExpanded ? "w-[90%] h-[90vh]" : "max-w-lg w-full"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -356,12 +363,16 @@ export default function NotesPage() {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={editedNote?.title || ''}
-                    onChange={(e) => setEditedNote({...editedNote!, title: e.target.value})}
+                    value={editedNote?.title || ""}
+                    onChange={(e) =>
+                      setEditedNote({ ...editedNote!, title: e.target.value })
+                    }
                     className="text-xl font-bold text-gray-800 border-b focus:outline-none focus:border-blue-500 w-full"
                   />
                 ) : (
-                  <h2 className="text-xl font-bold text-gray-800">{selectedNote.title}</h2>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {selectedNote.title}
+                  </h2>
                 )}
               </div>
               <div className="flex items-center space-x-2">
@@ -378,12 +389,22 @@ export default function NotesPage() {
                   )}
                 </Button>
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setShowMenu(!showMenu)}
                     className="text-gray-500 hover:text-gray-700 transition-colors duration-300 p-1"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                      />
                     </svg>
                   </button>
                   {showMenu && (
@@ -403,30 +424,46 @@ export default function NotesPage() {
                     </div>
                   )}
                 </div>
-                <button 
+                <button
                   onClick={closeModal}
                   className="text-gray-500 hover:text-gray-700 transition-colors duration-300 p-1"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
             </div>
-            <div 
+            <div
               className="prose max-w-none cursor-pointer"
               onClick={toggleExpand}
             >
               {isEditing ? (
                 <textarea
-                  value={editedNote?.content || ''}
-                  onChange={(e) => setEditedNote({...editedNote!, content: e.target.value})}
+                  value={editedNote?.content || ""}
+                  onChange={(e) =>
+                    setEditedNote({ ...editedNote!, content: e.target.value })
+                  }
                   className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    isEditModalExpanded ? 'h-[500px]' : 'h-[200px]'
+                    isEditModalExpanded ? "h-[500px]" : "h-[200px]"
                   }`}
                 />
               ) : (
-                <p className={`text-gray-700 whitespace-pre-wrap ${isEditModalExpanded ? 'text-base' : 'text-sm'}`}>
+                <p
+                  className={`text-gray-700 whitespace-pre-wrap ${
+                    isEditModalExpanded ? "text-base" : "text-sm"
+                  }`}
+                >
                   {selectedNote.content}
                 </p>
               )}
@@ -435,14 +472,21 @@ export default function NotesPage() {
               {isEditing ? (
                 <select
                   value={editedNote?.type || 1}
-                  onChange={(e) => setEditedNote({...editedNote!, type: parseInt(e.target.value)})}
+                  onChange={(e) =>
+                    setEditedNote({
+                      ...editedNote!,
+                      type: parseInt(e.target.value),
+                    })
+                  }
                   className="px-3 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value={1}>Type 1</option>
                   <option value={2}>Type 2</option>
                 </select>
               ) : (
-                <span className="text-xs text-gray-500">Type: {selectedNote.type}</span>
+                <span className="text-xs text-gray-500">
+                  Type: {selectedNote.type}
+                </span>
               )}
               <div className="flex items-center space-x-2">
                 {isEditing ? (
@@ -461,9 +505,24 @@ export default function NotesPage() {
                     >
                       {isSaving ? (
                         <>
-                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          <svg
+                            className="animate-spin h-4 w-4"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="none"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
                           </svg>
                           <span>Đang lưu...</span>
                         </>
@@ -483,5 +542,5 @@ export default function NotesPage() {
         </div>
       )}
     </div>
-  )
-} 
+  );
+}
