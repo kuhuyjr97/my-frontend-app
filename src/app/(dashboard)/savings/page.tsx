@@ -18,10 +18,19 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Transaction {
   id: string;
   type: number;
+  subType: number;
   amount: number;
   description: string;
   createdAt: string;
@@ -34,10 +43,17 @@ interface Subtype {
   subType: number;
 }
 
+interface SubtypesMap {
+  [key: number]: Subtype[];
+}
+
 export default function SavingsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
-  const [subtypes, setSubtypes] = useState<Subtype[]>([]);
+  const [subtypes, setSubtypes] = useState<SubtypesMap>({
+    [Types.INCOME]: [],
+    [Types.EXPENSE]: [],
+  });
   const [createSelectedMonth, setCreateSelectedMonth] = useState(
     format(new Date(), "yyyy-MM-dd")
   );
@@ -50,16 +66,21 @@ export default function SavingsPage() {
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "yyyy-MM")
   );
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    type: "",
+    subtype: "",
+    amount: "",
+    description: "",
+  });
 
   const baseUrl = backendUrl();
 
   useEffect(() => {
     fetchTransactions(selectedMonth);
-    fetchSubtypes(Number(formData.type));
-    console.log("createSelectedMonth", createSelectedMonth);
-  }, [selectedMonth, createSelectedMonth
-
-  ]);
+    fetchAllSubtypes();
+  }, [selectedMonth]);
 
   const fetchTransactions = async (yearMonth: string) => {
     const token = localStorage.getItem("token");
@@ -74,17 +95,22 @@ export default function SavingsPage() {
     }
   };
 
-  const fetchSubtypes = async (type: number) => {
+  const fetchAllSubtypes = async () => {
     const token = localStorage.getItem("token");
     try {
-      console.log("type", type);
-      const response = await axios.get(`${baseUrl}/types/${type}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const [incomeResponse, expenseResponse] = await Promise.all([
+        axios.get(`${baseUrl}/types/${Types.INCOME}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${baseUrl}/types/${Types.EXPENSE}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+      
+      setSubtypes({
+        [Types.INCOME]: incomeResponse.data,
+        [Types.EXPENSE]: expenseResponse.data,
       });
-      console.log("response", response.data);
-      setSubtypes(response.data);
-      // Reset subtype when type changes
-      setFormData((prev) => ({ ...prev, subtype: "" }));
     } catch (err) {
       console.error("Error fetching subtypes:", err);
       toast.error("Failed to fetch subtypes");
@@ -92,8 +118,11 @@ export default function SavingsPage() {
   };
 
   const handleTypeChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, type: value }));
-    fetchSubtypes(Number(value));
+    setFormData((prev) => ({ ...prev, type: value, subtype: "" }));
+  };
+
+  const handleEditTypeChange = (value: string) => {
+    setEditFormData((prev) => ({ ...prev, type: value, subtype: "" }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,6 +172,57 @@ export default function SavingsPage() {
 
   const balance = totalIncome - totalExpense;
 
+  const handleDeleteTransaction = async (id: string) => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(`${baseUrl}/savings/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Transaction deleted successfully");
+      fetchTransactions(selectedMonth);
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error("Error deleting transaction:", err);
+      toast.error("Failed to delete transaction");
+    }
+  };
+
+  const handleEditTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTransaction) return;
+
+    const token = localStorage.getItem("token");
+    try {
+      await axios.patch(
+        `${baseUrl}/savings/${selectedTransaction.id}`,
+        {
+          type: Number(editFormData.type),
+          subType: Number(editFormData.subtype),
+          amount: Number(editFormData.amount),
+          description: editFormData.description,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Transaction updated successfully");
+      fetchTransactions(selectedMonth);
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error("Error updating transaction:", err);
+      toast.error("Failed to update transaction");
+    }
+  };
+
+  const openTransactionModal = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setEditFormData({
+      type: transaction.type.toString(),
+      subtype: transaction.subType.toString(),
+      amount: transaction.amount.toString(),
+      description: transaction.description,
+    });
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl text-white font-bold mb-6">Savings</h1>
@@ -156,7 +236,7 @@ export default function SavingsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-600">
-              ${totalIncome.toFixed(2)}
+              {totalIncome}
             </p>
           </CardContent>
         </Card>
@@ -166,7 +246,7 @@ export default function SavingsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-600">
-              ${totalExpense.toFixed(2)}
+              {totalExpense}
             </p>
           </CardContent>
         </Card>
@@ -190,14 +270,14 @@ export default function SavingsPage() {
                 balance >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
-              ${balance.toFixed(2)}
+              {balance}
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Create Record Form */}
-      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md mb-8 ">
+      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md mb-8 px-36">
         <h2 className="text-xl font-semibold mb-4 text-white">
           Create New Record
         </h2>
@@ -236,7 +316,7 @@ export default function SavingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {subtypes.map((subtype) => (
+                    {(subtypes[Number(formData.type)] || []).map((subtype: Subtype) => (
                       <SelectItem
                         key={subtype.id}
                         value={subtype.id.toString()}
@@ -285,20 +365,20 @@ export default function SavingsPage() {
       </div>
 
       {/* Transaction History */}
-      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md  ">
+      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md px-36">
         <h2 className="text-xl font-semibold mb-4 text-white">
           Transaction History
         </h2>
-     <div className="flex gap-4">
-     <Input
-          type="month"
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          onClick={() => fetchTransactions(selectedMonth)}
-          className="mb-4 bg-white max-w-[200px]"
-        />
-        <Button onClick={() => setSelectedMonth('2099-99')} variant={"outline"}>All</Button>
-     </div>
+        <div className="flex gap-4">
+          <Input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            onClick={() => fetchTransactions(selectedMonth)}
+            className="mb-4 bg-white max-w-[200px]"
+          />
+          <Button onClick={() => setSelectedMonth('2099-99')} variant={"outline"}>All</Button>
+        </div>
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-purple-200">
             <TabsTrigger
@@ -325,7 +405,8 @@ export default function SavingsPage() {
               {transactions.map((t) => (
                 <div
                   key={t.id}
-                  className={`p-4 rounded-lg ${
+                  onClick={() => openTransactionModal(t)}
+                  className={`p-4 rounded-lg cursor-pointer ${
                     t.type === Types.INCOME
                       ? "bg-gradient-to-r from-green-50 to-green-100 border border-green-200"
                       : "bg-gradient-to-r from-red-50 to-red-100 border border-red-200"
@@ -345,8 +426,8 @@ export default function SavingsPage() {
                           : "text-red-600"
                       }`}
                     >
-                      {t.type === Types.INCOME ? "+" : "-"}$
-                      {t.amount.toFixed(2)}
+                      {t.type === Types.INCOME ? "+ " : "- "}
+                      {t.amount}
                     </p>
                   </div>
                 </div>
@@ -370,7 +451,7 @@ export default function SavingsPage() {
                         </p>
                       </div>
                       <p className="font-bold text-green-600">
-                        +${t.amount.toFixed(2)}
+                        + {t.amount}
                       </p>
                     </div>
                   </div>
@@ -394,7 +475,7 @@ export default function SavingsPage() {
                         </p>
                       </div>
                       <p className="font-bold text-red-600">
-                        -${t.amount.toFixed(2)}
+                        - {t.amount}
                       </p>
                     </div>
                   </div>
@@ -403,6 +484,87 @@ export default function SavingsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Edit Transaction Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+            <DialogDescription>
+              Make changes to your transaction here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditTransaction} className="space-y-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-4">
+                <Select value={editFormData.type} onValueChange={handleEditTypeChange}>
+                  <SelectTrigger className="bg-white w-32">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value={Types.INCOME.toString()}>
+                        Income
+                      </SelectItem>
+                      <SelectItem value={Types.EXPENSE.toString()}>
+                        Expense
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={editFormData.subtype}
+                  onValueChange={(value) => setEditFormData(prev => ({ ...prev, subtype: value }))}
+                >
+                  <SelectTrigger className="bg-white w-32">
+                    <SelectValue placeholder="Subtype" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {(subtypes[Number(editFormData.type)] || []).map((subtype: Subtype) => (
+                        <SelectItem
+                          key={subtype.id}
+                          value={subtype.id.toString()}
+                        >
+                          {subtype.description}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-4">
+                <Input
+                  type="number"
+                  placeholder="Amount"
+                  required
+                  value={editFormData.amount}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, amount: e.target.value }))}
+                  className="bg-white w-32"
+                />
+                <Input
+                  type="text"
+                  placeholder="Description"
+                  required
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="bg-white flex-1"
+                />
+              </div>
+            </div>
+            <DialogFooter className="flex justify-between">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => selectedTransaction && handleDeleteTransaction(selectedTransaction.id)}
+              >
+                Delete
+              </Button>
+              <Button type="submit">Save changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
