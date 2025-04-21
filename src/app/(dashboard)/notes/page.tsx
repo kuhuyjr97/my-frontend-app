@@ -3,6 +3,17 @@
 import { useState, useEffect } from 'react'
 import { StatusBar } from '@/components/dashboard/status-bar'
 import axios from 'axios'
+import { Plus, Maximize2, Minimize2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { backendUrl } from '@/app/baseUrl'
 
 interface Note {
   id: number
@@ -29,7 +40,10 @@ export default function NotesPage() {
   const [editedNote, setEditedNote] = useState<Note | null>(null)
   const [showMenu, setShowMenu] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isCreateModalExpanded, setIsCreateModalExpanded] = useState(false)
+  const [isEditModalExpanded, setIsEditModalExpanded] = useState(false)
+  const baseUrl = backendUrl()
 
   useEffect(() => {
     fetchNotes()
@@ -41,8 +55,8 @@ export default function NotesPage() {
     try {
       setLoading(true)
       const url = selectedType 
-        ? `https://my-backend-app-vkiq.onrender.com/notes/type/${selectedType}`
-        : 'https://my-backend-app-vkiq.onrender.com/notes'
+        ? `${baseUrl}/notes/type/${selectedType}`
+        : `${baseUrl}/notes`
       
       const response = await axios.get(url, {
         headers: {
@@ -63,13 +77,14 @@ export default function NotesPage() {
     const token = localStorage.getItem("token")
     e.preventDefault()
     try {
-      await axios.post('https://my-backend-app-vkiq.onrender.com/notes', newNote, {
+      await axios.post(`${baseUrl}/notes`, newNote, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       })
       setNewNote({ title: '', content: '', type: 1 })
       fetchNotes()
+      setIsCreateModalOpen(false)
     } catch (err: unknown) {
       console.error('Error creating note:', err)
       setError('Failed to create note')
@@ -79,7 +94,7 @@ export default function NotesPage() {
   const handleDeleteNote = async (noteId: number) => {
     const token = localStorage.getItem("token")
     try {
-      await axios.delete(`https://my-backend-app-vkiq.onrender.com/notes/${noteId}`, {
+      await axios.delete(`${baseUrl}/notes/${noteId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -98,7 +113,7 @@ export default function NotesPage() {
     const token = localStorage.getItem("token")
     try {
       setIsSaving(true)
-      await axios.patch(`https://my-backend-app-vkiq.onrender.com/notes/${editedNote.id}`, {
+      await axios.patch(`${baseUrl}/notes/${editedNote.id}`, {
         title: editedNote.title,
         content: editedNote.content,
         type: editedNote.type
@@ -109,7 +124,7 @@ export default function NotesPage() {
       })
       
       // Fetch updated note
-      const response = await axios.get(`https://my-backend-app-vkiq.onrender.com/notes/${editedNote.id}`, {
+      const response = await axios.get(`${baseUrl}/notes/${editedNote.id}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -165,6 +180,17 @@ export default function NotesPage() {
         <StatusBar title="Ghi chú" />
         
         <div className="p-6">
+          {/* Create Note Button */}
+          <div className="flex justify-end mb-6">
+            <Button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Tạo ghi chú mới
+            </Button>
+          </div>
+
           {/* Filter Section */}
           <div className="mb-6">
             <div className="flex space-x-4">
@@ -201,56 +227,6 @@ export default function NotesPage() {
             </div>
           </div>
 
-          {/* Create Note Form */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6 transform transition-all duration-300 hover:shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">Tạo ghi chú mới</h2>
-            <form onSubmit={handleCreateNote}>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Tiêu đề
-                </label>
-                <input
-                  type="text"
-                  value={newNote.title}
-                  onChange={(e) => setNewNote({...newNote, title: e.target.value})}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Nội dung
-                </label>
-                <textarea
-                  value={newNote.content}
-                  onChange={(e) => setNewNote({...newNote, content: e.target.value})}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                  rows={3}
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                  Type
-                </label>
-                <select
-                  value={newNote.type}
-                  onChange={(e) => setNewNote({...newNote, type: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                >
-                  <option value={1}>Type 1</option>
-                  <option value={2}>Type 2</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-all duration-300 transform hover:scale-105"
-              >
-                Tạo ghi chú
-              </button>
-            </form>
-          </div>
-
           {/* Notes List */}
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
@@ -261,23 +237,31 @@ export default function NotesPage() {
           {loading ? (
             <div className="text-center">Loading...</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2">
               {notes.map((note) => (
                 <div 
                   key={note.id} 
-                  className="bg-white rounded-lg shadow p-6 transform transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer"
+                  className="flex justify-between items-center p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50"
                   onClick={() => openNoteModal(note)}
                 >
-                  <h3 className="text-lg font-semibold mb-2">{note.title}</h3>
-                  <p className="text-gray-600 mb-4 line-clamp-3">{note.content}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">
-                      Type: {note.type}
+                  <div className="flex items-center gap-4">
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      note.type === 1 
+                        ? "bg-green-100 text-green-800" 
+                        : "bg-red-100 text-red-800"
+                    }`}>
+                      {note.type === 1 ? "Type 1" : "Type 2"}
                     </span>
-                    <span className="text-sm text-gray-500">
-                      {new Date(note.createdAt).toLocaleDateString()}
-                    </span>
+                    <div>
+                      <p className="font-medium">{note.title}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(note.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
+                  <p className="text-sm text-gray-500 line-clamp-1 max-w-[200px]">
+                    {note.content}
+                  </p>
                 </div>
               ))}
             </div>
@@ -285,27 +269,114 @@ export default function NotesPage() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Create Note Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className={`sm:max-w-[425px] ${isCreateModalExpanded ? 'sm:max-w-[800px]' : ''}`}>
+          <DialogHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <DialogTitle>Tạo ghi chú mới</DialogTitle>
+                <DialogDescription>
+                  Nhập thông tin ghi chú mới của bạn. Click lưu khi hoàn thành.
+                </DialogDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsCreateModalExpanded(!isCreateModalExpanded)}
+                className="h-8 w-8"
+              >
+                {isCreateModalExpanded ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </DialogHeader>
+          <form onSubmit={handleCreateNote} className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Tiêu đề
+              </label>
+              <input
+                type="text"
+                value={newNote.title}
+                onChange={(e) => setNewNote({...newNote, title: e.target.value})}
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Nội dung
+              </label>
+              <textarea
+                value={newNote.content}
+                onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  isCreateModalExpanded ? 'h-[400px]' : 'h-[100px]'
+                }`}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Type
+              </label>
+              <select
+                value={newNote.type}
+                onChange={(e) => setNewNote({...newNote, type: parseInt(e.target.value)})}
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={1}>Type 1</option>
+                <option value={2}>Type 2</option>
+              </select>
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Tạo ghi chú
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Note Modal */}
       {isModalOpen && selectedNote && (
         <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-[1px] flex items-center justify-center z-50">
           <div 
             className={`bg-white rounded-lg p-6 mx-4 transform transition-all duration-300 animate-fadeIn shadow-xl ${
-              isExpanded ? 'w-[90%] h-[90vh]' : 'max-w-lg w-full'
+              isEditModalExpanded ? 'w-[90%] h-[90vh]' : 'max-w-lg w-full'
             }`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-4">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedNote?.title || ''}
-                  onChange={(e) => setEditedNote({...editedNote!, title: e.target.value})}
-                  className="text-xl font-bold text-gray-800 border-b focus:outline-none focus:border-blue-500"
-                />
-              ) : (
-                <h2 className="text-xl font-bold text-gray-800">{selectedNote.title}</h2>
-              )}
+              <div className="flex-1">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedNote?.title || ''}
+                    onChange={(e) => setEditedNote({...editedNote!, title: e.target.value})}
+                    className="text-xl font-bold text-gray-800 border-b focus:outline-none focus:border-blue-500 w-full"
+                  />
+                ) : (
+                  <h2 className="text-xl font-bold text-gray-800">{selectedNote.title}</h2>
+                )}
+              </div>
               <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditModalExpanded(!isEditModalExpanded)}
+                  className="h-8 w-8"
+                >
+                  {isEditModalExpanded ? (
+                    <Minimize2 className="h-4 w-4" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                </Button>
                 <div className="relative">
                   <button 
                     onClick={() => setShowMenu(!showMenu)}
@@ -350,11 +421,12 @@ export default function NotesPage() {
                 <textarea
                   value={editedNote?.content || ''}
                   onChange={(e) => setEditedNote({...editedNote!, content: e.target.value})}
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={isExpanded ? 10 : 5}
+                  className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isEditModalExpanded ? 'h-[500px]' : 'h-[200px]'
+                  }`}
                 />
               ) : (
-                <p className={`text-gray-700 whitespace-pre-wrap ${isExpanded ? 'text-base' : 'text-sm'}`}>
+                <p className={`text-gray-700 whitespace-pre-wrap ${isEditModalExpanded ? 'text-base' : 'text-sm'}`}>
                   {selectedNote.content}
                 </p>
               )}
