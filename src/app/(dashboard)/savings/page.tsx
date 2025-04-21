@@ -491,7 +491,7 @@ export default function SavingsPage() {
           <DialogHeader>
             <DialogTitle>Edit Transaction</DialogTitle>
             <DialogDescription>
-              Make changes to your transaction here. Click save when you're done.
+              Make changes to your transaction here. Click save when you re done.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditTransaction} className="space-y-4">
