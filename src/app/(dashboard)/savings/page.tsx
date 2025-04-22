@@ -225,8 +225,7 @@ export default function SavingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl text-white font-bold mb-6">Savings</h1>
-       
+      <h1 className="text-2xl text-white font-bold mb-6">Savings</h1>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -235,9 +234,7 @@ export default function SavingsPage() {
             <CardTitle className="text-green-800">Total Income</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">
-              {totalIncome}
-            </p>
+            <p className="text-2xl font-bold text-green-600">{totalIncome}</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
@@ -245,9 +242,7 @@ export default function SavingsPage() {
             <CardTitle className="text-red-800">Total Expense</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-red-600">
-              {totalExpense}
-            </p>
+            <p className="text-2xl font-bold text-red-600">{totalExpense}</p>
           </CardContent>
         </Card>
         <Card
@@ -277,7 +272,7 @@ export default function SavingsPage() {
       </div>
 
       {/* Create Record Form */}
-      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md mb-8 px-36">
+      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md mb-8 lg:px-36">
         <h2 className="text-xl font-semibold mb-4 text-white">
           Create New Record
         </h2>
@@ -316,14 +311,16 @@ export default function SavingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {(subtypes[Number(formData.type)] || []).map((subtype: Subtype) => (
-                      <SelectItem
-                        key={subtype.id}
-                        value={subtype.id.toString()}
-                      >
-                        {subtype.description}
-                      </SelectItem>
-                    ))}
+                    {(subtypes[Number(formData.type)] || []).map(
+                      (subtype: Subtype) => (
+                        <SelectItem
+                          key={subtype.id}
+                          value={subtype.id.toString()}
+                        >
+                          {subtype.description}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -365,7 +362,7 @@ export default function SavingsPage() {
       </div>
 
       {/* Transaction History */}
-      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md px-36">
+      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md lg:px-36">
         <h2 className="text-xl font-semibold mb-4 text-white">
           Transaction History
         </h2>
@@ -377,7 +374,12 @@ export default function SavingsPage() {
             onClick={() => fetchTransactions(selectedMonth)}
             className="mb-4 bg-white max-w-[200px]"
           />
-          <Button onClick={() => setSelectedMonth('2099-99')} variant={"outline"}>All</Button>
+          <Button
+            onClick={() => setSelectedMonth("2099-99")}
+            variant={"outline"}
+          >
+            All
+          </Button>
         </div>
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-purple-200">
@@ -450,9 +452,7 @@ export default function SavingsPage() {
                           {format(new Date(t.createdAt), "MMM dd, yyyy")}
                         </p>
                       </div>
-                      <p className="font-bold text-green-600">
-                        + {t.amount}
-                      </p>
+                      <p className="font-bold text-green-600">+ {t.amount}</p>
                     </div>
                   </div>
                 ))}
@@ -474,9 +474,7 @@ export default function SavingsPage() {
                           {format(new Date(t.createdAt), "MMM dd, yyyy")}
                         </p>
                       </div>
-                      <p className="font-bold text-red-600">
-                        - {t.amount}
-                      </p>
+                      <p className="font-bold text-red-600">- {t.amount}</p>
                     </div>
                   </div>
                 ))}
@@ -491,13 +489,17 @@ export default function SavingsPage() {
           <DialogHeader>
             <DialogTitle>Edit Transaction</DialogTitle>
             <DialogDescription>
-              Make changes to your transaction here. Click save when you re done.
+              Make changes to your transaction here. Click save when you re
+              done.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditTransaction} className="space-y-4">
             <div className="flex flex-col gap-4">
               <div className="flex gap-4">
-                <Select value={editFormData.type} onValueChange={handleEditTypeChange}>
+                <Select
+                  value={editFormData.type}
+                  onValueChange={handleEditTypeChange}
+                >
                   <SelectTrigger className="bg-white w-32">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
@@ -514,21 +516,25 @@ export default function SavingsPage() {
                 </Select>
                 <Select
                   value={editFormData.subtype}
-                  onValueChange={(value) => setEditFormData(prev => ({ ...prev, subtype: value }))}
+                  onValueChange={(value) =>
+                    setEditFormData((prev) => ({ ...prev, subtype: value }))
+                  }
                 >
                   <SelectTrigger className="bg-white w-32">
                     <SelectValue placeholder="Subtype" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      {(subtypes[Number(editFormData.type)] || []).map((subtype: Subtype) => (
-                        <SelectItem
-                          key={subtype.id}
-                          value={subtype.id.toString()}
-                        >
-                          {subtype.description}
-                        </SelectItem>
-                      ))}
+                      {(subtypes[Number(editFormData.type)] || []).map(
+                        (subtype: Subtype) => (
+                          <SelectItem
+                            key={subtype.id}
+                            value={subtype.id.toString()}
+                          >
+                            {subtype.description}
+                          </SelectItem>
+                        )
+                      )}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -539,7 +545,12 @@ export default function SavingsPage() {
                   placeholder="Amount"
                   required
                   value={editFormData.amount}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, amount: e.target.value }))}
+                  onChange={(e) =>
+                    setEditFormData((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
+                  }
                   className="bg-white w-32"
                 />
                 <Input
@@ -547,7 +558,12 @@ export default function SavingsPage() {
                   placeholder="Description"
                   required
                   value={editFormData.description}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setEditFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   className="bg-white flex-1"
                 />
               </div>
@@ -556,7 +572,10 @@ export default function SavingsPage() {
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => selectedTransaction && handleDeleteTransaction(selectedTransaction.id)}
+                onClick={() =>
+                  selectedTransaction &&
+                  handleDeleteTransaction(selectedTransaction.id)
+                }
               >
                 Delete
               </Button>

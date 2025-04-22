@@ -19,7 +19,8 @@ interface Plan {
   id: number
   title: string
   description?: string
-  type?: number
+  type: number
+  subtype: number
   startedAt?: string
   dueTime?: string
   status?: string
@@ -42,7 +43,8 @@ export default function PlansPage() {
   const [newPlan, setNewPlan] = useState({
     title: '',
     description: '',
-    type: 1,
+    type: 2,
+    subtype: 1,
     startedAt: '',
     dueTime: '',
     status: 'pending'
@@ -68,7 +70,7 @@ export default function PlansPage() {
   const fetchPlanTypes = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(`${baseUrl}/types/${Types.PLAN}`, {
+      const response = await axios.get(`${baseUrl}/types/2`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -112,7 +114,8 @@ export default function PlansPage() {
     const payload = {
       title: newPlan.title,
       description: newPlan.description,
-      type: newPlan.type
+      type: 2,
+      subtype: newPlan.subtype
     }
     
     try {
@@ -124,7 +127,8 @@ export default function PlansPage() {
       setNewPlan({ 
         title: '', 
         description: '', 
-        type: 1, 
+        type: 2,
+        subtype: newPlan.subtype,
         startedAt: '',
         dueTime: '',
         status: 'pending'
@@ -162,23 +166,23 @@ export default function PlansPage() {
     try {
       setIsSaving(true)
       
-      // Chỉ gửi các trường bắt buộc
       const payload = {
         title: editedPlan.title,
         description: editedPlan.description,
-        type: editedPlan.type
+        type: 2,
+        subtype: 201
       }
+
+      console.log('payload', payload)
       
-      const response = await axios.put(`${baseUrl}/plans/${editedPlan.id}`, payload, {
+      await axios.patch(`${baseUrl}/plans/${editedPlan.id}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       })
       
-      if (response.status === 200) {
-        closeModal()
-        await fetchPlans()
-      }
+      closeModal()
+      await fetchPlans()
     } catch (err: unknown) {
       console.error('Error editing plan:', err)
       setError('Failed to edit plan')
@@ -217,17 +221,17 @@ export default function PlansPage() {
 
   return (
     <div className="flex h-screen">
-      <div className="flex-1 bg-[#303a42]">
-        <div className="p-6">
+      <div className="flex-1 bg-[#303a42] overflow-auto">
+        <div className="max-w-3xl mx-auto p-6">
           {/* Create Plan Button */}
           <div className="flex justify-end mb-6">
             <Button
               onClick={() => setIsCreateModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2"
               disabled={isCreating}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              {isCreating ? "Đang tạo..." : "Tạo kế hoạch mới"}
+              <Plus className="h-4 w-4" />
+              <span>{isCreating ? "Đang tạo..." : "Tạo kế hoạch mới"}</span>
             </Button>
           </div>
 
@@ -239,7 +243,7 @@ export default function PlansPage() {
                 className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                   selectedType === null
                     ? "bg-blue-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600"
+                    : "bg-white/10 text-white/80 hover:bg-white/20"
                 }`}
               >
                 Tất cả
@@ -247,11 +251,11 @@ export default function PlansPage() {
               {planTypes.map((type) => (
                 <button
                   key={type.id}
-                  onClick={() => setSelectedType(parseInt(type.type))}
+                  onClick={() => setSelectedType(parseInt(type.subtype))}
                   className={`px-4 py-2 rounded-lg transition-all duration-300 ${
-                    selectedType === parseInt(type.type)
+                    selectedType === parseInt(type.subtype)
                       ? "bg-blue-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600"
+                      : "bg-white/10 text-white/80 hover:bg-white/20"
                   }`}
                 >
                   {type.description}
@@ -261,44 +265,46 @@ export default function PlansPage() {
           </div>
 
           {/* Plans List */}
-          <div className="">
+          <div className="space-y-4">
             {error && (
-              <div className="bg-red-500 border-l-4 border-red-500 p-4 mb-6">
+              <div className="bg-red-100 border-l-4 border-red-500 p-4 rounded">
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
 
             {loading ? (
-              <div className="text-center">Loading...</div>
+              <div className="text-center text-white/80">Loading...</div>
             ) : (
-              <div className="space-y-2">
+              <div className="grid gap-4">
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
-                    className="grid grid-cols-12 items-center p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 gap-4"
-                    onClick={() => setSelectedPlan(plan)}
+                    className="bg-white rounded-lg p-4 shadow hover:shadow-md transition-all cursor-pointer"
+                    onClick={() => openPlanModal(plan)}
                   >
-                    <div className="col-span-2">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900 truncate">{plan.title}</h3>
+                        <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                          {plan.description}
+                        </p>
+                        <div className="mt-2 flex items-center text-xs text-gray-500">
+                          <time dateTime={plan.createdAt}>
+                            {new Date(plan.createdAt).toLocaleDateString()}
+                          </time>
+                        </div>
+                      </div>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs inline-block w-full text-center ${
+                        className={`shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           plan.type === 1
                             ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            : "bg-blue-100 text-blue-800"
                         }`}
                       >
-                        {planTypes.find((t) => parseInt(t.type) === plan.type)
-                          ?.description || `Type ${plan.type}`}
+                        {planTypes.find((t) => parseInt(t.subtype) === plan.subtype)
+                          ?.description || `Type ${plan.subtype}`}
                       </span>
                     </div>
-                    <div className="col-span-3">
-                      <p className="font-medium">{plan.title}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(plan.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <p className="text-sm text-gray-500 truncate col-span-7">
-                      {plan.description}
-                    </p>
                   </div>
                 ))}
               </div>
@@ -317,16 +323,18 @@ export default function PlansPage() {
           <DialogHeader>
             <div className="flex justify-between items-center">
               <div>
-                <DialogTitle>Tạo kế hoạch mới</DialogTitle>
-                <DialogDescription>
-                  Nhập thông tin kế hoạch mới của bạn. Click lưu khi hoàn thành.
+                <DialogTitle className="text-xl font-semibold text-gray-900">
+                  Tạo kế hoạch mới
+                </DialogTitle>
+                <DialogDescription className="mt-1 text-sm text-gray-500">
+                  Nhập thông tin kế hoạch mới của bạn
                 </DialogDescription>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsCreateModalExpanded(!isCreateModalExpanded)}
-                className="h-8 w-8"
+                className="h-8 w-8 hover:bg-gray-100 rounded-full"
               >
                 {isCreateModalExpanded ? (
                   <Minimize2 className="h-4 w-4" />
@@ -336,9 +344,10 @@ export default function PlansPage() {
               </Button>
             </div>
           </DialogHeader>
-          <form onSubmit={handleCreatePlan} className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+
+          <form onSubmit={handleCreatePlan} className="mt-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tiêu đề
               </label>
               <input
@@ -347,12 +356,13 @@ export default function PlansPage() {
                 onChange={(e) =>
                   setNewPlan({ ...newPlan, title: e.target.value })
                 }
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nội dung
               </label>
               <textarea
@@ -360,40 +370,42 @@ export default function PlansPage() {
                 onChange={(e) =>
                   setNewPlan({ ...newPlan, description: e.target.value })
                 }
-                className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm resize-none ${
                   isCreateModalExpanded ? "h-[400px]" : "h-[100px]"
                 }`}
                 required
               />
             </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Type
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Loại kế hoạch
               </label>
               <select
-                value={newPlan.type}
+                value={newPlan.subtype}
                 onChange={(e) =>
-                  setNewPlan({ ...newPlan, type: parseInt(e.target.value) })
+                  setNewPlan({ ...newPlan, subtype: parseInt(e.target.value) })
                 }
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               >
                 {planTypes.map((type) => (
-                  <option key={type.id} value={type.type}>
+                  <option key={type.id} value={type.subtype}>
                     {type.description}
                   </option>
                 ))}
               </select>
             </div>
+
             <DialogFooter>
               <Button 
                 type="submit" 
-                className="bg-blue-600 hover:bg-blue-700"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isCreating}
               >
                 {isCreating ? (
                   <>
                     <svg
-                      className="animate-spin h-4 w-4 mr-2"
+                      className="animate-spin h-4 w-4"
                       viewBox="0 0 24 24"
                     >
                       <circle
@@ -414,7 +426,10 @@ export default function PlansPage() {
                     <span>Đang tạo...</span>
                   </>
                 ) : (
-                  "Tạo kế hoạch"
+                  <>
+                    <Plus className="h-4 w-4" />
+                    <span>Tạo kế hoạch</span>
+                  </>
                 )}
               </Button>
             </DialogFooter>
@@ -432,7 +447,7 @@ export default function PlansPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 {isEditing ? (
                   <input
                     type="text"
@@ -440,10 +455,10 @@ export default function PlansPage() {
                     onChange={(e) =>
                       setEditedPlan({ ...editedPlan!, title: e.target.value })
                     }
-                    className="text-xl font-bold text-gray-800 border-b focus:outline-none focus:border-blue-500 w-full"
+                    className="text-xl font-bold w-full px-0 border-0 border-b-2 border-gray-200 focus:border-blue-500 focus:ring-0"
                   />
                 ) : (
-                  <h2 className="text-xl font-bold text-gray-800">
+                  <h2 className="text-xl font-bold text-gray-900 truncate">
                     {selectedPlan.title}
                   </h2>
                 )}
@@ -453,7 +468,7 @@ export default function PlansPage() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsEditModalExpanded(!isEditModalExpanded)}
-                  className="h-8 w-8"
+                  className="h-8 w-8 hover:bg-gray-100 rounded-full"
                 >
                   {isEditModalExpanded ? (
                     <Minimize2 className="h-4 w-4" />
@@ -517,26 +532,21 @@ export default function PlansPage() {
                 </button>
               </div>
             </div>
-            <div
-              className="prose max-w-none cursor-pointer"
-              onClick={toggleExpand}
-            >
+            <div className="prose max-w-none">
               {isEditing ? (
                 <textarea
                   value={editedPlan?.description || ""}
                   onChange={(e) =>
                     setEditedPlan({ ...editedPlan!, description: e.target.value })
                   }
-                  className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
                     isEditModalExpanded ? "h-[500px]" : "h-[200px]"
                   }`}
                 />
               ) : (
-                <p
-                  className={`text-gray-700 whitespace-pre-wrap ${
-                    isEditModalExpanded ? "text-base" : "text-sm"
-                  }`}
-                >
+                <p className={`text-gray-700 whitespace-pre-wrap ${
+                  isEditModalExpanded ? "text-base" : "text-sm"
+                }`}>
                   {selectedPlan.description}
                 </p>
               )}
@@ -544,39 +554,39 @@ export default function PlansPage() {
             <div className="mt-4 flex justify-between items-center">
               {isEditing ? (
                 <select
-                  value={editedPlan?.type || 1}
+                  value={editedPlan?.subtype || 1}
                   onChange={(e) =>
                     setEditedPlan({
                       ...editedPlan!,
-                      type: parseInt(e.target.value),
+                      subtype: parseInt(e.target.value),
                     })
                   }
-                  className="px-3 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   {planTypes.map((type) => (
-                    <option key={type.id} value={type.type}>
+                    <option key={type.id} value={type.subtype}>
                       {type.description}
                     </option>
                   ))}
                 </select>
               ) : (
-                <span className="text-xs text-gray-500">
-                  Type: {planTypes.find(t => parseInt(t.type) === selectedPlan.type)?.description || `Type ${selectedPlan.type}`}
+                <span className="text-sm text-gray-500">
+                  {planTypes.find(t => parseInt(t.subtype) === selectedPlan.subtype)?.description || `Type ${selectedPlan.subtype}`}
                 </span>
               )}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 {isEditing ? (
                   <>
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="text-sm text-gray-600 hover:text-gray-800"
+                      className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
                       disabled={isSaving}
                     >
                       Hủy
                     </button>
                     <button
                       onClick={handleEditPlan}
-                      className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
+                      className="px-4 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md flex items-center transition-colors disabled:opacity-50"
                       disabled={isSaving}
                     >
                       {isSaving ? (
@@ -608,8 +618,8 @@ export default function PlansPage() {
                     </button>
                   </>
                 ) : (
-                  <span className="text-xs text-gray-500">
-                    Created: {new Date(selectedPlan.createdAt).toLocaleString()}
+                  <span className="text-sm text-gray-500">
+                    {new Date(selectedPlan.createdAt).toLocaleString()}
                   </span>
                 )}
               </div>
