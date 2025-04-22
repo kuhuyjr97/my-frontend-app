@@ -29,7 +29,7 @@ export function StatusBar({ title }: StatusBarProps) {
         <h1 className="text-xl font-semibold">{title}</h1>
         <div className="flex items-center">
           <div className="relative"></div>
-          <div className="ml-4 relative">
+          <div className="mx-10 relative">
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>

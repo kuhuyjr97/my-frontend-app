@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { StatusBar } from "@/components/dashboard/status-bar";
 import axios from "axios";
 import { Plus, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { backendUrl } from "@/app/baseUrl";
+import { Types, TypeLabels } from "@/app/enums/types";
 
 interface Note {
   id: number;
@@ -23,8 +23,16 @@ interface Note {
   createdAt: string;
 }
 
+interface NoteType {
+  id: string;
+  type: string;
+  subtype: string;
+  description: string;
+}
+
 export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
+  const [noteTypes, setNoteTypes] = useState<NoteType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedType, setSelectedType] = useState<number | null>(null);
@@ -43,12 +51,29 @@ export default function NotesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCreateModalExpanded, setIsCreateModalExpanded] = useState(false);
   const [isEditModalExpanded, setIsEditModalExpanded] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const baseUrl = backendUrl();
 
   useEffect(() => {
     fetchNotes();
+    fetchNoteTypes();
     console.log("baseUrl", baseUrl);
   }, [selectedType]);
+
+  const fetchNoteTypes = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(`${baseUrl}/types/${Types.NOTE}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setNoteTypes(response.data);
+    } catch (err) {
+      console.error("Error fetching note types:", err);
+      setError("Failed to fetch note types");
+    }
+  };
 
   const fetchNotes = async () => {
     const token = localStorage.getItem("token");
@@ -74,8 +99,9 @@ export default function NotesPage() {
   };
 
   const handleCreateNote = async (e: React.FormEvent) => {
-    const token = localStorage.getItem("token");
     e.preventDefault();
+    setIsCreating(true);
+    const token = localStorage.getItem("token");
     try {
       await axios.post(`${baseUrl}/notes`, newNote, {
         headers: {
@@ -88,6 +114,8 @@ export default function NotesPage() {
     } catch (err: unknown) {
       console.error("Error creating note:", err);
       setError("Failed to create note");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -171,98 +199,93 @@ export default function NotesPage() {
 
   return (
     <div className="flex h-screen">
-      <div className="flex-1 bg-gray-100">
-        <StatusBar title="Ghi chú" />
-
+      <div className="flex-1 bg-[#303a42]">
         <div className="p-6">
           {/* Create Note Button */}
           <div className="flex justify-end mb-6">
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               className="bg-blue-600 hover:bg-blue-700"
+              disabled={isCreating}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Tạo ghi chú mới
+              {isCreating ? "Đang tạo..." : "Tạo ghi chú mới"}
             </Button>
           </div>
 
           {/* Filter Section */}
-          <div className="mb-6">
-            <div className="flex space-x-4">
+          <div className="mb-6 ">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedType(null)}
-                className={`px-4 py-2 rounded transition-all duration-300 ${
+                className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                   selectedType === null
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600"
                 }`}
               >
                 Tất cả
               </button>
-              <button
-                onClick={() => setSelectedType(1)}
-                className={`px-4 py-2 rounded transition-all duration-300 ${
-                  selectedType === 1
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                Type 1
-              </button>
-              <button
-                onClick={() => setSelectedType(2)}
-                className={`px-4 py-2 rounded transition-all duration-300 ${
-                  selectedType === 2
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                Type 2
-              </button>
+              {noteTypes.map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setSelectedType(parseInt(type.type))}
+                  className={`px-4 py-2 rounded-lg transition-all duration-300 ${
+                    selectedType === parseInt(type.type)
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600"
+                  }`}
+                >
+                  {type.description}
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Notes List */}
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          )}
+          <div className="">
+            {error && (
+              <div className="bg-red-500  border-l-4 border-red-500  p-4 mb-6">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
 
-          {loading ? (
-            <div className="text-center">Loading...</div>
-          ) : (
-            <div className="space-y-2">
-              {notes.map((note) => (
-                <div
-                  key={note.id}
-                  className="flex justify-between items-center p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50"
-                  onClick={() => openNoteModal(note)}
-                >
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        note.type === 1
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {note.type === 1 ? "Type 1" : "Type 2"}
-                    </span>
-                    <div>
+            {loading ? (
+              <div className="text-center">Loading...</div>
+            ) : (
+              <div className="space-y-2 ">
+                {notes.map((note) => (
+                  <div
+                    key={note.id}
+                    className="grid grid-cols-12 items-center p-3 bg-white rounded-lg cursor-pointer hover:bg-gray-50 gap-4"
+                    onClick={() => openNoteModal(note)}
+                  >
+                    <div className="col-span-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs inline-block w-full text-center ${
+                          note.type === 1
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {noteTypes.find((t) => parseInt(t.type) === note.type)
+                          ?.description || `Type ${note.type}`}
+                      </span>
+                    </div>
+                    <div className="col-span-3">
                       <p className="font-medium">{note.title}</p>
                       <p className="text-sm text-gray-500">
                         {new Date(note.createdAt).toLocaleDateString()}
                       </p>
                     </div>
+                    <p className="text-sm text-gray-500 truncate col-span-7">
+                      {note.content}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-500 line-clamp-1 max-w-[200px]">
-                    {note.content}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -336,13 +359,45 @@ export default function NotesPage() {
                 }
                 className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value={1}>Type 1</option>
-                <option value={2}>Type 2</option>
+                {noteTypes.map((type) => (
+                  <option key={type.id} value={type.type}>
+                    {type.description}
+                  </option>
+                ))}
               </select>
             </div>
             <DialogFooter>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Tạo ghi chú
+              <Button 
+                type="submit" 
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={isCreating}
+              >
+                {isCreating ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 mr-2"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <span>Đang tạo...</span>
+                  </>
+                ) : (
+                  "Tạo ghi chú"
+                )}
               </Button>
             </DialogFooter>
           </form>
@@ -480,12 +535,15 @@ export default function NotesPage() {
                   }
                   className="px-3 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value={1}>Type 1</option>
-                  <option value={2}>Type 2</option>
+                  {noteTypes.map((type) => (
+                    <option key={type.id} value={type.type}>
+                      {type.description}
+                    </option>
+                  ))}
                 </select>
               ) : (
                 <span className="text-xs text-gray-500">
-                  Type: {selectedNote.type}
+                  Type: {noteTypes.find(t => parseInt(t.type) === selectedNote.type)?.description || `Type ${selectedNote.type}`}
                 </span>
               )}
               <div className="flex items-center space-x-2">
@@ -506,7 +564,7 @@ export default function NotesPage() {
                       {isSaving ? (
                         <>
                           <svg
-                            className="animate-spin h-4 w-4"
+                            className="animate-spin h-4 w-4 mr-2"
                             viewBox="0 0 24 24"
                           >
                             <circle
