@@ -167,13 +167,13 @@ export default function TypeSettingsPage() {
   }, {} as Record<string, Type[]>);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 bg-gray-900">
       <DialogComponent title="Type Settings" description="Type Settings" />
-      <h1 className="text-2xl font-bold mb-6">Type Settings</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-100">Type Settings</h1>
 
       {/* Display Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-lg font-semibold mb-4">Main Type</h2>
+      <div className="bg-gray-800 p-6 rounded-lg shadow-md mb-6">
+        <h2 className="text-lg font-semibold mb-4 text-gray-100">Main Type</h2>
 
         <Select
           value={selectedType}
@@ -182,13 +182,17 @@ export default function TypeSettingsPage() {
             setFormData((prev) => ({ ...prev, type: value }));
           }}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
             <SelectValue placeholder="Select a main type" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-gray-800 border-gray-700">
             <SelectGroup>
               {typeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value.toString()}>
+                <SelectItem 
+                  key={option.value} 
+                  value={option.value.toString()}
+                  className="text-gray-100 hover:bg-gray-700"
+                >
                   {option.label}
                 </SelectItem>
               ))}
@@ -197,21 +201,25 @@ export default function TypeSettingsPage() {
         </Select>
 
         <Input
-          className="my-3"
+          className="my-3 bg-gray-900 border-gray-700 text-gray-100"
           type="text"
           placeholder="Description"
           name="description"
           onChange={(e) => setDescription(e.target.value)}
         />
-        <Button onClick={handleSubmit}>Add</Button>
+        <Button 
+          onClick={handleSubmit}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          Add
+        </Button>
       </div>
-      <br />
 
-      {/* asdsadasd */}
-      <div className=" bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Existing Types</h2>
+      {/* Types List Section */}
+      <div className="bg-gray-800 p-6 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4 text-gray-100">Existing Types</h2>
         {/* button for filter types */}
-        <div className="flex flex-wrap gap-3 ">
+        <div className="flex flex-wrap gap-3">
           {[
             { label: "All", value: null },
             { label: TypeLabels[Types.NOTE], value: Types.NOTE },
@@ -219,21 +227,36 @@ export default function TypeSettingsPage() {
             { label: TypeLabels[Types.TASK], value: Types.TASK },
             { label: TypeLabels[Types.INCOME], value: Types.INCOME },
             { label: TypeLabels[Types.EXPENSE], value: Types.EXPENSE },
-          ].map((item, index) => (
-            <Button
-              key={index}
-              onClick={() => fetchTypes(item.value as unknown as Types)}
-              className="bg-blue-500 text-white px-4 py-2 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base"
-            >
-              {item.label}
-            </Button>
-          ))}
+          ].map((item, index) => {
+            const isSelected = item.value === null 
+              ? selectedType === "" 
+              : selectedType === item.value.toString();
+            
+            return (
+              <Button
+                key={index}
+                onClick={() => fetchTypes(item.value as unknown as Types)}
+                className={`px-4 py-2 min-w-[100px] sm:min-w-[120px] text-sm sm:text-base ${
+                  isSelected 
+                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                    : "bg-gray-700 hover:bg-gray-600 text-gray-100"
+                }`}
+              >
+                {item.label}
+              </Button>
+            );
+          })}
         </div>
 
-        <div className=" flex flex-wrap gap-3 mt-4">
+        <div className="flex flex-wrap gap-3 mt-4">
           {types.map((type) => (
             <div key={type.id} className="p-2">
-              <SheetSide handleEdit={(newDescription) => handleEdit(type.id, newDescription)} title={TypeLabels[type.type as unknown as Types]} description={type.description} handleDelete={() => handleDelete(type.id)}/>
+              <SheetSide 
+                handleEdit={(newDescription) => handleEdit(type.id, newDescription)} 
+                title={TypeLabels[type.type as unknown as Types]} 
+                description={type.description} 
+                handleDelete={() => handleDelete(type.id)}
+              />
             </div>
           ))}
         </div>

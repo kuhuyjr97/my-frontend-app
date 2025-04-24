@@ -224,273 +224,254 @@ export default function SavingsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl text-white font-bold mb-6">Savings</h1>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardHeader>
-            <CardTitle className="text-green-800">Total Income</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">{totalIncome}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-          <CardHeader>
-            <CardTitle className="text-red-800">Total Expense</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-red-600">{totalExpense}</p>
-          </CardContent>
-        </Card>
-        <Card
-          className={`bg-gradient-to-br ${
-            balance >= 0
-              ? "from-green-50 to-green-100 border-green-200"
-              : "from-red-50 to-red-100 border-red-200"
-          }`}
-        >
-          <CardHeader>
-            <CardTitle
-              className={balance >= 0 ? "text-green-800" : "text-red-800"}
-            >
-              Balance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p
-              className={`text-2xl font-bold ${
-                balance >= 0 ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              {balance}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Create Record Form */}
-      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md mb-8 lg:px-36">
-        <h2 className="text-xl font-semibold mb-4 text-white">
-          Create New Record
-        </h2>
-        <Input
-          type="date"
-          value={createSelectedMonth}
-          onChange={(e) => setCreateSelectedMonth(e.target.value)}
-          className="mb-4 bg-white max-w-[200px]"
-        />
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex gap-4">
-              <Select value={formData.type} onValueChange={handleTypeChange}>
-                <SelectTrigger className="bg-white w-32">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value={Types.INCOME.toString()}>
-                      Income
-                    </SelectItem>
-                    <SelectItem value={Types.EXPENSE.toString()}>
-                      Expense
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <Select
-                value={formData.subtype}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, subtype: value }))
-                }
-              >
-                <SelectTrigger className="bg-white w-32">
-                  <SelectValue placeholder="Subtype" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {(subtypes[Number(formData.type)] || []).map(
-                      (subtype: Subtype) => (
-                        <SelectItem
-                          key={subtype.id}
-                          value={subtype.id.toString()}
-                        >
-                          {subtype.description}
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+    <div className="flex h-screen bg-gray-900">
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Header Section */}
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-xl font-bold text-gray-100">Savings</h1>
+              <p className="text-xs text-gray-400">Manage your income and expenses</p>
             </div>
-            <div className="flex gap-4 flex-1">
-              <Input
-                type="number"
-                placeholder="Amount"
-                required
-                value={formData.amount}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, amount: e.target.value }))
-                }
-                className="bg-white w-32"
-              />
-              <Input
-                type="text"
-                placeholder="Description"
-                required
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="bg-white flex-1"
-              />
-            </div>
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Add Record
-            </Button>
           </div>
-        </form>
-      </div>
 
-      {/* Transaction History */}
-      <div className="bg-[#1c1e25] p-6 rounded-lg shadow-md lg:px-36">
-        <h2 className="text-xl font-semibold mb-4 text-white">
-          Transaction History
-        </h2>
-        <div className="flex gap-4">
-          <Input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            onClick={() => fetchTransactions(selectedMonth)}
-            className="mb-4 bg-white max-w-[200px]"
-          />
-          <Button
-            onClick={() => setSelectedMonth("2099-99")}
-            variant={"outline"}
-          >
-            All
-          </Button>
-        </div>
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-purple-200">
-            <TabsTrigger
-              value="all"
-              className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-            >
-              All
-            </TabsTrigger>
-            <TabsTrigger
-              value="income"
-              className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
-            >
-              Income
-            </TabsTrigger>
-            <TabsTrigger
-              value="expense"
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
-            >
-              Expense
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="all">
-            <div className="space-y-4">
-              {transactions.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => openTransactionModal(t)}
-                  className={`p-4 rounded-lg cursor-pointer ${
-                    t.type === Types.INCOME
-                      ? "bg-gradient-to-r from-green-50 to-green-100 border border-green-200"
-                      : "bg-gradient-to-r from-red-50 to-red-100 border border-red-200"
-                  }`}
+          {/* Summary Cards */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="bg-gray-800 p-3 rounded-lg">
+              <p className="text-sm text-gray-400">Total Income</p>
+              <p className="text-lg font-bold text-green-400">{totalIncome}</p>
+            </div>
+            <div className="bg-gray-800 p-3 rounded-lg">
+              <p className="text-sm text-gray-400">Total Expense</p>
+              <p className="text-lg font-bold text-red-400">{totalExpense}</p>
+            </div>
+            <div className="bg-gray-800 p-3 rounded-lg">
+              <p className="text-sm text-gray-400">Balance</p>
+              <p className={`text-lg font-bold ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {balance}
+              </p>
+            </div>
+          </div>
+
+          {/* Create Record Form */}
+          <div className="bg-gray-800 p-4 rounded-lg shadow-sm mb-4">
+            <h2 className="text-lg font-semibold text-gray-100 mb-3">New Transaction</h2>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Select value={formData.type} onValueChange={handleTypeChange}>
+                    <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100 h-9">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectGroup>
+                        <SelectItem value={Types.INCOME.toString()} className="text-gray-100 hover:bg-gray-700">
+                          Income
+                        </SelectItem>
+                        <SelectItem value={Types.EXPENSE.toString()} className="text-gray-100 hover:bg-gray-700">
+                          Expense
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1">
+                  <Select
+                    value={formData.subtype}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, subtype: value }))
+                    }
+                  >
+                    <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100 h-9">
+                      <SelectValue placeholder="Subtype" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectGroup>
+                        {(subtypes[Number(formData.type)] || []).map(
+                          (subtype: Subtype) => (
+                            <SelectItem
+                              key={subtype.id}
+                              value={subtype.id.toString()}
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
+                              {subtype.description}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Amount"
+                    required
+                    value={formData.amount}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, amount: e.target.value }))
+                    }
+                    className="bg-gray-900 border-gray-700 text-gray-100 h-9"
+                  />
+                </div>
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    placeholder="Description"
+                    required
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    className="bg-gray-900 border-gray-700 text-gray-100 h-9"
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                onClick={handleSubmit}
+                className="bg-blue-600 hover:bg-blue-700 h-9"
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {/* Transaction History */}
+          <div className="bg-gray-800 p-4 rounded-lg shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold text-gray-100">Transactions</h2>
+              <div className="flex gap-2">
+                <Input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="bg-gray-900 border-gray-700 text-gray-100 h-8 w-32"
+                />
+                <Button
+                  onClick={() => setSelectedMonth("2099-99")}
+                  variant="outline"
+                  className="h-8"
                 >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">{t.description}</p>
-                      <p className="text-sm text-gray-500">
-                        {format(new Date(t.createdAt), "MMM dd, yyyy")}
-                      </p>
-                    </div>
-                    <p
-                      className={`font-bold ${
+                  All
+                </Button>
+              </div>
+            </div>
+
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-900">
+                <TabsTrigger
+                  value="all"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  All
+                </TabsTrigger>
+                <TabsTrigger
+                  value="income"
+                  className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                >
+                  Income
+                </TabsTrigger>
+                <TabsTrigger
+                  value="expense"
+                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                >
+                  Expense
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="all">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
+                  {transactions.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => openTransactionModal(t)}
+                      className={`p-3 rounded-lg cursor-pointer ${
                         t.type === Types.INCOME
-                          ? "text-green-600"
-                          : "text-red-600"
+                          ? "bg-gray-900/50 border border-green-900/50"
+                          : "bg-gray-900/50 border border-red-900/50"
                       }`}
                     >
-                      {t.type === Types.INCOME ? "+ " : "- "}
-                      {t.amount}
-                    </p>
-                  </div>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium text-gray-100">{t.description}</p>
+                          <p className="text-xs text-gray-400">
+                            {format(new Date(t.createdAt), "MMM dd, yyyy")}
+                          </p>
+                        </div>
+                        <p
+                          className={`text-sm font-bold ${
+                            t.type === Types.INCOME ? "text-green-400" : "text-red-400"
+                          }`}
+                        >
+                          {t.type === Types.INCOME ? "+ " : "- "}
+                          {t.amount}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="income">
-            <div className="space-y-4">
-              {transactions
-                .filter((t) => t.type === Types.INCOME)
-                .map((t) => (
-                  <div
-                    key={t.id}
-                    className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-green-100 border border-green-200"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{t.description}</p>
-                        <p className="text-sm text-gray-500">
-                          {format(new Date(t.createdAt), "MMM dd, yyyy")}
-                        </p>
+              </TabsContent>
+              <TabsContent value="income">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
+                  {transactions
+                    .filter((t) => t.type === Types.INCOME)
+                    .map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-3 rounded-lg bg-gray-900/50 border border-green-900/50"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-sm font-medium text-gray-100">{t.description}</p>
+                            <p className="text-xs text-gray-400">
+                              {format(new Date(t.createdAt), "MMM dd, yyyy")}
+                            </p>
+                          </div>
+                          <p className="text-sm font-bold text-green-400">+ {t.amount}</p>
+                        </div>
                       </div>
-                      <p className="font-bold text-green-600">+ {t.amount}</p>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="expense">
-            <div className="space-y-4">
-              {transactions
-                .filter((t) => t.type === Types.EXPENSE)
-                .map((t) => (
-                  <div
-                    key={t.id}
-                    className="p-4 rounded-lg bg-gradient-to-r from-red-50 to-red-100 border border-red-200"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">{t.description}</p>
-                        <p className="text-sm text-gray-500">
-                          {format(new Date(t.createdAt), "MMM dd, yyyy")}
-                        </p>
+                    ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="expense">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
+                  {transactions
+                    .filter((t) => t.type === Types.EXPENSE)
+                    .map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-3 rounded-lg bg-gray-900/50 border border-red-900/50"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-sm font-medium text-gray-100">{t.description}</p>
+                            <p className="text-xs text-gray-400">
+                              {format(new Date(t.createdAt), "MMM dd, yyyy")}
+                            </p>
+                          </div>
+                          <p className="text-sm font-bold text-red-400">- {t.amount}</p>
+                        </div>
                       </div>
-                      <p className="font-bold text-red-600">- {t.amount}</p>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+                    ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
 
       {/* Edit Transaction Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
           <DialogHeader>
-            <DialogTitle>Edit Transaction</DialogTitle>
-            <DialogDescription>
-              Make changes to your transaction here. Click save when you re
-              done.
+            <DialogTitle className="text-gray-100">Edit Transaction</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Make changes to your transaction here. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditTransaction} className="space-y-4">
@@ -500,15 +481,15 @@ export default function SavingsPage() {
                   value={editFormData.type}
                   onValueChange={handleEditTypeChange}
                 >
-                  <SelectTrigger className="bg-white w-32">
+                  <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-100">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-800 border-gray-700">
                     <SelectGroup>
-                      <SelectItem value={Types.INCOME.toString()}>
+                      <SelectItem value={Types.INCOME.toString()} className="text-gray-100 hover:bg-gray-700">
                         Income
                       </SelectItem>
-                      <SelectItem value={Types.EXPENSE.toString()}>
+                      <SelectItem value={Types.EXPENSE.toString()} className="text-gray-100 hover:bg-gray-700">
                         Expense
                       </SelectItem>
                     </SelectGroup>
@@ -520,16 +501,17 @@ export default function SavingsPage() {
                     setEditFormData((prev) => ({ ...prev, subtype: value }))
                   }
                 >
-                  <SelectTrigger className="bg-white w-32">
+                  <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-100">
                     <SelectValue placeholder="Subtype" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-800 border-gray-700">
                     <SelectGroup>
                       {(subtypes[Number(editFormData.type)] || []).map(
                         (subtype: Subtype) => (
                           <SelectItem
                             key={subtype.id}
                             value={subtype.id.toString()}
+                            className="text-gray-100 hover:bg-gray-700"
                           >
                             {subtype.description}
                           </SelectItem>
@@ -551,7 +533,7 @@ export default function SavingsPage() {
                       amount: e.target.value,
                     }))
                   }
-                  className="bg-white w-32"
+                  className="bg-gray-900 border-gray-700 text-gray-100"
                 />
                 <Input
                   type="text"
@@ -564,7 +546,7 @@ export default function SavingsPage() {
                       description: e.target.value,
                     }))
                   }
-                  className="bg-white flex-1"
+                  className="bg-gray-900 border-gray-700 text-gray-100"
                 />
               </div>
             </div>
