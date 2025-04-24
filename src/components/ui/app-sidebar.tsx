@@ -30,7 +30,7 @@ import {
 const applicationItems = [
   {
     title: "Home",
-    url: "#",
+    url: "/home",
     icon: Home,
   },
   {
