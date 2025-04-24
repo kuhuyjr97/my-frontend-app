@@ -312,7 +312,7 @@ export default function TasksPage() {
                 <span className="flex items-center gap-1">
                   <span>with status</span>
                   <span className="font-medium text-gray-100">
-                    {StatusLabels[selectedStatus]}
+                    {StatusLabels[selectedStatus as keyof typeof StatusLabels]}
                   </span>
                 </span>
               )}
@@ -754,7 +754,7 @@ export default function TasksPage() {
                 </>
               ) : (
                 <span className="text-xs text-gray-400">
-                  Created: {format(new Date(selectedTask.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                  Created: {format(new Date(selectedTask.startedAt), "dd/MM/yyyy HH:mm", { locale: vi })}
                 </span>
               )}
             </div>
