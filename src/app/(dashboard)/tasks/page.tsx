@@ -134,6 +134,7 @@ export default function TasksPage() {
   const handleView = (task: Task) => {
     setSelectedTask(task);
     setEditedTask({ ...task });
+    setSelectedSubType(task.type);
     setIsModalOpen(true);
     setIsExpanded(false);
     setIsEditing(false);
@@ -461,7 +462,7 @@ export default function TasksPage() {
                         {format(new Date(task.startedAt), "dd/MM/yyyy", { locale: vi })} -{" "}
                         {format(new Date(task.dueTime), "dd/MM/yyyy", { locale: vi })}
                         {isOverdue(task.dueTime) && (
-                          <span className="ml-2 text-red-500">(Quá hạn)</span>
+                          <span className="ml-2 text-red-500">(Overdue)</span>
                         )}
                       </span>
                     </div>
@@ -560,7 +561,7 @@ export default function TasksPage() {
                         onClick={() => handleDelete(selectedTask.id)}
                         className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
                       >
-                        Xóa
+                        Delete
                       </button>
                     </div>
                   )}
@@ -612,8 +613,12 @@ export default function TasksPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
                     <Select
-                      value={editedTask?.type.toString() || "1"}
-                      onValueChange={(value) => setEditedTask({ ...editedTask!, type: parseInt(value) })}
+                      value={editedTask?.type.toString()}
+                      onValueChange={(value) => {
+                        const type = parseInt(value);
+                        setSelectedSubType(type);
+                        setEditedTask({ ...editedTask!, type });
+                      }}
                     >
                       <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
                         <SelectValue>
@@ -660,7 +665,7 @@ export default function TasksPage() {
                     <label className="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
                     <input
                       type="date"
-                      value={editedTask?.startedAt || ""}
+                      value={editedTask?.startedAt?.split('T')[0] || ""}
                       onChange={(e) => setEditedTask({ ...editedTask!, startedAt: e.target.value })}
                       className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -669,7 +674,7 @@ export default function TasksPage() {
                     <label className="block text-sm font-medium text-gray-300 mb-1">Due Date</label>
                     <input
                       type="date"
-                      value={editedTask?.dueTime || ""}
+                      value={editedTask?.dueTime?.split('T')[0] || ""}
                       onChange={(e) => setEditedTask({ ...editedTask!, dueTime: e.target.value })}
                       className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -683,7 +688,7 @@ export default function TasksPage() {
                       {format(new Date(selectedTask.startedAt), "dd/MM/yyyy", { locale: vi })} -{" "}
                       {format(new Date(selectedTask.dueTime), "dd/MM/yyyy", { locale: vi })}
                       {isOverdue(selectedTask.dueTime) && (
-                        <span className="ml-2 text-red-500">(Quá hạn)</span>
+                        <span className="ml-2 text-red-500">(Overdue)</span>
                       )}
                     </span>
                   </div>
@@ -717,7 +722,7 @@ export default function TasksPage() {
                     className="text-sm text-gray-400 hover:text-gray-100"
                     disabled={isSaving}
                   >
-                    Hủy
+                    Cancel
                   </button>
                   <button
                     onClick={handleEditTask}
@@ -745,10 +750,10 @@ export default function TasksPage() {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           />
                         </svg>
-                        <span>Đang lưu...</span>
+                        <span>Saving...</span>
                       </>
                     ) : (
-                      <span>Lưu</span>
+                      <span>Save</span>
                     )}
                   </button>
                 </>

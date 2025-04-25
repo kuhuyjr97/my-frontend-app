@@ -2,19 +2,19 @@ export enum Status {
   NOT_STARTED = 1,
   IN_PROGRESS = 2,
   COMPLETED = 3,
-  OVERDUE = 4
+  OVERDUE = 4,
 }
 
-export const StatusLabels = {
-  [Status.NOT_STARTED]: "Chưa bắt đầu",
-  [Status.IN_PROGRESS]: "Đang thực hiện",
-  [Status.COMPLETED]: "Hoàn thành",
-  [Status.OVERDUE]: "Quá hạn"
+export const StatusLabels: Record<Status, string> = {
+  [Status.NOT_STARTED]: "Not Started",
+  [Status.IN_PROGRESS]: "In Progress",
+  [Status.COMPLETED]: "Completed",
+  [Status.OVERDUE]: "Overdue",
 };
 
-export const StatusColors = {
-  [Status.NOT_STARTED]: "bg-gray-100 text-gray-800",
-  [Status.IN_PROGRESS]: "bg-blue-100 text-blue-800",
-  [Status.COMPLETED]: "bg-green-100 text-green-800",
-  [Status.OVERDUE]: "bg-red-100 text-red-800"
+export const StatusColors: Record<Status, string> = {
+  [Status.NOT_STARTED]: "bg-gray-500/20 text-gray-500",
+  [Status.IN_PROGRESS]: "bg-blue-500/20 text-blue-500",
+  [Status.COMPLETED]: "bg-green-500/20 text-green-500",
+  [Status.OVERDUE]: "bg-red-500/20 text-red-500",
 }; 
