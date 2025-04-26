@@ -8,6 +8,8 @@ import {
   FileText,
 } from "lucide-react";
 
+import { customStyle } from "@/app/style/custom-style";
+
 import {
   Sidebar,
   SidebarContent,
@@ -53,6 +55,11 @@ const applicationItems = [
     url: "/savings",
     icon: Wallet,
   },
+  {
+    title: "Saving test",
+    url: "/savingg",
+    icon: Wallet,
+  },
 ];
 
 const settingItems = [
@@ -71,7 +78,7 @@ const settingItems = [
 export function AppSidebar() {
   return (
     <Sidebar className="">
-      <SidebarContent className=" bg-[#1c1e25] text-white w-64">
+      <SidebarContent className={`${customStyle.baseBg} text-white w-64`}>
         <SidebarGroup>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -89,7 +96,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <hr className="border-gray-400" />
+        <hr className={`${customStyle.baseBg}`} />
 
         {/* setting group */}
         <SidebarGroup>
