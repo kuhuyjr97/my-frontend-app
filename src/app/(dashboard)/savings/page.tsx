@@ -35,6 +35,7 @@ interface Transaction {
   amount: number;
   description: string;
   createdAt: string;
+  date: string;
 }
 
 interface Subtype {
@@ -63,6 +64,7 @@ export default function SavingsPage() {
     subtype: "",
     amount: "",
     description: "",
+    date: "",
   });
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "yyyy-MM")
@@ -74,7 +76,16 @@ export default function SavingsPage() {
     subtype: "",
     amount: "",
     description: "",
+    date: "",
   });
+  const [newTransaction, setNewTransaction] = useState({
+    type: Types.EXPENSE,
+    amount: "",
+    description: "",
+    subType: 0,
+    date: format(new Date(), "yyyy-MM-dd"),
+  });
+  const [isCreating, setIsCreating] = useState(false);
 
   const baseUrl = backendUrl();
 
@@ -129,6 +140,7 @@ export default function SavingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
+    console.log(formData);
     if (
       formData.subtype === "" ||
       formData.amount === "" ||
@@ -137,6 +149,7 @@ export default function SavingsPage() {
       toast.error("Please fill all the fields");
       return;
     }
+    const date = new Date(formData.date);
     try {
       await axios.post(
         `${baseUrl}/savings`,
@@ -155,6 +168,7 @@ export default function SavingsPage() {
         subtype: "",
         amount: "",
         description: "",
+        date: "",
       });
       fetchTransactions(selectedMonth);
     } catch (err) {
@@ -220,8 +234,50 @@ export default function SavingsPage() {
       subtype: transaction.subType.toString(),
       amount: transaction.amount.toString(),
       description: transaction.description,
+      date: transaction.date,
     });
     setIsModalOpen(true);
+  };
+
+  const handleCreateTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (
+      newTransaction.amount === "" ||
+      newTransaction.description === "" ||
+      newTransaction.subType === 0
+    ) {
+      toast.error("Please fill all the fields");
+      return;
+    }
+    try {
+      setIsCreating(true);
+      await axios.post(
+        `${baseUrl}/savings`,
+        {
+          type: newTransaction.type,
+          subType: newTransaction.subType,
+          amount: Number(newTransaction.amount),
+          description: newTransaction.description,
+          createdAt: newTransaction.date,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Transaction created successfully");
+      setNewTransaction({
+        type: Types.EXPENSE,
+        amount: "",
+        description: "",
+        subType: 0,
+        date: format(new Date(), "yyyy-MM-dd"),
+      });
+      fetchTransactions(selectedMonth);
+    } catch (err) {
+      console.error("Error creating transaction:", err);
+      toast.error("Failed to create transaction");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -256,7 +312,7 @@ export default function SavingsPage() {
           {/* Create Record Form */}
           <div className={`p-4 rounded-lg ${customStyle.cardBg}`}>
             <h2 className={`text-lg font-semibold ${customStyle.textTitleWhite} mb-3`}>New Transaction</h2>
-            <div className="flex flex-col gap-3">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <div className="flex gap-3">
                 <div className="flex-1">
                   <Select value={formData.type} onValueChange={handleTypeChange}>
@@ -318,28 +374,36 @@ export default function SavingsPage() {
                 </div>
                 <div className="flex-1">
                   <Input
-                    type="text"
-                    placeholder="Description"
+                    type="date"
+                    placeholder="Date"
                     required
-                    value={formData.description}
+                    value={formData.date}
                     onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
+                      setFormData((prev) => ({ ...prev, date: e.target.value }))
                     }
                     className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
                   />
                 </div>
               </div>
+              <div className="flex-1">
+                <Input
+                  type="text"
+                  placeholder="Description"
+                  required
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                  className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
+                />
+              </div>
               <Button
                 type="submit"
-                onClick={handleSubmit}
                 className="bg-blue-600 hover:bg-blue-700 h-9"
               >
                 Add
               </Button>
-            </div>
+            </form>
           </div>
 
           {/* Transaction History */}
@@ -536,19 +600,32 @@ export default function SavingsPage() {
                   className="bg-gray-900 border-gray-700 text-gray-100"
                 />
                 <Input
-                  type="text"
-                  placeholder="Description"
+                  type="date"
+                  placeholder="Date"
                   required
-                  value={editFormData.description}
+                  value={editFormData.date}
                   onChange={(e) =>
                     setEditFormData((prev) => ({
                       ...prev,
-                      description: e.target.value,
+                      date: e.target.value,
                     }))
                   }
                   className="bg-gray-900 border-gray-700 text-gray-100"
                 />
               </div>
+              <Input
+                type="text"
+                placeholder="Description"
+                required
+                value={editFormData.description}
+                onChange={(e) =>
+                  setEditFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                className="bg-gray-900 border-gray-700 text-gray-100"
+              />
             </div>
             <DialogFooter className="flex justify-between">
               <Button
