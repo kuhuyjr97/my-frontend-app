@@ -7,6 +7,7 @@ import { Types } from "@/app/enums/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { customStyle } from "@/app/style/custom-style";
 import {
   Select,
   SelectContent,
@@ -224,28 +225,27 @@ export default function SavingsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-900">
+    <div className={`flex h-screen ${customStyle.containerBg}`}>
       <div className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h1 className="text-xl font-bold text-gray-100">Savings</h1>
-              <p className="text-xs text-gray-400">Manage your income and expenses</p>
+              <h1 className={`text-xl font-bold ${customStyle.textTitle}`}>Savings</h1>
             </div>
           </div>
 
           {/* Summary Cards */}
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="bg-gray-800 p-3 rounded-lg">
+            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
               <p className="text-sm text-gray-400">Total Income</p>
               <p className="text-lg font-bold text-green-400">{totalIncome}</p>
             </div>
-            <div className="bg-gray-800 p-3 rounded-lg">
+            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
               <p className="text-sm text-gray-400">Total Expense</p>
               <p className="text-lg font-bold text-red-400">{totalExpense}</p>
             </div>
-            <div className="bg-gray-800 p-3 rounded-lg">
+            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
               <p className="text-sm text-gray-400">Balance</p>
               <p className={`text-lg font-bold ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {balance}
@@ -254,21 +254,21 @@ export default function SavingsPage() {
           </div>
 
           {/* Create Record Form */}
-          <div className="bg-gray-800 p-4 rounded-lg shadow-sm mb-4">
-            <h2 className="text-lg font-semibold text-gray-100 mb-3">New Transaction</h2>
+          <div className={`p-4 rounded-lg ${customStyle.cardBg}`}>
+            <h2 className={`text-lg font-semibold ${customStyle.textTitleWhite} mb-3`}>New Transaction</h2>
             <div className="flex flex-col gap-3">
               <div className="flex gap-3">
                 <div className="flex-1">
                   <Select value={formData.type} onValueChange={handleTypeChange}>
-                    <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100 h-9">
+                    <SelectTrigger className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}>
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className={`${customStyle.selectBg} ${customStyle.borderColor}`}>
                       <SelectGroup>
-                        <SelectItem value={Types.INCOME.toString()} className="text-gray-100 hover:bg-gray-700">
+                        <SelectItem value={Types.INCOME.toString()} className={`${customStyle.textContentGrey} hover:bg-gray-700`}>
                           Income
                         </SelectItem>
-                        <SelectItem value={Types.EXPENSE.toString()} className="text-gray-100 hover:bg-gray-700">
+                        <SelectItem value={Types.EXPENSE.toString()} className={`${customStyle.textContentGrey} hover:bg-gray-700`}>
                           Expense
                         </SelectItem>
                       </SelectGroup>
@@ -282,17 +282,17 @@ export default function SavingsPage() {
                       setFormData((prev) => ({ ...prev, subtype: value }))
                     }
                   >
-                    <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100 h-9">
+                    <SelectTrigger className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}>
                       <SelectValue placeholder="Subtype" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className={`${customStyle.selectBg} ${customStyle.borderColor}`}>
                       <SelectGroup>
                         {(subtypes[Number(formData.type)] || []).map(
                           (subtype: Subtype) => (
                             <SelectItem
                               key={subtype.id}
                               value={subtype.id.toString()}
-                              className="text-gray-100 hover:bg-gray-700"
+                              className={`${customStyle.textContentGrey} hover:bg-gray-700`}
                             >
                               {subtype.description}
                             </SelectItem>
@@ -328,7 +328,7 @@ export default function SavingsPage() {
                         description: e.target.value,
                       }))
                     }
-                    className="bg-gray-900 border-gray-700 text-gray-100 h-9"
+                    className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
                   />
                 </div>
               </div>
@@ -343,15 +343,15 @@ export default function SavingsPage() {
           </div>
 
           {/* Transaction History */}
-          <div className="bg-gray-800 p-4 rounded-lg shadow-sm">
+          <div className={`p-4 rounded-lg ${customStyle.cardBg} mt-4`}>
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-gray-100">Transactions</h2>
+              <h2 className={`text-lg font-semibold ${customStyle.textTitleWhite}`}>Transactions</h2>
               <div className="flex gap-2">
                 <Input
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="bg-gray-900 border-gray-700 text-gray-100 h-8 w-32"
+                  className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-8 w-32`}
                 />
                 <Button
                   onClick={() => setSelectedMonth("2099-99")}
@@ -364,7 +364,7 @@ export default function SavingsPage() {
             </div>
 
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-gray-900">
+              <TabsList className={`grid w-full grid-cols-3 ${customStyle.selectBg}`}>
                 <TabsTrigger
                   value="all"
                   className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"

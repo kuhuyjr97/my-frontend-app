@@ -55,11 +55,6 @@ const applicationItems = [
     url: "/savings",
     icon: Wallet,
   },
-  {
-    title: "Saving test",
-    url: "/savingg",
-    icon: Wallet,
-  },
 ];
 
 const settingItems = [
