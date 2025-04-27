@@ -64,12 +64,13 @@ export default function SavingsPage() {
     subtype: "",
     amount: "",
     description: "",
-    date: "",
+    date: format(new Date(), "yyyy-MM-dd"),
   });
   const [selectedMonth, setSelectedMonth] = useState(
     format(new Date(), "yyyy-MM")
   );
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     type: "",
@@ -85,7 +86,6 @@ export default function SavingsPage() {
     subType: 0,
     date: format(new Date(), "yyyy-MM-dd"),
   });
-  const [isCreating, setIsCreating] = useState(false);
 
   const baseUrl = backendUrl();
 
@@ -118,7 +118,7 @@ export default function SavingsPage() {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
-      
+
       setSubtypes({
         [Types.INCOME]: incomeResponse.data,
         [Types.EXPENSE]: expenseResponse.data,
@@ -150,6 +150,8 @@ export default function SavingsPage() {
       return;
     }
     const date = new Date(formData.date);
+    const currentDate = date.toISOString().slice(0, 10);
+
     try {
       await axios.post(
         `${baseUrl}/savings`,
@@ -158,7 +160,7 @@ export default function SavingsPage() {
           subType: Number(formData.subtype),
           amount: Number(formData.amount),
           description: formData.description,
-          createdAt: createSelectedMonth,
+          createdAt: formData.date,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -215,6 +217,7 @@ export default function SavingsPage() {
           subType: Number(editFormData.subtype),
           amount: Number(editFormData.amount),
           description: editFormData.description,
+          createdAt: new Date(editFormData.date),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -229,55 +232,15 @@ export default function SavingsPage() {
 
   const openTransactionModal = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
+    console.log("transaction", transaction);
     setEditFormData({
       type: transaction.type.toString(),
       subtype: transaction.subType.toString(),
       amount: transaction.amount.toString(),
       description: transaction.description,
-      date: transaction.date,
+      date: transaction.createdAt,
     });
     setIsModalOpen(true);
-  };
-
-  const handleCreateTransaction = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const token = localStorage.getItem("token");
-    if (
-      newTransaction.amount === "" ||
-      newTransaction.description === "" ||
-      newTransaction.subType === 0
-    ) {
-      toast.error("Please fill all the fields");
-      return;
-    }
-    try {
-      setIsCreating(true);
-      await axios.post(
-        `${baseUrl}/savings`,
-        {
-          type: newTransaction.type,
-          subType: newTransaction.subType,
-          amount: Number(newTransaction.amount),
-          description: newTransaction.description,
-          createdAt: newTransaction.date,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Transaction created successfully");
-      setNewTransaction({
-        type: Types.EXPENSE,
-        amount: "",
-        description: "",
-        subType: 0,
-        date: format(new Date(), "yyyy-MM-dd"),
-      });
-      fetchTransactions(selectedMonth);
-    } catch (err) {
-      console.error("Error creating transaction:", err);
-      toast.error("Failed to create transaction");
-    } finally {
-      setIsCreating(false);
-    }
   };
 
   return (
@@ -287,7 +250,9 @@ export default function SavingsPage() {
           {/* Header Section */}
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h1 className={`text-xl font-bold ${customStyle.textTitle}`}>Savings</h1>
+              <h1 className={`text-xl font-bold ${customStyle.textTitle}`}>
+                Savings
+              </h1>
             </div>
           </div>
 
@@ -303,7 +268,11 @@ export default function SavingsPage() {
             </div>
             <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
               <p className="text-sm text-gray-400">Balance</p>
-              <p className={`text-lg font-bold ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <p
+                className={`text-lg font-bold ${
+                  balance >= 0 ? "text-green-400" : "text-red-400"
+                }`}
+              >
                 {balance}
               </p>
             </div>
@@ -311,20 +280,37 @@ export default function SavingsPage() {
 
           {/* Create Record Form */}
           <div className={`p-4 rounded-lg ${customStyle.cardBg}`}>
-            <h2 className={`text-lg font-semibold ${customStyle.textTitleWhite} mb-3`}>New Transaction</h2>
+            <h2
+              className={`text-lg font-semibold ${customStyle.textTitleWhite} mb-3`}
+            >
+              New Transaction
+            </h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <Select value={formData.type} onValueChange={handleTypeChange}>
-                    <SelectTrigger className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}>
+                  <Select
+                    value={formData.type}
+                    onValueChange={handleTypeChange}
+                  >
+                    <SelectTrigger
+                      className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}
+                    >
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
-                    <SelectContent className={`${customStyle.selectBg} ${customStyle.borderColor}`}>
+                    <SelectContent
+                      className={`${customStyle.selectBg} ${customStyle.borderColor}`}
+                    >
                       <SelectGroup>
-                        <SelectItem value={Types.INCOME.toString()} className={`${customStyle.textContentGrey} hover:bg-gray-700`}>
+                        <SelectItem
+                          value={Types.INCOME.toString()}
+                          className={`${customStyle.textContentGrey} hover:bg-gray-700`}
+                        >
                           Income
                         </SelectItem>
-                        <SelectItem value={Types.EXPENSE.toString()} className={`${customStyle.textContentGrey} hover:bg-gray-700`}>
+                        <SelectItem
+                          value={Types.EXPENSE.toString()}
+                          className={`${customStyle.textContentGrey} hover:bg-gray-700`}
+                        >
                           Expense
                         </SelectItem>
                       </SelectGroup>
@@ -338,10 +324,14 @@ export default function SavingsPage() {
                       setFormData((prev) => ({ ...prev, subtype: value }))
                     }
                   >
-                    <SelectTrigger className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}>
+                    <SelectTrigger
+                      className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}
+                    >
                       <SelectValue placeholder="Subtype" />
                     </SelectTrigger>
-                    <SelectContent className={`${customStyle.selectBg} ${customStyle.borderColor}`}>
+                    <SelectContent
+                      className={`${customStyle.selectBg} ${customStyle.borderColor}`}
+                    >
                       <SelectGroup>
                         {(subtypes[Number(formData.type)] || []).map(
                           (subtype: Subtype) => (
@@ -367,7 +357,10 @@ export default function SavingsPage() {
                     required
                     value={formData.amount}
                     onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, amount: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        amount: e.target.value,
+                      }))
                     }
                     className="bg-gray-900 border-gray-700 text-gray-100 h-9"
                   />
@@ -376,7 +369,6 @@ export default function SavingsPage() {
                   <Input
                     type="date"
                     placeholder="Date"
-                    required
                     value={formData.date}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, date: e.target.value }))
@@ -392,7 +384,10 @@ export default function SavingsPage() {
                   required
                   value={formData.description}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
                   }
                   className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
                 />
@@ -407,9 +402,13 @@ export default function SavingsPage() {
           </div>
 
           {/* Transaction History */}
-          <div className={`p-4 rounded-lg ${customStyle.cardBg} mt-4`}>
+          <div className={`p-4 rounded-lg ${customStyle.cardBg} mt-4 mb-32`}>
             <div className="flex justify-between items-center mb-3">
-              <h2 className={`text-lg font-semibold ${customStyle.textTitleWhite}`}>Transactions</h2>
+              <h2
+                className={`text-lg font-semibold ${customStyle.textTitleWhite}`}
+              >
+                Transactions
+              </h2>
               <div className="flex gap-2">
                 <Input
                   type="month"
@@ -428,7 +427,9 @@ export default function SavingsPage() {
             </div>
 
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className={`grid w-full grid-cols-3 ${customStyle.selectBg}`}>
+              <TabsList
+                className={`grid w-full grid-cols-3 ${customStyle.selectBg}`}
+              >
                 <TabsTrigger
                   value="all"
                   className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -462,14 +463,18 @@ export default function SavingsPage() {
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="text-sm font-medium text-gray-100">{t.description}</p>
+                          <p className="text-sm font-medium text-gray-100">
+                            {t.description}
+                          </p>
                           <p className="text-xs text-gray-400">
                             {format(new Date(t.createdAt), "MMM dd, yyyy")}
                           </p>
                         </div>
                         <p
                           className={`text-sm font-bold ${
-                            t.type === Types.INCOME ? "text-green-400" : "text-red-400"
+                            t.type === Types.INCOME
+                              ? "text-green-400"
+                              : "text-red-400"
                           }`}
                         >
                           {t.type === Types.INCOME ? "+ " : "- "}
@@ -491,12 +496,16 @@ export default function SavingsPage() {
                       >
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="text-sm font-medium text-gray-100">{t.description}</p>
+                            <p className="text-sm font-medium text-gray-100">
+                              {t.description}
+                            </p>
                             <p className="text-xs text-gray-400">
                               {format(new Date(t.createdAt), "MMM dd, yyyy")}
                             </p>
                           </div>
-                          <p className="text-sm font-bold text-green-400">+ {t.amount}</p>
+                          <p className="text-sm font-bold text-green-400">
+                            + {t.amount}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -513,12 +522,16 @@ export default function SavingsPage() {
                       >
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="text-sm font-medium text-gray-100">{t.description}</p>
+                            <p className="text-sm font-medium text-gray-100">
+                              {t.description}
+                            </p>
                             <p className="text-xs text-gray-400">
                               {format(new Date(t.createdAt), "MMM dd, yyyy")}
                             </p>
                           </div>
-                          <p className="text-sm font-bold text-red-400">- {t.amount}</p>
+                          <p className="text-sm font-bold text-red-400">
+                            - {t.amount}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -533,9 +546,12 @@ export default function SavingsPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
           <DialogHeader>
-            <DialogTitle className="text-gray-100">Edit Transaction</DialogTitle>
+            <DialogTitle className="text-gray-100">
+              Edit Transaction
+            </DialogTitle>
             <DialogDescription className="text-gray-400">
-              Make changes to your transaction here. Click save when you re done.
+              Make changes to your transaction here. Click save when you re
+              done.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditTransaction} className="space-y-4">
@@ -550,10 +566,16 @@ export default function SavingsPage() {
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
                     <SelectGroup>
-                      <SelectItem value={Types.INCOME.toString()} className="text-gray-100 hover:bg-gray-700">
+                      <SelectItem
+                        value={Types.INCOME.toString()}
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
                         Income
                       </SelectItem>
-                      <SelectItem value={Types.EXPENSE.toString()} className="text-gray-100 hover:bg-gray-700">
+                      <SelectItem
+                        value={Types.EXPENSE.toString()}
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
                         Expense
                       </SelectItem>
                     </SelectGroup>
@@ -602,8 +624,9 @@ export default function SavingsPage() {
                 <Input
                   type="date"
                   placeholder="Date"
-                  required
-                  value={editFormData.date}
+                  value={
+                    editFormData.date ? editFormData.date.slice(0, 10) : ""
+                  }
                   onChange={(e) =>
                     setEditFormData((prev) => ({
                       ...prev,
