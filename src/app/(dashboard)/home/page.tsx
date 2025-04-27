@@ -208,7 +208,7 @@ export default function HomePage() {
           </div>
 
           {/* Recent Activities */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-36">
             {/* Recent Tasks */}
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-4">

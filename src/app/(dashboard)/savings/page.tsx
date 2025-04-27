@@ -86,6 +86,7 @@ export default function SavingsPage() {
     subType: 0,
     date: format(new Date(), "yyyy-MM-dd"),
   });
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const baseUrl = backendUrl();
 
@@ -243,6 +244,17 @@ export default function SavingsPage() {
     setIsModalOpen(true);
   };
 
+  const handleOpenCreateModal = () => {
+    setFormData({
+      type: Types.EXPENSE.toString(),
+      subtype: "",
+      amount: "",
+      description: "",
+      date: format(new Date(), "yyyy-MM-dd"),
+    });
+    setIsCreateModalOpen(true);
+  };
+
   return (
     <div className={`flex h-screen ${customStyle.containerBg}`}>
       <div className="flex-1 overflow-auto">
@@ -278,128 +290,110 @@ export default function SavingsPage() {
             </div>
           </div>
 
-          {/* Create Record Form */}
-          <div className={`p-4 rounded-lg ${customStyle.cardBg}`}>
-            <h2
-              className={`text-lg font-semibold ${customStyle.textTitleWhite} mb-3`}
-            >
+          {/* New Transaction Button and Modal */}
+          <div className="flex justify-end mb-4">
+            <Button onClick={handleOpenCreateModal} className="bg-blue-600 hover:bg-blue-700">
               New Transaction
-            </h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <Select
-                    value={formData.type}
-                    onValueChange={handleTypeChange}
-                  >
-                    <SelectTrigger
-                      className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}
+            </Button>
+          </div>
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+            <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
+              <DialogHeader>
+                <DialogTitle className="text-gray-100">New Transaction</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <Select value={formData.type} onValueChange={handleTypeChange}>
+                      <SelectTrigger className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}>
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent className={`${customStyle.selectBg} ${customStyle.borderColor}`}>
+                        <SelectGroup>
+                          <SelectItem value={Types.INCOME.toString()} className={`${customStyle.textContentGrey} hover:bg-gray-700`}>
+                            Income
+                          </SelectItem>
+                          <SelectItem value={Types.EXPENSE.toString()} className={`${customStyle.textContentGrey} hover:bg-gray-700`}>
+                            Expense
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1">
+                    <Select
+                      value={formData.subtype}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, subtype: value }))
+                      }
                     >
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent
-                      className={`${customStyle.selectBg} ${customStyle.borderColor}`}
-                    >
-                      <SelectGroup>
-                        <SelectItem
-                          value={Types.INCOME.toString()}
-                          className={`${customStyle.textContentGrey} hover:bg-gray-700`}
-                        >
-                          Income
-                        </SelectItem>
-                        <SelectItem
-                          value={Types.EXPENSE.toString()}
-                          className={`${customStyle.textContentGrey} hover:bg-gray-700`}
-                        >
-                          Expense
-                        </SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}>
+                        <SelectValue placeholder="Subtype" />
+                      </SelectTrigger>
+                      <SelectContent className={`${customStyle.selectBg} ${customStyle.borderColor}`}>
+                        <SelectGroup>
+                          {(subtypes[Number(formData.type)] || []).map(
+                            (subtype: Subtype) => (
+                              <SelectItem
+                                key={subtype.id}
+                                value={subtype.id.toString()}
+                                className={`${customStyle.textContentGrey} hover:bg-gray-700`}
+                              >
+                                {subtype.description}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <Select
-                    value={formData.subtype}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, subtype: value }))
-                    }
-                  >
-                    <SelectTrigger
-                      className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}
-                    >
-                      <SelectValue placeholder="Subtype" />
-                    </SelectTrigger>
-                    <SelectContent
-                      className={`${customStyle.selectBg} ${customStyle.borderColor}`}
-                    >
-                      <SelectGroup>
-                        {(subtypes[Number(formData.type)] || []).map(
-                          (subtype: Subtype) => (
-                            <SelectItem
-                              key={subtype.id}
-                              value={subtype.id.toString()}
-                              className={`${customStyle.textContentGrey} hover:bg-gray-700`}
-                            >
-                              {subtype.description}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <Input
+                      type="number"
+                      placeholder="Amount"
+                      required
+                      value={formData.amount}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, amount: e.target.value }))
+                      }
+                      className="bg-gray-900 border-gray-700 text-gray-100 h-9"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      type="date"
+                      placeholder="Date"
+                      required
+                      value={formData.date}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, date: e.target.value }))
+                      }
+                      className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-3">
                 <div className="flex-1">
                   <Input
-                    type="number"
-                    placeholder="Amount"
+                    type="text"
+                    placeholder="Description"
                     required
-                    value={formData.amount}
+                    value={formData.description}
                     onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        amount: e.target.value,
-                      }))
-                    }
-                    className="bg-gray-900 border-gray-700 text-gray-100 h-9"
-                  />
-                </div>
-                <div className="flex-1">
-                  <Input
-                    type="date"
-                    placeholder="Date"
-                    value={formData.date}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, date: e.target.value }))
+                      setFormData((prev) => ({ ...prev, description: e.target.value }))
                     }
                     className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
                   />
                 </div>
-              </div>
-              <div className="flex-1">
-                <Input
-                  type="text"
-                  placeholder="Description"
-                  required
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 h-9"
-              >
-                Add
-              </Button>
-            </form>
-          </div>
+                <DialogFooter className="flex justify-end">
+                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700 h-9">
+                    Add
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           {/* Transaction History */}
           <div className={`p-4 rounded-lg ${customStyle.cardBg} mt-4 mb-32`}>
@@ -410,7 +404,7 @@ export default function SavingsPage() {
                 Transactions
               </h2>
               <div className="flex gap-2">
-                <Input
+                <input
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
