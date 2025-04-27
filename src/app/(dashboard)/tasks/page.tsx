@@ -223,7 +223,7 @@ export default function TasksPage() {
   const getFilteredTasks = () => {
     return tasks.filter(task => {
       const matchesType = selectedType === "all" || task.type === Number(selectedType);
-      const matchesStatus = selectedStatus === "all" || task.status === selectedStatus;
+      const matchesStatus = selectedStatus === "all" || Number(task.status) === selectedStatus;
       return matchesType && matchesStatus;
     });
   };
@@ -284,7 +284,7 @@ export default function TasksPage() {
                   if (value === "all") {
                     setSelectedStatus("all");
                   } else {
-                    setSelectedStatus(parseInt(value));
+                    setSelectedStatus(Number(value));
                   }
                 }}
               >
@@ -294,11 +294,10 @@ export default function TasksPage() {
                 <SelectContent className="bg-gray-800 border-gray-700">
                   <SelectGroup>
                     <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All Status</SelectItem>
-                    {Object.entries(StatusLabels).map(([key, label]) => (
-                      <SelectItem key={key} value={key} className="text-gray-100 hover:bg-gray-700">
-                        {label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="1" className="text-gray-100 hover:bg-gray-700">{StatusLabels[1]}</SelectItem>
+                    <SelectItem value="2" className="text-gray-100 hover:bg-gray-700">{StatusLabels[2]}</SelectItem>
+                    <SelectItem value="3" className="text-gray-100 hover:bg-gray-700">{StatusLabels[3]}</SelectItem>
+                    <SelectItem value="4" className="text-gray-100 hover:bg-gray-700">{StatusLabels[4]}</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -418,7 +417,7 @@ export default function TasksPage() {
                       if (value === "all") {
                         setSelectedStatus("all");
                       } else {
-                        setSelectedStatus(parseInt(value));
+                        setSelectedStatus(Number(value));
                       }
                     }}
                   >
@@ -427,11 +426,11 @@ export default function TasksPage() {
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-700">
                       <SelectGroup>
-                        <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All</SelectItem>
-                        <SelectItem value="1" className="text-gray-100 hover:bg-gray-700">Not Started</SelectItem>
-                        <SelectItem value="2" className="text-gray-100 hover:bg-gray-700">In Progress</SelectItem>
-                        <SelectItem value="3" className="text-gray-100 hover:bg-gray-700">Completed</SelectItem>
-                        <SelectItem value="4" className="text-gray-100 hover:bg-gray-700">Overdue</SelectItem>
+                        <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All Status</SelectItem>
+                        <SelectItem value="1" className="text-gray-100 hover:bg-gray-700">{StatusLabels[1]}</SelectItem>
+                        <SelectItem value="2" className="text-gray-100 hover:bg-gray-700">{StatusLabels[2]}</SelectItem>
+                        <SelectItem value="3" className="text-gray-100 hover:bg-gray-700">{StatusLabels[3]}</SelectItem>
+                        <SelectItem value="4" className="text-gray-100 hover:bg-gray-700">{StatusLabels[4]}</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
