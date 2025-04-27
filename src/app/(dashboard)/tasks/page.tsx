@@ -171,8 +171,8 @@ export default function TasksPage() {
           title: editedTask.title,
           description: editedTask.description,
           type: editedTask.type,
-          startedAt: editedTask.startedAt,
-          dueTime: editedTask.dueTime,
+          startedAt: new Date(editedTask.startedAt),
+          dueTime: new Date(editedTask.dueTime),
           status: String(editedTask.status),
         },
         {
@@ -220,20 +220,13 @@ export default function TasksPage() {
     return isAfter(new Date(), new Date(dueTime));
   };
 
-  const handleStatusChange = (value: string) => {
-    if (value === "all") {
-      setSelectedStatus("all");
-    } else {
-      setSelectedStatus(Number(value) as Status);
-    }
+  const getFilteredTasks = () => {
+    return tasks.filter(task => {
+      const matchesType = selectedType === "all" || task.type === Number(selectedType);
+      const matchesStatus = selectedStatus === "all" || task.status === selectedStatus;
+      return matchesType && matchesStatus;
+    });
   };
-
-  const filteredTasks = tasks.filter(task => {
-    if (selectedStatus === "all" && selectedType === "all") return true;
-    if (selectedStatus === "all") return task.type === parseInt(selectedType);
-    if (selectedType === "all") return task.status === selectedStatus;
-    return task.status === selectedStatus && task.type === parseInt(selectedType);
-  });
 
   if (loading) return (
     <div className="flex h-screen bg-gray-900 items-center justify-center">
@@ -275,7 +268,7 @@ export default function TasksPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
                   <SelectGroup>
-                    <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All</SelectItem>
+                    <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All Types</SelectItem>
                     {taskTypes.map((type) => (
                       <SelectItem key={type.id} value={type.subType} className="text-gray-100 hover:bg-gray-700">
                         {type.description}
@@ -284,6 +277,32 @@ export default function TasksPage() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+
+              <Select
+                value={selectedStatus === "all" ? "all" : selectedStatus.toString()}
+                onValueChange={(value) => {
+                  if (value === "all") {
+                    setSelectedStatus("all");
+                  } else {
+                    setSelectedStatus(parseInt(value));
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[180px] bg-gray-800 border-gray-700 text-gray-100">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectGroup>
+                    <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All Status</SelectItem>
+                    {Object.entries(StatusLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key} className="text-gray-100 hover:bg-gray-700">
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
               <Button
                 onClick={() => setShowForm(!showForm)}
                 className="bg-blue-600 hover:bg-blue-700"
@@ -298,12 +317,12 @@ export default function TasksPage() {
           <div className="bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
             <div className="flex items-center gap-4 text-sm text-gray-400">
               <span className="flex items-center gap-1">
-                <span className="font-medium text-gray-100">{filteredTasks.length}</span>
+                <span className="font-medium text-gray-100">{getFilteredTasks().length}</span>
                 <span>tasks</span>
               </span>
               {selectedType !== "all" && (
                 <span className="flex items-center gap-1">
-                  <span>showing</span>
+                  <span>type:</span>
                   <span className="font-medium text-gray-100">
                     {taskTypes.find(t => t.subType === selectedType)?.description}
                   </span>
@@ -311,7 +330,7 @@ export default function TasksPage() {
               )}
               {selectedStatus !== "all" && (
                 <span className="flex items-center gap-1">
-                  <span>with status</span>
+                  <span>status:</span>
                   <span className="font-medium text-gray-100">
                     {StatusLabels[selectedStatus as keyof typeof StatusLabels]}
                   </span>
@@ -435,7 +454,7 @@ export default function TasksPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredTasks.map((task) => (
+            {getFilteredTasks().map((task) => (
               <div 
                 key={task.id} 
                 onClick={() => handleView(task)}
