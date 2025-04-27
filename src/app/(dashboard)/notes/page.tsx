@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { backendUrl } from "@/app/baseUrl";
 import { Types, TypeLabels } from "@/app/enums/types";
-
+import { customStyle } from "@/app/style/custom-style";
 interface Note {
   id: number;
   title: string;
@@ -273,7 +273,7 @@ export default function NotesPage() {
           </div>
 
           {/* Notes List */}
-          <div className="space-y-4">
+          <div className={`space-y-4 ${customStyle.containerBg} p-5`}>
             {error && (
               <div className="bg-red-900/50 border-l-4 border-red-500 p-4 rounded-lg">
                 <p className="text-sm text-red-300">{error}</p>
@@ -486,7 +486,7 @@ export default function NotesPage() {
                 <p
                   className={`text-gray-300 whitespace-pre-wrap ${
                     isEditModalExpanded ? "text-base" : "text-sm"
-                  }`}
+                  } max-h-170 overflow-y-auto`}
                 >
                   {selectedNote.content}
                 </p>
