@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
 
 interface Transaction {
   id: string;
@@ -89,6 +90,38 @@ export default function SavingsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const baseUrl = backendUrl();
+  const router = useRouter();
+  useEffect(() => {
+    async function fetchData() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        localStorage.removeItem("token");
+      router.push("/login");
+      return;
+    }
+
+   try {
+    const check = await axios.get(`${baseUrl}/auth/check`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!check.data) {
+      localStorage.removeItem("token");
+      router.push("/login");
+      return;
+    }
+   } catch (error) {
+    console.log('error',error);
+    localStorage.removeItem("token");
+    console.log('navifte to login');
+    router.push("/login");
+    return;
+   }
+ 
+  }
+  fetchTransactions(selectedMonth);
+  fetchAllSubtypes();
+  fetchData();
+}, []);
 
   useEffect(() => {
     fetchTransactions(selectedMonth);

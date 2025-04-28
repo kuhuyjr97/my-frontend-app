@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface Task {
   id: string;
@@ -68,11 +69,39 @@ export default function TasksPage() {
     status: 1
   });
   const baseUrl = backendUrl();
-
+  const router = useRouter();
   useEffect(() => {
-    fetchTasks();
-    fetchTaskTypes();
-  }, []);
+    async function fetchData() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        localStorage.removeItem("token");
+      router.push("/login");
+      return;
+    }
+
+   try {
+    const check = await axios.get(`${baseUrl}/auth/check`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!check.data) {
+      localStorage.removeItem("token");
+      router.push("/login");
+      return;
+    }
+   } catch (error) {
+    console.log('error',error);
+    localStorage.removeItem("token");
+    console.log('navifte to login');
+    router.push("/login");
+    return;
+   }
+ 
+  }
+  fetchTasks();
+  fetchTaskTypes();
+  fetchData();
+}, []);
+
 
   const fetchTasks = async () => {
     try {

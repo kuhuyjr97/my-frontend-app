@@ -15,6 +15,7 @@ import {
 import { backendUrl } from "@/app/baseUrl";
 import { Types, TypeLabels } from "@/app/enums/types";
 import { customStyle } from "@/app/style/custom-style";
+import { useRouter } from "next/navigation";
 interface Note {
   id: number;
   title: string;
@@ -54,10 +55,38 @@ export default function NotesPage() {
   const [isEditModalExpanded, setIsEditModalExpanded] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const baseUrl = backendUrl();
+  const router = useRouter();
 
   useEffect(() => {
+    async function fetchData() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        localStorage.removeItem("token");
+        router.push("/login");
+        return;
+      }
+
+     try {
+      const check = await axios.get(`${baseUrl}/auth/check`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!check.data) {
+        localStorage.removeItem("token");
+        router.push("/login");
+        return;
+      }
+     } catch (error) {
+      console.log('error',error);
+      localStorage.removeItem("token");
+      console.log('navifte to login');
+      router.push("/login");
+      return;
+     }
+   
+    }
     fetchNotes();
     fetchNoteTypes();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -486,7 +515,7 @@ export default function NotesPage() {
                 <p
                   className={`text-gray-300 whitespace-pre-wrap ${
                     isEditModalExpanded ? "text-base" : "text-sm"
-                  } max-h-170 overflow-y-auto`}
+                  } sm:mt-96 max-h-170 overflow-y-auto`}
                 >
                   {selectedNote.content}
                 </p>

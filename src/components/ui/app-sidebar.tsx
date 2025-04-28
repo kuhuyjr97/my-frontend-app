@@ -46,11 +46,6 @@ const applicationItems = [
     icon: List,
   },
   {
-    title: "Plans",
-    url: "/plans",
-    icon: Calendar,
-  },
-  {
     title: "Savings",
     url: "/savings",
     icon: Wallet,
@@ -62,11 +57,6 @@ const settingItems = [
     title: "Types",
     url: "/settings/type",
     icon: Settings,
-  },
-  {
-    title: "Help",
-    url: "#",
-    icon: HelpCircle,
   },
 ];
 
@@ -95,24 +85,21 @@ export function AppSidebar() {
 
         {/* setting group */}
         <SidebarGroup>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton>Setting</SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-popper-anchor-width]">
-                  {settingItems.map((item) => (
-                    <DropdownMenuItem key={item.title}>
-                      <a href={item.url}>
-                        <span>{item.title}</span>
-                      </a>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          <SidebarGroupLabel>Setting</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {settingItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <a href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>

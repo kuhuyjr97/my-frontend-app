@@ -5,8 +5,14 @@ import axios from "axios";
 import { backendUrl } from "@/app/baseUrl";
 import { Types } from "@/app/enums/types";
 import { format } from "date-fns";
-import { Calendar, Clock, DollarSign, FileText, ListTodo, Plus } from "lucide-react";
+import {
+  Calendar,
+  DollarSign,
+  FileText,
+  ListTodo,
+} from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Task {
   id: number;
@@ -54,11 +60,39 @@ export default function HomePage() {
   const [selectedNoteType, setSelectedNoteType] = useState<number | null>(null);
   const [selectedPlanType, setSelectedPlanType] = useState<number | null>(null);
   const [selectedTaskType, setSelectedTaskType] = useState<number | null>(null);
-  const [selectedTransactionType, setSelectedTransactionType] = useState<number | null>(null);
+  const [selectedTransactionType, setSelectedTransactionType] = useState<
+    number | null
+  >(null);
 
   const baseUrl = backendUrl();
-
+  const router = useRouter();
   useEffect(() => {
+    async function fetchData() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        localStorage.removeItem("token");
+        router.push("/login");
+        return;
+      }
+
+     try {
+      const check = await axios.get(`${baseUrl}/auth/check`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!check.data) {
+        localStorage.removeItem("token");
+        router.push("/login");
+        return;
+      }
+     } catch (error) {
+      console.log('error',error);
+      localStorage.removeItem("token");
+      console.log('navifte to login');
+      router.push("/login");
+      return;
+     }
+   
+    }
     fetchData();
   }, []);
 
@@ -66,20 +100,22 @@ export default function HomePage() {
     const token = localStorage.getItem("token");
     try {
       setLoading(true);
-      const [tasksRes, transactionsRes, notesRes, plansRes] = await Promise.all([
-        axios.get(`${baseUrl}/tasks`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${baseUrl}/savings/2099-99`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${baseUrl}/notes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${baseUrl}/plans`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      const [tasksRes, transactionsRes, notesRes, plansRes] = await Promise.all(
+        [
+          axios.get(`${baseUrl}/tasks`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${baseUrl}/savings/2099-99`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${baseUrl}/notes`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${baseUrl}/plans`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]
+      );
 
       setTasks(tasksRes.data);
       setTransactions(transactionsRes.data);
@@ -149,7 +185,9 @@ export default function HomePage() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-100">Dashboard</h1>
-              <p className="text-sm text-gray-400">Welcome to your personal dashboard</p>
+              <p className="text-sm text-gray-400">
+                Welcome to your personal dashboard
+              </p>
             </div>
             <div className="text-sm text-gray-400">
               {format(new Date(), "EEEE, MMMM d, yyyy")}
@@ -163,7 +201,11 @@ export default function HomePage() {
                 <h3 className="text-sm font-medium text-gray-400">Balance</h3>
                 <DollarSign className="h-5 w-5 text-blue-400" />
               </div>
-              <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <p
+                className={`text-2xl font-bold ${
+                  balance >= 0 ? "text-green-400" : "text-red-400"
+                }`}
+              >
                 {balance}
               </p>
               <div className="flex justify-between text-xs text-gray-400 mt-2">
@@ -191,7 +233,10 @@ export default function HomePage() {
               </div>
               <p className="text-2xl font-bold text-gray-100">{notes.length}</p>
               <div className="text-xs text-gray-400 mt-2">
-                Last updated: {notes.length > 0 ? format(new Date(notes[0].createdAt), "MMM d") : "Never"}
+                Last updated:{" "}
+                {notes.length > 0
+                  ? format(new Date(notes[0].createdAt), "MMM d")
+                  : "Never"}
               </div>
             </div>
 
@@ -202,7 +247,10 @@ export default function HomePage() {
               </div>
               <p className="text-2xl font-bold text-gray-100">{plans.length}</p>
               <div className="text-xs text-gray-400 mt-2">
-                Last updated: {plans.length > 0 ? format(new Date(plans[0].createdAt), "MMM d") : "Never"}
+                Last updated:{" "}
+                {plans.length > 0
+                  ? format(new Date(plans[0].createdAt), "MMM d")
+                  : "Never"}
               </div>
             </div>
           </div>
@@ -212,11 +260,17 @@ export default function HomePage() {
             {/* Recent Tasks */}
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-100">Recent Tasks</h2>
+                <h2 className="text-lg font-semibold text-gray-100">
+                  Recent Tasks
+                </h2>
                 <div className="flex items-center gap-2">
                   <select
                     value={selectedTaskType || ""}
-                    onChange={(e) => setSelectedTaskType(e.target.value ? Number(e.target.value) : null)}
+                    onChange={(e) =>
+                      setSelectedTaskType(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
                     className="bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All Types</option>
@@ -224,7 +278,10 @@ export default function HomePage() {
                     <option value="2">Type 2</option>
                     <option value="3">Type 3</option>
                   </select>
-                  <Link href="/tasks" className="text-sm text-blue-400 hover:text-blue-300">
+                  <Link
+                    href="/tasks"
+                    className="text-sm text-blue-400 hover:text-blue-300"
+                  >
                     View All
                   </Link>
                 </div>
@@ -236,7 +293,9 @@ export default function HomePage() {
                     className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg"
                   >
                     <div>
-                      <p className="text-sm font-medium text-gray-100">{task.title}</p>
+                      <p className="text-sm font-medium text-gray-100">
+                        {task.title}
+                      </p>
                       <p className="text-xs text-gray-400">
                         {format(new Date(task.createdAt), "MMM d, yyyy")}
                       </p>
@@ -258,11 +317,17 @@ export default function HomePage() {
             {/* Recent Notes */}
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-100">Recent Notes</h2>
+                <h2 className="text-lg font-semibold text-gray-100">
+                  Recent Notes
+                </h2>
                 <div className="flex items-center gap-2">
                   <select
                     value={selectedNoteType || ""}
-                    onChange={(e) => setSelectedNoteType(e.target.value ? Number(e.target.value) : null)}
+                    onChange={(e) =>
+                      setSelectedNoteType(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
                     className="bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All Types</option>
@@ -270,7 +335,10 @@ export default function HomePage() {
                     <option value="2">Type 2</option>
                     <option value="3">Type 3</option>
                   </select>
-                  <Link href="/notes" className="text-sm text-blue-400 hover:text-blue-300">
+                  <Link
+                    href="/notes"
+                    className="text-sm text-blue-400 hover:text-blue-300"
+                  >
                     View All
                   </Link>
                 </div>
@@ -282,7 +350,9 @@ export default function HomePage() {
                     className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg"
                   >
                     <div>
-                      <p className="text-sm font-medium text-gray-100">{note.title}</p>
+                      <p className="text-sm font-medium text-gray-100">
+                        {note.title}
+                      </p>
                       <p className="text-xs text-gray-400">
                         {format(new Date(note.createdAt), "MMM d, yyyy")}
                       </p>
@@ -298,11 +368,17 @@ export default function HomePage() {
             {/* Recent Plans */}
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-100">Recent Plans</h2>
+                <h2 className="text-lg font-semibold text-gray-100">
+                  Recent Plans
+                </h2>
                 <div className="flex items-center gap-2">
                   <select
                     value={selectedPlanType || ""}
-                    onChange={(e) => setSelectedPlanType(e.target.value ? Number(e.target.value) : null)}
+                    onChange={(e) =>
+                      setSelectedPlanType(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
                     className="bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All Types</option>
@@ -310,7 +386,10 @@ export default function HomePage() {
                     <option value="2">Type 2</option>
                     <option value="3">Type 3</option>
                   </select>
-                  <Link href="/plans" className="text-sm text-blue-400 hover:text-blue-300">
+                  <Link
+                    href="/plans"
+                    className="text-sm text-blue-400 hover:text-blue-300"
+                  >
                     View All
                   </Link>
                 </div>
@@ -322,7 +401,9 @@ export default function HomePage() {
                     className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg"
                   >
                     <div>
-                      <p className="text-sm font-medium text-gray-100">{plan.title}</p>
+                      <p className="text-sm font-medium text-gray-100">
+                        {plan.title}
+                      </p>
                       <p className="text-xs text-gray-400">
                         {format(new Date(plan.createdAt), "MMM d, yyyy")}
                       </p>
@@ -344,18 +425,27 @@ export default function HomePage() {
             {/* Recent Savings */}
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-100">Recent Savings</h2>
+                <h2 className="text-lg font-semibold text-gray-100">
+                  Recent Savings
+                </h2>
                 <div className="flex items-center gap-2">
                   <select
                     value={selectedTransactionType || ""}
-                    onChange={(e) => setSelectedTransactionType(e.target.value ? Number(e.target.value) : null)}
+                    onChange={(e) =>
+                      setSelectedTransactionType(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
                     className="bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All Types</option>
                     <option value={Types.INCOME}>Income</option>
                     <option value={Types.EXPENSE}>Expense</option>
                   </select>
-                  <Link href="/savings" className="text-sm text-blue-400 hover:text-blue-300">
+                  <Link
+                    href="/savings"
+                    className="text-sm text-blue-400 hover:text-blue-300"
+                  >
                     View All
                   </Link>
                 </div>
@@ -367,14 +457,18 @@ export default function HomePage() {
                     className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg"
                   >
                     <div>
-                      <p className="text-sm font-medium text-gray-100">{transaction.description}</p>
+                      <p className="text-sm font-medium text-gray-100">
+                        {transaction.description}
+                      </p>
                       <p className="text-xs text-gray-400">
                         {format(new Date(transaction.createdAt), "MMM d, yyyy")}
                       </p>
                     </div>
                     <p
                       className={`text-sm font-bold ${
-                        transaction.type === Types.INCOME ? "text-green-400" : "text-red-400"
+                        transaction.type === Types.INCOME
+                          ? "text-green-400"
+                          : "text-red-400"
                       }`}
                     >
                       {transaction.type === Types.INCOME ? "+ " : "- "}

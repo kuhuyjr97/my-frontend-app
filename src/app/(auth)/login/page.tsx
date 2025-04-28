@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
@@ -12,6 +12,48 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const baseUrl = backendUrl();
+  
+  useEffect(() => {
+    async function fetchData() {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const check = await axios.get(`${baseUrl}/auth/check`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (check.data ===1) {
+            router.push("/notes");
+            return;
+          }
+         } catch (error) {
+          console.log('error',error);
+          return;
+         }
+      router.push("/notes");
+      return;
+    }
+
+   try {
+    const check = await axios.get(`${baseUrl}/auth/check`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!check.data) {
+      localStorage.removeItem("token");
+      router.push("/login");
+      return;
+    }
+   } catch (error) {
+    console.log('error',error);
+    localStorage.removeItem("token");
+    console.log('navifte to login');
+    router.push("/login");
+    return;
+   }
+ 
+  }
+  fetchData();
+}, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
