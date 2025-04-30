@@ -76,36 +76,39 @@
   --sidebar-ring: oklch(0.708 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+  
  /* background */
---my-bg-color: #8661bd; /* tím chủ đạo */
---my-card-bg-color: #2e1065; /* tím đậm */
---my-container-bg-color: #5e5176; /* tím đậm */
---my-select-bg-color: #33254e; /* tím đậm */
---my-button-bg-color: #96887c; /* tím đậm */
+--my-bg-color: #9370e6; 
+--my-bg-page-color: #896eff; 
+--my-bg-status-bar: #a68ed3; 
+--my-card-bg-color: #2e1065; 
+--my-container-bg-color: #5e5176; 
+--my-select-bg-color: #33254e; 
+--my-button-bg-color: #96887c; 
+
 
 /* border */
---my-border-color: #312e65; /* viền tím tươi */
 
 /* hover */
---my-hover-color: #5954b7; /* viền tím tươi */
+--my-hover-color: #5954b7; 
 
 /* text */
---my-text-title-color: #1e1b4b; /* tím than */
---my-text-title-white-color: #ede9fe; /* trắng hơi tím (text trên card) */
---my-text-content-color: #4c1d95; /* tím vừa */
---my-text-content-white-color: #ede9fe; /* trắng hơi tím (text trên card) */
---my-text-content-grey-color: #ede9fe; /* trắng hơi tím (text trên card) */
---my-card-text-color: #ede9fe; /* trắng hơi tím (text trên card) */
+--my-text-title-color: #1e1b4b; 
+--my-text-title-white-color: #ede9fe; 
+--my-text-content-color: #4c1d95; 
+--my-text-content-white-color: #ede9fe; 
+--my-text-content-grey-color: #ede9fe; 
+--my-card-text-color: #ede9fe; 
 
 
 
 /* card */
---my-card-border-color: #7c3aed; /* viền tím tươi */
---my-card-shadow-color: #5b21b6; /* bóng tím đậm */
---my-card-hover-color: #6d28d9; /* hover sáng hơn tí */
---my-card-active-color: #5b21b6; /* active đậm hơn */
---my-card-focus-color: #8b5cf6; /* focus highlight */
---my-card-disabled-color: #c4b5fd; /* disabled tím nhạt */
+--my-card-border-color: #7c3aed; 
+--my-card-shadow-color: #5b21b6; 
+--my-card-hover-color: #6d28d9; 
+--my-card-active-color: #5b21b6; 
+--my-card-focus-color: #8b5cf6; 
+--my-card-disabled-color: #c4b5fd; 
 
 }
 

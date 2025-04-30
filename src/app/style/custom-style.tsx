@@ -3,6 +3,8 @@
 export const customStyle = {
     /* Background */
     baseBg: "bg-[var(--my-bg-color)]",
+    statusBarBg: "bg-[linear-gradient(90deg,#a68ed3,#89c9e2)]",
+    pageBg: "bg-[var(--my-bg-page-color)]",
     cardBg: "bg-[var(--my-card-bg-color)]",
     containerBg: "bg-[var(--my-container-bg-color)]",
     selectBg: "bg-[var(--my-select-bg-color)]",

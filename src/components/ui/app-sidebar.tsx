@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { customStyle } from "@/app/style/custom-style";
+import { cn } from "@/lib/utils";
 
 import {
   Sidebar,
@@ -50,9 +51,6 @@ const applicationItems = [
     url: "/savings",
     icon: Wallet,
   },
-];
-
-const settingItems = [
   {
     title: "Types",
     url: "/settings/type",
@@ -62,42 +60,39 @@ const settingItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar className="">
-      <SidebarContent className={`${customStyle.baseBg} text-white w-64`}>
+    <Sidebar className="sm:w-64 lg:w-25 ">
+      <SidebarContent className={`${customStyle.baseBg} text-white `}>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {applicationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
+                    <div
+                      className={cn(
+                        "py-7",
+                        "lg:flex lg:flex-row lg:gap-2 lg:py-10 lg:justify-center",
+                        ""
+                      )}
+                    >
+                      <a
+                        href={item.url}
+                        className={cn(
+                          "flex",
+                          "items-center ",
+                          "lg:flex-col  gap-2"
+                        )}
+                      >
+                        <item.icon className="mb-2" />
+                        <span>{item.title}</span>
+                      </a>
+                    </div>
                   </SidebarMenuButton>
+                  <hr className={`${customStyle.baseBg}`} />
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <hr className={`${customStyle.baseBg}`} />
 
-        {/* setting group */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Setting</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               ))}
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

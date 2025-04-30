@@ -52,6 +52,7 @@ interface SubtypesMap {
 
 export default function SavingsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [monthTransactions, setMonthTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [subtypes, setSubtypes] = useState<SubtypesMap>({
     [Types.INCOME]: [],
@@ -96,32 +97,31 @@ export default function SavingsPage() {
       const token = localStorage.getItem("token");
       if (!token) {
         localStorage.removeItem("token");
-      router.push("/login");
-      return;
-    }
+        router.push("/login");
+        return;
+      }
 
-   try {
-    const check = await axios.get(`${baseUrl}/auth/check`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!check.data) {
-      localStorage.removeItem("token");
-      router.push("/login");
-      return;
+      try {
+        const check = await axios.get(`${baseUrl}/auth/check`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!check.data) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+      } catch (error) {
+        console.log("error", error);
+        localStorage.removeItem("token");
+        console.log("navifte to login");
+        router.push("/login");
+        return;
+      }
     }
-   } catch (error) {
-    console.log('error',error);
-    localStorage.removeItem("token");
-    console.log('navifte to login');
-    router.push("/login");
-    return;
-   }
- 
-  }
-  fetchTransactions(selectedMonth);
-  fetchAllSubtypes();
-  fetchData();
-}, []);
+    fetchTransactions(selectedMonth);
+    fetchAllSubtypes();
+    fetchData();
+  }, []);
 
   useEffect(() => {
     fetchTransactions(selectedMonth);
@@ -129,12 +129,21 @@ export default function SavingsPage() {
   }, [selectedMonth]);
 
   const fetchTransactions = async (yearMonth: string) => {
+    console.log("yearMonth", yearMonth);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(`${baseUrl}/savings/${yearMonth}`, {
+      const totalResponse = await axios.get(`${baseUrl}/savings/2099-99`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTransactions(response.data);
+      setTransactions(totalResponse.data);
+
+      const monthResponse = await axios.get(`${baseUrl}/savings/${yearMonth}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("total", totalResponse.data);
+      console.log("month", monthResponse.data);
+      setMonthTransactions(monthResponse.data);
     } catch (err) {
       console.error("Error fetching transactions:", err);
       toast.error("Failed to fetch transactions");
@@ -223,6 +232,16 @@ export default function SavingsPage() {
 
   const balance = totalIncome - totalExpense;
 
+  const monthIncome = monthTransactions
+    .filter((t) => t.type === Types.INCOME)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const monthExpense = monthTransactions
+    .filter((t) => t.type === Types.EXPENSE)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const monthBalance = monthIncome - monthExpense;
+
   const handleDeleteTransaction = async (id: string) => {
     const token = localStorage.getItem("token");
     try {
@@ -301,15 +320,39 @@ export default function SavingsPage() {
             </div>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          {/* Summary total */}
+            <div className={`grid grid-cols-3 p-3 ${customStyle.pageBg} rounded-lg  gap-3 mb-4`}>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Total Income</p>
+                <p className="text-lg font-bold text-green-400">
+                  {totalIncome}
+                </p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400"> Expense</p>
+                <p className="text-lg font-bold text-red-400">{totalExpense}</p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Balance</p>
+                <p
+                  className={`text-lg font-bold ${
+                    balance >= 0 ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {balance}
+                </p>
+              </div>
+            </div>
+
+          {/* Summary Month */}
+          <div className={`grid grid-cols-3 p-3 ${customStyle.pageBg} rounded-lg  gap-3 mb-4`}>
             <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-              <p className="text-sm text-gray-400">Total Income</p>
-              <p className="text-lg font-bold text-green-400">{totalIncome}</p>
+              <p className="text-sm text-gray-400">Month Income</p>
+              <p className="text-lg font-bold text-green-400">{monthIncome}</p>
             </div>
             <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-              <p className="text-sm text-gray-400">Total Expense</p>
-              <p className="text-lg font-bold text-red-400">{totalExpense}</p>
+              <p className="text-sm text-gray-400"> Expense</p>
+              <p className="text-lg font-bold text-red-400">{monthExpense}</p>
             </div>
             <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
               <p className="text-sm text-gray-400">Balance</p>
@@ -318,35 +361,53 @@ export default function SavingsPage() {
                   balance >= 0 ? "text-green-400" : "text-red-400"
                 }`}
               >
-                {balance}
+                {monthBalance}
               </p>
             </div>
           </div>
 
           {/* New Transaction Button and Modal */}
           <div className="flex justify-end mb-4">
-            <Button onClick={handleOpenCreateModal} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              onClick={handleOpenCreateModal}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               New Transaction
             </Button>
           </div>
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
               <DialogHeader>
-                <DialogTitle className="text-gray-100">New Transaction</DialogTitle>
+                <DialogTitle className="text-gray-100">
+                  New Transaction
+                </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <Select value={formData.type} onValueChange={handleTypeChange}>
-                      <SelectTrigger className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}>
+                    <Select
+                      value={formData.type}
+                      onValueChange={handleTypeChange}
+                    >
+                      <SelectTrigger
+                        className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}
+                      >
                         <SelectValue placeholder="Type" />
                       </SelectTrigger>
-                      <SelectContent className={`${customStyle.selectBg} ${customStyle.borderColor}`}>
+                      <SelectContent
+                        className={`${customStyle.selectBg} ${customStyle.borderColor}`}
+                      >
                         <SelectGroup>
-                          <SelectItem value={Types.INCOME.toString()} className={`${customStyle.textContentGrey} hover:bg-gray-700`}>
+                          <SelectItem
+                            value={Types.INCOME.toString()}
+                            className={`${customStyle.textContentGrey} hover:bg-gray-700`}
+                          >
                             Income
                           </SelectItem>
-                          <SelectItem value={Types.EXPENSE.toString()} className={`${customStyle.textContentGrey} hover:bg-gray-700`}>
+                          <SelectItem
+                            value={Types.EXPENSE.toString()}
+                            className={`${customStyle.textContentGrey} hover:bg-gray-700`}
+                          >
                             Expense
                           </SelectItem>
                         </SelectGroup>
@@ -360,10 +421,14 @@ export default function SavingsPage() {
                         setFormData((prev) => ({ ...prev, subtype: value }))
                       }
                     >
-                      <SelectTrigger className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}>
+                      <SelectTrigger
+                        className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}
+                      >
                         <SelectValue placeholder="Subtype" />
                       </SelectTrigger>
-                      <SelectContent className={`${customStyle.selectBg} ${customStyle.borderColor}`}>
+                      <SelectContent
+                        className={`${customStyle.selectBg} ${customStyle.borderColor}`}
+                      >
                         <SelectGroup>
                           {(subtypes[Number(formData.type)] || []).map(
                             (subtype: Subtype) => (
@@ -389,7 +454,10 @@ export default function SavingsPage() {
                       required
                       value={formData.amount}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, amount: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          amount: e.target.value,
+                        }))
                       }
                       className="bg-gray-900 border-gray-700 text-gray-100 h-9"
                     />
@@ -401,7 +469,10 @@ export default function SavingsPage() {
                       required
                       value={formData.date}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, date: e.target.value }))
+                        setFormData((prev) => ({
+                          ...prev,
+                          date: e.target.value,
+                        }))
                       }
                       className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
                     />
@@ -414,13 +485,19 @@ export default function SavingsPage() {
                     required
                     value={formData.description}
                     onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, description: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
                     }
                     className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
                   />
                 </div>
                 <DialogFooter className="flex justify-end">
-                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700 h-9">
+                  <Button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 h-9"
+                  >
                     Add
                   </Button>
                 </DialogFooter>
