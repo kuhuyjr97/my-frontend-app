@@ -141,8 +141,6 @@ export default function SavingsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("total", totalResponse.data);
-      console.log("month", monthResponse.data);
       setMonthTransactions(monthResponse.data);
     } catch (err) {
       console.error("Error fetching transactions:", err);
@@ -555,7 +553,7 @@ export default function SavingsPage() {
               </TabsList>
               <TabsContent value="all">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
-                  {transactions.map((t) => (
+                  {monthTransactions.map((t) => (
                     <div
                       key={t.id}
                       onClick={() => openTransactionModal(t)}
@@ -591,7 +589,7 @@ export default function SavingsPage() {
               </TabsContent>
               <TabsContent value="income">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
-                  {transactions
+                    {monthTransactions
                     .filter((t) => t.type === Types.INCOME)
                     .map((t) => (
                       <div
@@ -617,7 +615,7 @@ export default function SavingsPage() {
               </TabsContent>
               <TabsContent value="expense">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
-                  {transactions
+                  {monthTransactions
                     .filter((t) => t.type === Types.EXPENSE)
                     .map((t) => (
                       <div
