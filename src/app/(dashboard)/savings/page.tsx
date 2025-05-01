@@ -51,16 +51,19 @@ interface SubtypesMap {
 }
 
 export default function SavingsPage() {
+  //
+  const [subtypeList, setSubtypeList] = useState<
+    { name: string; value: string }[]
+  >([]);
+
+  //
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [monthTransactions, setMonthTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
   const [subtypes, setSubtypes] = useState<SubtypesMap>({
     [Types.INCOME]: [],
     [Types.EXPENSE]: [],
   });
-  const [createSelectedMonth, setCreateSelectedMonth] = useState(
-    format(new Date(), "yyyy-MM-dd")
-  );
+
   const [formData, setFormData] = useState({
     type: Types.EXPENSE.toString(),
     subtype: "",
@@ -81,13 +84,7 @@ export default function SavingsPage() {
     description: "",
     date: "",
   });
-  const [newTransaction, setNewTransaction] = useState({
-    type: Types.EXPENSE,
-    amount: "",
-    description: "",
-    subType: 0,
-    date: format(new Date(), "yyyy-MM-dd"),
-  });
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const baseUrl = backendUrl();
@@ -122,14 +119,14 @@ export default function SavingsPage() {
     fetchAllSubtypes();
     fetchData();
   }, []);
-
+  const [savingResponse, setSavingResponse] = useState<any[]>([]);
   useEffect(() => {
     fetchTransactions(selectedMonth);
     fetchAllSubtypes();
+    handleTypeChange(formData.type);
   }, [selectedMonth]);
 
   const fetchTransactions = async (yearMonth: string) => {
-    console.log("yearMonth", yearMonth);
     const token = localStorage.getItem("token");
     try {
       const totalResponse = await axios.get(`${baseUrl}/savings/2099-99`, {
@@ -151,19 +148,10 @@ export default function SavingsPage() {
   const fetchAllSubtypes = async () => {
     const token = localStorage.getItem("token");
     try {
-      const [incomeResponse, expenseResponse] = await Promise.all([
-        axios.get(`${baseUrl}/types/${Types.INCOME}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${baseUrl}/types/${Types.EXPENSE}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-
-      setSubtypes({
-        [Types.INCOME]: incomeResponse.data,
-        [Types.EXPENSE]: expenseResponse.data,
+      const savingResponse = await axios.get(`${baseUrl}/types`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      setSavingResponse(savingResponse.data);
     } catch (err) {
       console.error("Error fetching subtypes:", err);
       toast.error("Failed to fetch subtypes");
@@ -171,6 +159,26 @@ export default function SavingsPage() {
   };
 
   const handleTypeChange = (value: string) => {
+    if (value === Types.INCOME.toString()) {
+      const incomeSubtypes = savingResponse
+        .filter((item: any) => item.type === Types.INCOME)
+        .map((item: any) => ({
+          name: item.description,
+          value: String(item.subType),
+        }));
+
+      setSubtypeList(incomeSubtypes);
+    } else if (value === Types.EXPENSE.toString()) {
+      const expenseSubtypes = savingResponse
+        .filter((item: any) => item.type === Types.EXPENSE)
+        .map((item: any) => ({
+          name: item.description,
+          value: String(item.subType),
+        }));
+      setSubtypeList(expenseSubtypes);
+    }
+
+    console.log("subtypeList", subtypeList);
     setFormData((prev) => ({ ...prev, type: value, subtype: "" }));
   };
 
@@ -190,9 +198,6 @@ export default function SavingsPage() {
       toast.error("Please fill all the fields");
       return;
     }
-    const date = new Date(formData.date);
-    const currentDate = date.toISOString().slice(0, 10);
-
     try {
       await axios.post(
         `${baseUrl}/savings`,
@@ -319,31 +324,33 @@ export default function SavingsPage() {
           </div>
 
           {/* Summary total */}
-            <div className={`grid grid-cols-3 p-3 ${customStyle.pageBg} rounded-lg  gap-3 mb-4`}>
-              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-                <p className="text-sm text-gray-400">Total Income</p>
-                <p className="text-lg font-bold text-green-400">
-                  {totalIncome}
-                </p>
-              </div>
-              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-                <p className="text-sm text-gray-400"> Expense</p>
-                <p className="text-lg font-bold text-red-400">{totalExpense}</p>
-              </div>
-              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-                <p className="text-sm text-gray-400">Balance</p>
-                <p
-                  className={`text-lg font-bold ${
-                    balance >= 0 ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  {balance}
-                </p>
-              </div>
+          <div
+            className={`grid grid-cols-3 p-3 ${customStyle.pageBg} rounded-lg  gap-3 mb-4`}
+          >
+            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+              <p className="text-sm text-gray-400">Total Income</p>
+              <p className="text-lg font-bold text-green-400">{totalIncome}</p>
             </div>
+            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+              <p className="text-sm text-gray-400"> Expense</p>
+              <p className="text-lg font-bold text-red-400">{totalExpense}</p>
+            </div>
+            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+              <p className="text-sm text-gray-400">Balance</p>
+              <p
+                className={`text-lg font-bold ${
+                  balance >= 0 ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {balance}
+              </p>
+            </div>
+          </div>
 
           {/* Summary Month */}
-          <div className={`grid grid-cols-3 p-3 ${customStyle.pageBg} rounded-lg  gap-3 mb-4`}>
+          <div
+            className={`grid grid-cols-3 p-3 ${customStyle.pageBg} rounded-lg  gap-3 mb-4`}
+          >
             <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
               <p className="text-sm text-gray-400">Month Income</p>
               <p className="text-lg font-bold text-green-400">{monthIncome}</p>
@@ -370,9 +377,10 @@ export default function SavingsPage() {
               onClick={handleOpenCreateModal}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              New Transaction
+              New Transaction asd {formData.type}
             </Button>
           </div>
+          <p></p>
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogContent className="sm:max-w-[425px] bg-gray-800 border-gray-700">
               <DialogHeader>
@@ -412,12 +420,15 @@ export default function SavingsPage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/*  todo*/}
                   <div className="flex-1">
                     <Select
                       value={formData.subtype}
-                      onValueChange={(value) =>
-                        setFormData((prev) => ({ ...prev, subtype: value }))
-                      }
+                      onValueChange={(value) => {
+                        console.log("value", value);
+                        setFormData((prev) => ({ ...prev, subtype: value }));
+                      }}
                     >
                       <SelectTrigger
                         className={`w-full ${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textTitleWhite} h-9`}
@@ -428,17 +439,11 @@ export default function SavingsPage() {
                         className={`${customStyle.selectBg} ${customStyle.borderColor}`}
                       >
                         <SelectGroup>
-                          {(subtypes[Number(formData.type)] || []).map(
-                            (subtype: Subtype) => (
-                              <SelectItem
-                                key={subtype.id}
-                                value={subtype.id.toString()}
-                                className={`${customStyle.textContentGrey} hover:bg-gray-700`}
-                              >
-                                {subtype.description}
-                              </SelectItem>
-                            )
-                          )}
+                          {subtypeList.map((item) => (
+                            <SelectItem key={item.value} value={item.value}>
+                              {item.name} {item.value}
+                            </SelectItem>
+                          ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -589,7 +594,7 @@ export default function SavingsPage() {
               </TabsContent>
               <TabsContent value="income">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
-                    {monthTransactions
+                  {monthTransactions
                     .filter((t) => t.type === Types.INCOME)
                     .map((t) => (
                       <div
@@ -701,7 +706,7 @@ export default function SavingsPage() {
                             value={subtype.id.toString()}
                             className="text-gray-100 hover:bg-gray-700"
                           >
-                            {subtype.description}
+                            {subtype.description} 
                           </SelectItem>
                         )
                       )}
