@@ -183,6 +183,23 @@ export default function SavingsPage() {
   };
 
   const handleEditTypeChange = (value: string) => {
+    if (value === Types.INCOME.toString()) {
+      const incomeSubtypes = savingResponse
+        .filter((item: any) => item.type === Types.INCOME)
+        .map((item: any) => ({
+          name: item.description,
+          value: String(item.subType),
+        }));
+      setSubtypeList(incomeSubtypes);
+    } else if (value === Types.EXPENSE.toString()) {
+      const expenseSubtypes = savingResponse
+        .filter((item: any) => item.type === Types.EXPENSE)
+        .map((item: any) => ({
+          name: item.description,
+          value: String(item.subType),
+        }));
+      setSubtypeList(expenseSubtypes);
+    }
     setEditFormData((prev) => ({ ...prev, type: value, subtype: "" }));
   };
 
@@ -289,13 +306,43 @@ export default function SavingsPage() {
   const openTransactionModal = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     console.log("transaction", transaction);
+    
+    // Set subtypeList based on transaction type
+    if (transaction.type === Types.INCOME) {
+      const incomeSubtypes = savingResponse
+        .filter((item: any) => item.type === Types.INCOME)
+        .map((item: any) => ({
+          name: item.description,
+          value: String(item.subType),
+        }));
+      setSubtypeList(incomeSubtypes);
+    } else if (transaction.type === Types.EXPENSE) {
+      const expenseSubtypes = savingResponse
+        .filter((item: any) => item.type === Types.EXPENSE)
+        .map((item: any) => ({
+          name: item.description,
+          value: String(item.subType),
+        }));
+      setSubtypeList(expenseSubtypes);
+    }
+
+    // Set default values for edit form
+    const defaultSubtype = transaction.subType.toString();
     setEditFormData({
       type: transaction.type.toString(),
-      subtype: transaction.subType.toString(),
+      subtype: defaultSubtype,
       amount: transaction.amount.toString(),
       description: transaction.description,
       date: transaction.createdAt,
     });
+
+    // Set default subtype in the form
+    setFormData(prev => ({
+      ...prev,
+      type: transaction.type.toString(),
+      subtype: defaultSubtype
+    }));
+
     setIsModalOpen(true);
   };
 
@@ -699,17 +746,15 @@ export default function SavingsPage() {
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
                     <SelectGroup>
-                      {(subtypes[Number(editFormData.type)] || []).map(
-                        (subtype: Subtype) => (
-                          <SelectItem
-                            key={subtype.id}
-                            value={subtype.id.toString()}
-                            className="text-gray-100 hover:bg-gray-700"
-                          >
-                            {subtype.description} 
-                          </SelectItem>
-                        )
-                      )}
+                      {subtypeList.map((item) => (
+                        <SelectItem
+                          key={item.value}
+                          value={item.value}
+                          className="text-gray-100 hover:bg-gray-700"
+                        >
+                          {item.name}
+                        </SelectItem>
+                      ))}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
