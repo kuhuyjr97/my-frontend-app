@@ -177,8 +177,12 @@ export default function SavingsPage() {
         {} as Record<number, number>
       );
 
+      const monthNameMap = Object.fromEntries(
+        typeResponse.data.map((item: any) => [item.subType, item.description])
+      );
+
       const monthChartData = Object.entries(monthResult).map(([name, total]) => ({
-        name,
+        name: monthNameMap[Number(name)] || name,
         total: total as number,
       }));
 
