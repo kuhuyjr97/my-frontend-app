@@ -54,8 +54,8 @@ export default function SavingsPage() {
     { name: string; value: string }[]
   >([]);
 
-  const [totalChartData, setTotalChartData] = useState<any[]>([]);
-  const [monthChartData, setMonthChartData] = useState<any[]>([]);
+  const [totalChartData, setTotalChartData] = useState<{ name: string; total: number }[]>([]);
+  const [monthChartData, setMonthChartData] = useState<{ name: string; total: number }[]>([]);
   //
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -119,7 +119,7 @@ export default function SavingsPage() {
     fetchAllSubtypes();
     fetchData();
   }, []);
-  const [savingResponse, setSavingResponse] = useState<any[]>([]);
+  const [savingResponse, setSavingResponse] = useState<[]>([]);
   useEffect(() => {
     fetchTransactions(selectedMonth);
     fetchAllSubtypes();
@@ -152,7 +152,7 @@ export default function SavingsPage() {
       );
 
       const nameMap = Object.fromEntries(
-        typeResponse.data.map((item: any) => [item.subType, item.description])
+        typeResponse.data.map((item: { subType: number; description: string }) => [item.subType, item.description])
       );
       const renamedResult = Object.entries(result).reduce(
         (acc, [subType, total]) => {
@@ -178,7 +178,7 @@ export default function SavingsPage() {
       );
 
       const monthNameMap = Object.fromEntries(
-        typeResponse.data.map((item: any) => [item.subType, item.description])
+        typeResponse.data.map((item: { subType: number; description: string }) => [item.subType, item.description])
       );
 
       const monthChartData = Object.entries(monthResult).map(([name, total]) => ({
@@ -218,8 +218,8 @@ export default function SavingsPage() {
   const handleTypeChange = (value: string) => {
     if (value === Types.INCOME.toString()) {
       const incomeSubtypes = savingResponse
-        .filter((item: any) => item.type === Types.INCOME)
-        .map((item: any) => ({
+        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.INCOME)
+        .map((item: { subType: number; description: string }) => ({
           name: item.description,
           value: String(item.subType),
         }));
@@ -227,8 +227,8 @@ export default function SavingsPage() {
       setSubtypeList(incomeSubtypes);
     } else if (value === Types.EXPENSE.toString()) {
       const expenseSubtypes = savingResponse
-        .filter((item: any) => item.type === Types.EXPENSE)
-        .map((item: any) => ({
+        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.EXPENSE)
+        .map((item: { subType: number; description: string }) => ({
           name: item.description,
           value: String(item.subType),
         }));
@@ -241,16 +241,16 @@ export default function SavingsPage() {
   const handleEditTypeChange = (value: string) => {
     if (value === Types.INCOME.toString()) {
       const incomeSubtypes = savingResponse
-        .filter((item: any) => item.type === Types.INCOME)
-        .map((item: any) => ({
+        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.INCOME)
+        .map((item: { subType: number; description: string }) => ({
           name: item.description,
           value: String(item.subType),
         }));
       setSubtypeList(incomeSubtypes);
     } else if (value === Types.EXPENSE.toString()) {
       const expenseSubtypes = savingResponse
-        .filter((item: any) => item.type === Types.EXPENSE)
-        .map((item: any) => ({
+        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.EXPENSE)
+        .map((item: { subType: number; description: string }) => ({
           name: item.description,
           value: String(item.subType),
         }));
@@ -366,16 +366,16 @@ export default function SavingsPage() {
     // Set subtypeList based on transaction type
     if (transaction.type === Types.INCOME) {
       const incomeSubtypes = savingResponse
-        .filter((item: any) => item.type === Types.INCOME)
-        .map((item: any) => ({
+        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.INCOME)
+        .map((item: { subType: number; description: string }) => ({
           name: item.description,
           value: String(item.subType),
         }));
       setSubtypeList(incomeSubtypes);
     } else if (transaction.type === Types.EXPENSE) {
       const expenseSubtypes = savingResponse
-        .filter((item: any) => item.type === Types.EXPENSE)
-        .map((item: any) => ({
+        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.EXPENSE)
+        .map((item: { subType: number; description: string }) => ({
           name: item.description,
           value: String(item.subType),
         }));
