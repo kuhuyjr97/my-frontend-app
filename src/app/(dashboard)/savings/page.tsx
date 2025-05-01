@@ -1,5 +1,5 @@
 "use client";
-
+import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { backendUrl } from "@/app/baseUrl";
@@ -8,6 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { customStyle } from "@/app/style/custom-style";
+
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
 import {
   Select,
   SelectContent,
@@ -17,7 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -39,30 +48,21 @@ interface Transaction {
   date: string;
 }
 
-interface Subtype {
-  id: number;
-  name: string;
-  description: string;
-  subType: number;
-}
-
-interface SubtypesMap {
-  [key: number]: Subtype[];
-}
-
 export default function SavingsPage() {
   //
   const [subtypeList, setSubtypeList] = useState<
     { name: string; value: string }[]
   >([]);
 
+  const [totalChartData, setTotalChartData] = useState<any[]>([]);
+  const [monthChartData, setMonthChartData] = useState<any[]>([]);
   //
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [sumTransactions, setSumTransactions] = useState<
+    Record<string, number>
+  >({});
   const [monthTransactions, setMonthTransactions] = useState<Transaction[]>([]);
-  const [subtypes, setSubtypes] = useState<SubtypesMap>({
-    [Types.INCOME]: [],
-    [Types.EXPENSE]: [],
-  });
 
   const [formData, setFormData] = useState({
     type: Types.EXPENSE.toString(),
@@ -127,16 +127,67 @@ export default function SavingsPage() {
   }, [selectedMonth]);
 
   const fetchTransactions = async (yearMonth: string) => {
+    console.log("yearMonth", yearMonth);
     const token = localStorage.getItem("token");
     try {
       const totalResponse = await axios.get(`${baseUrl}/savings/2099-99`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTransactions(totalResponse.data);
 
       const monthResponse = await axios.get(`${baseUrl}/savings/${yearMonth}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      const typeResponse = await axios.get(`${baseUrl}/types`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setTransactions(totalResponse.data);
+      const result = totalResponse.data.reduce(
+        (acc: Record<number, number>, item: Transaction) => {
+          acc[item.subType] = (acc[item.subType] || 0) + item.amount;
+          return acc;
+        },
+        {} as Record<number, number>
+      );
+
+      const nameMap = Object.fromEntries(
+        typeResponse.data.map((item: any) => [item.subType, item.description])
+      );
+      const renamedResult = Object.entries(result).reduce(
+        (acc, [subType, total]) => {
+          const name = nameMap[Number(subType)] || subType;
+          acc[name] = total as number;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+      setSumTransactions(renamedResult);
+
+      const totalChartData = Object.entries(renamedResult).map(([name, total]) => ({
+        name,
+        total: total as number,
+      }));
+
+      const monthResult = monthResponse.data.reduce(
+        (acc: Record<number, number>, item: Transaction) => {
+          acc[item.subType] = (acc[item.subType] || 0) + item.amount;
+          return acc;
+        },
+        {} as Record<number, number>
+      );
+
+      const monthChartData = Object.entries(monthResult).map(([name, total]) => ({
+        name,
+        total: total as number,
+      }));
+
+      console.log("totalChartData", totalChartData);
+      console.log("monthChartData", monthChartData);
+
+      setTotalChartData(totalChartData);
+      setMonthChartData(monthChartData);
+
 
       setMonthTransactions(monthResponse.data);
     } catch (err) {
@@ -151,6 +202,8 @@ export default function SavingsPage() {
       const savingResponse = await axios.get(`${baseUrl}/types`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      console.log("saving sum from type", sumTransactions);
       setSavingResponse(savingResponse.data);
     } catch (err) {
       console.error("Error fetching subtypes:", err);
@@ -178,7 +231,6 @@ export default function SavingsPage() {
       setSubtypeList(expenseSubtypes);
     }
 
-    console.log("subtypeList", subtypeList);
     setFormData((prev) => ({ ...prev, type: value, subtype: "" }));
   };
 
@@ -306,7 +358,7 @@ export default function SavingsPage() {
   const openTransactionModal = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     console.log("transaction", transaction);
-    
+
     // Set subtypeList based on transaction type
     if (transaction.type === Types.INCOME) {
       const incomeSubtypes = savingResponse
@@ -337,10 +389,10 @@ export default function SavingsPage() {
     });
 
     // Set default subtype in the form
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       type: transaction.type.toString(),
-      subtype: defaultSubtype
+      subtype: defaultSubtype,
     }));
 
     setIsModalOpen(true);
@@ -371,50 +423,82 @@ export default function SavingsPage() {
           </div>
 
           {/* Summary total */}
+
           <div
-            className={`grid grid-cols-3 p-3 ${customStyle.pageBg} rounded-lg  gap-3 mb-4`}
+            className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 ${customStyle.pageBg} rounded-lg mb-4`}
           >
-            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-              <p className="text-sm text-gray-400">Total Income</p>
-              <p className="text-lg font-bold text-green-400">{totalIncome}</p>
+            {/* Total Summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Total Income</p>
+                <p className="text-lg font-bold text-green-400">
+                  {totalIncome}
+                </p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Expense</p>
+                <p className="text-lg font-bold text-red-400">{totalExpense}</p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Balance</p>
+                <p
+                  className={`text-lg font-bold ${
+                    balance >= 0 ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {balance}
+                </p>
+              </div>
             </div>
-            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-              <p className="text-sm text-gray-400"> Expense</p>
-              <p className="text-lg font-bold text-red-400">{totalExpense}</p>
-            </div>
-            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-              <p className="text-sm text-gray-400">Balance</p>
-              <p
-                className={`text-lg font-bold ${
-                  balance >= 0 ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {balance}
-              </p>
+
+            {/* Monthly Summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Month Income</p>
+                <p className="text-lg font-bold text-green-400">
+                  {monthIncome}
+                </p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Expense</p>
+                <p className="text-lg font-bold text-red-400">{monthExpense}</p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Balance</p>
+                <p
+                  className={`text-lg font-bold ${
+                    balance >= 0 ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {monthBalance}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Summary Month */}
-          <div
-            className={`grid grid-cols-3 p-3 ${customStyle.pageBg} rounded-lg  gap-3 mb-4`}
-          >
-            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-              <p className="text-sm text-gray-400">Month Income</p>
-              <p className="text-lg font-bold text-green-400">{monthIncome}</p>
+          <div className="w-full flex flex-col sm:flex-row gap-3 h-[600px] sm:h-[300px]">
+            {/* Chart total */}
+            <div className="w-full sm:w-1/2 h-1/2 sm:h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={totalChartData}>
+                <XAxis dataKey="name" tick={{ fill: '#FFFFFF' }} /> 
+                  <YAxis tick={{ fill: '#FFFFFF' }} />
+                  <Tooltip />
+                  <Bar dataKey="total" fill="#2563eb" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-              <p className="text-sm text-gray-400"> Expense</p>
-              <p className="text-lg font-bold text-red-400">{monthExpense}</p>
-            </div>
-            <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
-              <p className="text-sm text-gray-400">Balance</p>
-              <p
-                className={`text-lg font-bold ${
-                  balance >= 0 ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {monthBalance}
-              </p>
+
+            {/* Chart month */}
+            <div className="w-full sm:w-1/2 h-1/2 sm:h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthChartData}>
+                  <XAxis dataKey="name" tick={{ fill: '#FFFFFF' }} />
+                  <YAxis tick={{ fill: '#FFFFFF' }} />
+                  <Tooltip />
+                  <Bar dataKey="total" fill="#2563eb" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
@@ -424,7 +508,7 @@ export default function SavingsPage() {
               onClick={handleOpenCreateModal}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              New Transaction asd {formData.type}
+              New Transaction
             </Button>
           </div>
           <p></p>
