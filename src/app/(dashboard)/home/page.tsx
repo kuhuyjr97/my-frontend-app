@@ -5,14 +5,12 @@ import axios from "axios";
 import { backendUrl } from "@/app/baseUrl";
 import { Types } from "@/app/enums/types";
 import { format } from "date-fns";
-import {
-  Calendar,
-  DollarSign,
-  FileText,
-  ListTodo,
-} from "lucide-react";
+import { customStyle } from "@/app/style/custom-style";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Status } from "@/app/enums/status";
+import { StatusLabels } from "@/app/enums/status";
 
 interface Task {
   id: number;
@@ -36,7 +34,7 @@ interface Transaction {
 interface Note {
   id: number;
   title: string;
-  content: string;
+  description: string;
   type: number;
   createdAt: string;
 }
@@ -55,6 +53,7 @@ export default function HomePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [types, setTypes] = useState<[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedNoteType, setSelectedNoteType] = useState<number | null>(null);
@@ -66,42 +65,43 @@ export default function HomePage() {
 
   const baseUrl = backendUrl();
   const router = useRouter();
+
   useEffect(() => {
-    async function fetchData() {
+    async function checkAuth() {
       const token = localStorage.getItem("token");
       if (!token) {
-        localStorage.removeItem("token");
         router.push("/login");
         return;
       }
 
-     try {
-      const check = await axios.get(`${baseUrl}/auth/check`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!check.data) {
+      try {
+        const check = await axios.get(`${baseUrl}/auth/check`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!check.data) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+        // If authentication successful, fetch data
+        fetchData();
+      } catch (error) {
+        console.log("error", error);
         localStorage.removeItem("token");
         router.push("/login");
         return;
       }
-     } catch (error) {
-      console.log('error',error);
-      localStorage.removeItem("token");
-      console.log('navifte to login');
-      router.push("/login");
-      return;
-     }
-   
     }
-    fetchData();
+
+    checkAuth();
   }, []);
 
   const fetchData = async () => {
     const token = localStorage.getItem("token");
     try {
       setLoading(true);
-      const [tasksRes, transactionsRes, notesRes, plansRes] = await Promise.all(
-        [
+      const [tasksRes, transactionsRes, notesRes, plansRes, typesRes] =
+        await Promise.all([
           axios.get(`${baseUrl}/tasks`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
@@ -114,13 +114,16 @@ export default function HomePage() {
           axios.get(`${baseUrl}/plans`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-        ]
-      );
+          axios.get(`${baseUrl}/types`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
       setTasks(tasksRes.data);
       setTransactions(transactionsRes.data);
       setNotes(notesRes.data);
       setPlans(plansRes.data);
+      setTypes(typesRes.data);
       setError("");
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -130,19 +133,6 @@ export default function HomePage() {
     }
   };
 
-  const totalIncome = transactions
-    .filter((t) => t.type === Types.INCOME)
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpense = transactions
-    .filter((t) => t.type === Types.EXPENSE)
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const balance = totalIncome - totalExpense;
-
-  const pendingTasks = tasks.filter((t) => t.status === 1).length;
-  const completedTasks = tasks.filter((t) => t.status === 2).length;
-
   const filteredNotes = selectedNoteType
     ? notes.filter((note) => note.type === selectedNoteType)
     : notes;
@@ -151,9 +141,12 @@ export default function HomePage() {
     ? plans.filter((plan) => plan.type === selectedPlanType)
     : plans;
 
-  const filteredTasks = selectedTaskType
-    ? tasks.filter((task) => task.type === selectedTaskType)
-    : tasks;
+    const filteredTasks = tasks.filter((item) => {
+      if (selectedTaskType === 0 || selectedTaskType === null) {
+        return true; 
+      }
+      return Number(item.status) === selectedTaskType; 
+    });
 
   const filteredTransactions = selectedTransactionType
     ? transactions.filter((t) => t.type === selectedTransactionType)
@@ -177,6 +170,21 @@ export default function HomePage() {
     );
   }
 
+  function getStatusLabel(status: string) {
+    switch (status) {
+      case Status.NOT_STARTED.toString():
+        return "Not Started"
+      case Status.IN_PROGRESS.toString():
+        return "In Progress"
+      case Status.COMPLETED.toString():
+        return "Completed"
+      case Status.OVERDUE.toString():
+        return "Overdue"
+      default:
+        return "Unknown"
+    }
+  }
+
   return (
     <div className="flex h-screen bg-gray-900">
       <div className="flex-1 overflow-auto">
@@ -195,63 +203,53 @@ export default function HomePage() {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6 ${customStyle.pageBg} p-4 rounded-lg`}
+          >
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-400">Balance</h3>
-                <DollarSign className="h-5 w-5 text-blue-400" />
+                <h3 className="text-sm font-medium text-gray-400">
+                  Saving Records
+                </h3>
               </div>
-              <p
-                className={`text-2xl font-bold ${
-                  balance >= 0 ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {balance}
+              <p className="text-2xl font-bold text-gray-100">
+                {transactions.length}
               </p>
-              <div className="flex justify-between text-xs text-gray-400 mt-2">
-                <span>Income: {totalIncome}</span>
-                <span>Expense: {totalExpense}</span>
-              </div>
             </div>
-
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-400">Tasks</h3>
-                <ListTodo className="h-5 w-5 text-green-400" />
+                <h3 className="text-sm font-medium text-gray-400">
+                  Task Records
+                </h3>
               </div>
               <p className="text-2xl font-bold text-gray-100">{tasks.length}</p>
-              <div className="flex justify-between text-xs text-gray-400 mt-2">
-                <span>Pending: {pendingTasks}</span>
-                <span>Completed: {completedTasks}</span>
-              </div>
             </div>
 
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-400">Notes</h3>
-                <FileText className="h-5 w-5 text-yellow-400" />
+                <h3 className="text-sm font-medium text-gray-400">
+                  Note Records
+                </h3>
               </div>
               <p className="text-2xl font-bold text-gray-100">{notes.length}</p>
-              <div className="text-xs text-gray-400 mt-2">
-                Last updated:{" "}
-                {notes.length > 0
-                  ? format(new Date(notes[0].createdAt), "MMM d")
-                  : "Never"}
-              </div>
             </div>
 
             <div className="bg-gray-800 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-400">Plans</h3>
-                <Calendar className="h-5 w-5 text-purple-400" />
+                <h3 className="text-sm font-medium text-gray-400">
+                  Plan Records
+                </h3>
               </div>
               <p className="text-2xl font-bold text-gray-100">{plans.length}</p>
-              <div className="text-xs text-gray-400 mt-2">
-                Last updated:{" "}
-                {plans.length > 0
-                  ? format(new Date(plans[0].createdAt), "MMM d")
-                  : "Never"}
+            </div>
+
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-400">
+                  Type Records
+                </h3>
               </div>
+              <p className="text-2xl font-bold text-gray-100">{types.length}</p>
             </div>
           </div>
 
@@ -273,10 +271,11 @@ export default function HomePage() {
                     }
                     className="bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">All Types</option>
-                    <option value="1">Type 1</option>
-                    <option value="2">Type 2</option>
-                    <option value="3">Type 3</option>
+                    <option value="0">All Types</option>
+                    <option value="1">Not Started</option>
+                    <option value="2">In Progress</option>
+                    <option value="3">Completed</option>
+                    <option value="4">Overdue</option>
                   </select>
                   <Link
                     href="/tasks"
@@ -302,12 +301,12 @@ export default function HomePage() {
                     </div>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        task.status === 1
+                        task.status === Number(Status.NOT_STARTED)
                           ? "bg-yellow-900/50 text-yellow-300"
                           : "bg-green-900/50 text-green-300"
                       }`}
                     >
-                      {task.status === 1 ? "Pending" : "Completed"}
+                      {getStatusLabel(task.status.toString())}
                     </span>
                   </div>
                 ))}
@@ -330,10 +329,10 @@ export default function HomePage() {
                     }
                     className="bg-gray-900 border border-gray-700 text-gray-100 text-sm rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">All Types</option>
-                    <option value="1">Type 1</option>
-                    <option value="2">Type 2</option>
-                    <option value="3">Type 3</option>
+                    <option value="1">Not Started</option>
+                    <option value="2">In Progress</option>
+                    <option value="3">Completed</option>
+                    <option value="4">Overdue</option>
                   </select>
                   <Link
                     href="/notes"

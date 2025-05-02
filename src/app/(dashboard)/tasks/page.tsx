@@ -1,8 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Calendar, User, Clock, CheckCircle2, AlertCircle, Trash2, Minimize2, Maximize2 } from "lucide-react";
-import { format, isAfter } from "date-fns";
+import {
+  Plus,
+  Calendar,
+  User,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Trash2,
+  Minimize2,
+  Maximize2,
+} from "lucide-react";
+import { endOfDay, format, isAfter } from "date-fns";
 import { vi } from "date-fns/locale";
 import axios from "axios";
 import { backendUrl } from "@/app/baseUrl";
@@ -21,6 +31,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -28,8 +40,9 @@ import { useRouter } from "next/navigation";
 interface Task {
   id: string;
   title: string;
-  description: string;
+  content: string;
   type: number;
+  subType: number;
   startedAt: string;
   dueTime: string;
   issuer: string;
@@ -41,7 +54,7 @@ interface Task {
 interface Type {
   id: number;
   subType: string;
-  description: string;
+  content: string;
 }
 
 export default function TasksPage() {
@@ -52,6 +65,7 @@ export default function TasksPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Task | null>(null);
@@ -62,11 +76,12 @@ export default function TasksPage() {
   const [selectedSubType, setSelectedSubType] = useState<number>(1);
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
+    content: "",
     type: 1,
-    startedAt: new Date().toISOString().split('T')[0],
-    dueTime: new Date().toISOString().split('T')[0],
-    status: 1
+    startedAt: new Date().toISOString().split("T")[0],
+    dueTime: new Date().toISOString().split("T")[0],
+    status: 1,
+    subType: 1,
   });
   const baseUrl = backendUrl();
   const router = useRouter();
@@ -75,33 +90,31 @@ export default function TasksPage() {
       const token = localStorage.getItem("token");
       if (!token) {
         localStorage.removeItem("token");
-      router.push("/login");
-      return;
-    }
+        router.push("/login");
+        return;
+      }
 
-   try {
-    const check = await axios.get(`${baseUrl}/auth/check`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!check.data) {
-      localStorage.removeItem("token");
-      router.push("/login");
-      return;
+      try {
+        const check = await axios.get(`${baseUrl}/auth/check`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!check.data) {
+          localStorage.removeItem("token");
+          router.push("/login");
+          return;
+        }
+      } catch (error) {
+        console.log("error", error);
+        localStorage.removeItem("token");
+        console.log("navifte to login");
+        router.push("/login");
+        return;
+      }
     }
-   } catch (error) {
-    console.log('error',error);
-    localStorage.removeItem("token");
-    console.log('navifte to login');
-    router.push("/login");
-    return;
-   }
- 
-  }
-  fetchTasks();
-  fetchTaskTypes();
-  fetchData();
-}, []);
-
+    fetchTasks();
+    fetchTaskTypes();
+    fetchData();
+  }, []);
 
   const fetchTasks = async () => {
     try {
@@ -143,15 +156,16 @@ export default function TasksPage() {
           Authorization: `Bearer ${token}`,
         },
       });
-      
-      setShowForm(false);
+
+      setIsCreateModalOpen(false);
       setFormData({
         title: "",
-        description: "",
+        content: "",
         type: 1,
-        startedAt: new Date().toISOString().split('T')[0],
-        dueTime: new Date().toISOString().split('T')[0],
-        status: 1
+        startedAt: new Date().toISOString().split("T")[0],
+        dueTime: new Date().toISOString().split("T")[0],
+        status: 1,
+        subType: 1,
       });
       fetchTasks();
     } catch (err) {
@@ -198,8 +212,9 @@ export default function TasksPage() {
         `${baseUrl}/tasks/${editedTask.id}`,
         {
           title: editedTask.title,
-          description: editedTask.description,
+          content: editedTask.content,
           type: editedTask.type,
+          subType: editedTask.subType,
           startedAt: new Date(editedTask.startedAt),
           dueTime: new Date(editedTask.dueTime),
           status: String(editedTask.status),
@@ -223,7 +238,7 @@ export default function TasksPage() {
 
   const handleDelete = async (taskId: string) => {
     if (!confirm("Bạn có chắc chắn muốn xóa công việc này?")) return;
-    
+
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`${baseUrl}/tasks/${taskId}`, {
@@ -239,36 +254,47 @@ export default function TasksPage() {
     }
   };
 
-  const handleCancel = () => {
-    setShowForm(false);
-    setSelectedTask(null);
-    setIsEditing(false);
-  };
+
 
   const isOverdue = (dueTime: string) => {
-    return isAfter(new Date(), new Date(dueTime));
+    return isAfter(endOfDay(new Date()), new Date(dueTime));
   };
 
   const getFilteredTasks = () => {
-    return tasks.filter(task => {
-      const matchesType = selectedType === "all" || task.type === Number(selectedType);
-      const matchesStatus = selectedStatus === "all" || Number(task.status) === selectedStatus;
+    console.log("selectedStatus", selectedStatus);
+    console.log("taskTypes", tasks);
+    if (selectedStatus === 0) {
+      return tasks.filter(
+        (task) =>
+          Number(task.status) === Status.IN_PROGRESS ||
+        Number(task.status) === Status.NOT_STARTED ||
+        Number(task.status) === Status.OVERDUE
+      );
+    }
+
+    return tasks.filter((task) => {
+      const matchesType =
+        selectedType === "all" || task.type === Number(selectedType);
+      const matchesStatus =
+        selectedStatus === "all" || Number(task.status) === selectedStatus;
       return matchesType && matchesStatus;
     });
   };
 
-  if (loading) return (
-    <div className="flex h-screen bg-gray-900 items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-    </div>
-  );
-  if (error) return (
-    <div className="flex h-screen bg-gray-900 items-center justify-center">
-      <div className="bg-red-900/50 border-l-4 border-red-500 p-4 rounded-lg">
-        <p className="text-sm text-red-300">{error}</p>
+  if (loading)
+    return (
+      <div className="flex h-screen bg-gray-900 items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
-    </div>
-  );
+    );
+  if (error)
+    return (
+      <div className="flex h-screen bg-gray-900 items-center justify-center">
+        <div className="bg-red-900/50 border-l-4 border-red-500 p-4 rounded-lg">
+          <p className="text-sm text-red-300">{error}</p>
+        </div>
+      </div>
+    );
 
   return (
     <div className="flex h-screen bg-gray-900">
@@ -284,31 +310,9 @@ export default function TasksPage() {
             </div>
             <div className="flex items-center gap-4">
               <Select
-                value={selectedType}
-                onValueChange={(value) => {
-                  setSelectedType(value);
-                  if (value !== "all") {
-                    setSelectedSubType(parseInt(value));
-                  }
-                }}
-              >
-                <SelectTrigger className="w-[180px] bg-gray-800 border-gray-700 text-gray-100">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectGroup>
-                    <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All Types</SelectItem>
-                    {taskTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.subType} className="text-gray-100 hover:bg-gray-700">
-                        {type.description}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={selectedStatus === "all" ? "all" : selectedStatus.toString()}
+                value={
+                  selectedStatus === "all" ? "all" : selectedStatus.toString()
+                }
                 onValueChange={(value) => {
                   if (value === "all") {
                     setSelectedStatus("all");
@@ -322,17 +326,48 @@ export default function TasksPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
                   <SelectGroup>
-                    <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All Status</SelectItem>
-                    <SelectItem value="1" className="text-gray-100 hover:bg-gray-700">{StatusLabels[1]}</SelectItem>
-                    <SelectItem value="2" className="text-gray-100 hover:bg-gray-700">{StatusLabels[2]}</SelectItem>
-                    <SelectItem value="3" className="text-gray-100 hover:bg-gray-700">{StatusLabels[3]}</SelectItem>
-                    <SelectItem value="4" className="text-gray-100 hover:bg-gray-700">{StatusLabels[4]}</SelectItem>
+                    <SelectItem
+                      value="all"
+                      className="text-gray-100 hover:bg-gray-700"
+                    >
+                      All Status
+                    </SelectItem>
+                    <SelectItem
+                      value="0"
+                      className="text-gray-100 hover:bg-gray-700"
+                    >
+                      Need to to
+                    </SelectItem>
+                    <SelectItem
+                      value="1"
+                      className="text-gray-100 hover:bg-gray-700"
+                    >
+                      {StatusLabels[1]}
+                    </SelectItem>
+                    <SelectItem
+                      value="2"
+                      className="text-gray-100 hover:bg-gray-700"
+                    >
+                      {StatusLabels[2]}
+                    </SelectItem>
+                    <SelectItem
+                      value="3"
+                      className="text-gray-100 hover:bg-gray-700"
+                    >
+                      {StatusLabels[3]}
+                    </SelectItem>
+                    <SelectItem
+                      value="4"
+                      className="text-gray-100 hover:bg-gray-700"
+                    >
+                      {StatusLabels[4]}
+                    </SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
 
               <Button
-                onClick={() => setShowForm(!showForm)}
+                onClick={() => setIsCreateModalOpen(true)}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -345,14 +380,19 @@ export default function TasksPage() {
           <div className="bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
             <div className="flex items-center gap-4 text-sm text-gray-400">
               <span className="flex items-center gap-1">
-                <span className="font-medium text-gray-100">{getFilteredTasks().length}</span>
+                <span className="font-medium text-gray-100">
+                  {getFilteredTasks().length}
+                </span>
                 <span>tasks</span>
               </span>
               {selectedType !== "all" && (
                 <span className="flex items-center gap-1">
                   <span>type:</span>
                   <span className="font-medium text-gray-100">
-                    {taskTypes.find(t => t.subType === selectedType)?.description}
+                    {
+                      taskTypes.find((t) => t.subType === selectedType)
+                        ?.content
+                    }
                   </span>
                 </span>
               )}
@@ -367,138 +407,157 @@ export default function TasksPage() {
             </div>
           </div>
 
-          {showForm && (
-            <form onSubmit={handleSubmit} className="mb-8 p-6 bg-gray-800 rounded-lg shadow-lg">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
-                  <input
-                    type="text"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
-                  <Select
-                    value={selectedSubType.toString()}
-                    onValueChange={(value) => {
-                      const subType = parseInt(value);
-                      setSelectedSubType(subType);
-                      setFormData({ ...formData, type: subType });
-                    }}
-                  >
-                    <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
-                      <SelectValue>
-                        {taskTypes.find(type => parseInt(type.subType) === selectedSubType)?.description || "Select type"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectGroup>
-                        {taskTypes.map((type) => (
-                          <SelectItem 
-                            key={type.id} 
-                            value={type.subType}
-                            className="text-gray-100 hover:bg-gray-700"
-                          >
-                            {type.description}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    value={formData.startedAt}
-                    onChange={(e) => setFormData({ ...formData, startedAt: e.target.value })}
-                    className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Due Date</label>
-                  <input
-                    type="date"
-                    value={formData.dueTime}
-                    onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
-                    className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Status</label>
-                  <Select
-                    value={selectedStatus === "all" ? "all" : selectedStatus.toString()}
-                    onValueChange={(value) => {
-                      if (value === "all") {
-                        setSelectedStatus("all");
-                      } else {
-                        setSelectedStatus(Number(value));
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-[180px] bg-gray-800 border-gray-700 text-gray-100">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
-                      <SelectGroup>
-                        <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">All Status</SelectItem>
-                        <SelectItem value="1" className="text-gray-100 hover:bg-gray-700">{StatusLabels[1]}</SelectItem>
-                        <SelectItem value="2" className="text-gray-100 hover:bg-gray-700">{StatusLabels[2]}</SelectItem>
-                        <SelectItem value="3" className="text-gray-100 hover:bg-gray-700">{StatusLabels[3]}</SelectItem>
-                        <SelectItem value="4" className="text-gray-100 hover:bg-gray-700">{StatusLabels[4]}</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                  className="text-gray-300 border-gray-700 hover:bg-gray-700"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                  Create Task
-                </Button>
-              </div>
-            </form>
-          )}
+          {/* Create Task Modal */}
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+            <DialogContent className="sm:max-w-[600px] bg-gray-800 border-gray-700">
+              <DialogHeader>
+                <DialogTitle className="text-gray-100">Create New Task</DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  Fill in the task details below. Click save when you re done.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-300">Title</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full px-3 py-2 mt-1 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-300">Content</label>
+                    <textarea
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      className="w-full px-3 py-2 mt-1 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
+                      required
+                    />
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-300">Sub Type</label>
+                      <Select
+                        value={selectedSubType.toString()}
+                        onValueChange={(value) => {
+                          const subType = parseInt(value);
+                          setSelectedSubType(subType);
+                          setFormData({ ...formData, subType: subType });
+                        }}
+                      >
+                        <SelectTrigger className="w-full mt-1 bg-gray-900 border-gray-700 text-gray-100">
+                          <SelectValue>
+                            {taskTypes.find((type) => parseInt(type.subType) === selectedSubType)?.content || "Select type"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700">
+                          <SelectGroup>
+                            {taskTypes.map((type) => (
+                              <SelectItem
+                                key={type.id}
+                                value={type.subType}
+                                className="text-gray-100 hover:bg-gray-700"
+                              >
+                                {type.content} {type.subType}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-300">Status</label>
+                      <Select
+                        value={formData.status.toString()}
+                        onValueChange={(value) => setFormData({ ...formData, status: parseInt(value) })}
+                      >
+                        <SelectTrigger className="w-full mt-1 bg-gray-900 border-gray-700 text-gray-100">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700">
+                          <SelectGroup>
+                            <SelectItem value="1" className="text-gray-100 hover:bg-gray-700">
+                              {StatusLabels[1]}
+                            </SelectItem>
+                            <SelectItem value="2" className="text-gray-100 hover:bg-gray-700">
+                              {StatusLabels[2]}
+                            </SelectItem>
+                            <SelectItem value="3" className="text-gray-100 hover:bg-gray-700">
+                              {StatusLabels[3]}
+                            </SelectItem>
+                            <SelectItem value="4" className="text-gray-100 hover:bg-gray-700">
+                              {StatusLabels[4]}
+                            </SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-300">Start Date</label>
+                      <input
+                        type="date"
+                        value={formData.startedAt}
+                        onChange={(e) => setFormData({ ...formData, startedAt: e.target.value })}
+                        className="w-full px-3 py-2 mt-1 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-gray-300">Due Date</label>
+                      <input
+                        type="date"
+                        value={formData.dueTime}
+                        onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
+                        className="w-full px-3 py-2 mt-1 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Create Task
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Tasks Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {getFilteredTasks().map((task) => (
-              <div 
-                key={task.id} 
+              <div
+                key={task.id}
                 onClick={() => handleView(task)}
                 className="bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition-all cursor-pointer"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg text-gray-100">{task.title}</h3>
+                  <h3 className="font-semibold text-lg text-gray-100">
+                    {task.title}
+                  </h3>
                   {task.status && (
-                    <span className={`px-2 py-1 rounded-full text-sm ${StatusColors[task.status]}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${
+                        StatusColors[task.status]
+                      }`}
+                    >
                       {StatusLabels[task.status]}
                     </span>
                   )}
                 </div>
-                
-                {task.description && (
-                  <p className="text-gray-400 mb-4">{task.description}</p>
+
+                {task.content && (
+                  <p className="text-gray-400 mb-4">{task.content}</p>
                 )}
 
                 <div className="space-y-2">
@@ -506,8 +565,13 @@ export default function TasksPage() {
                     <div className="flex items-center gap-2 text-sm text-gray-400">
                       <Calendar size={16} />
                       <span>
-                        {format(new Date(task.startedAt), "dd/MM/yyyy", { locale: vi })} -{" "}
-                        {format(new Date(task.dueTime), "dd/MM/yyyy", { locale: vi })}
+                        {format(new Date(task.startedAt), "dd/MM/yyyy", {
+                          locale: vi,
+                        })}{" "}
+                        -{" "}
+                        {format(new Date(task.dueTime), "dd/MM/yyyy", {
+                          locale: vi,
+                        })}
                         {isOverdue(task.dueTime) && (
                           <span className="ml-2 text-red-500">(Overdue)</span>
                         )}
@@ -532,7 +596,10 @@ export default function TasksPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Clock size={16} />
                     <span>
-                      Cập nhật: {format(new Date(task.updatedAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                      Cập nhật:{" "}
+                      {format(new Date(task.updatedAt), "dd/MM/yyyy HH:mm", {
+                        locale: vi,
+                      })}
                     </span>
                   </div>
                 </div>
@@ -557,11 +624,15 @@ export default function TasksPage() {
                   <input
                     type="text"
                     value={editedTask?.title || ""}
-                    onChange={(e) => setEditedTask({ ...editedTask!, title: e.target.value })}
+                    onChange={(e) =>
+                      setEditedTask({ ...editedTask!, title: e.target.value })
+                    }
                     className="text-xl font-bold text-gray-100 border-b border-gray-700 bg-transparent focus:outline-none focus:border-blue-500 w-full"
                   />
                 ) : (
-                  <h2 className="text-xl font-bold text-gray-100">{selectedTask.title}</h2>
+                  <h2 className="text-xl font-bold text-gray-100">
+                    {selectedTask.title}
+                  </h2>
                 )}
               </div>
               <div className="flex items-center space-x-2">
@@ -637,8 +708,13 @@ export default function TasksPage() {
             <div className="prose max-w-none">
               {isEditing ? (
                 <textarea
-                  value={editedTask?.description || ""}
-                  onChange={(e) => setEditedTask({ ...editedTask!, description: e.target.value })}
+                  value={editedTask?.content || ""}
+                  onChange={(e) =>
+                    setEditedTask({
+                      ...editedTask!,
+                      content: e.target.value,
+                    })
+                  }
                   className={`w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isExpanded ? "h-[500px]" : "h-[200px]"
                   }`}
@@ -649,7 +725,7 @@ export default function TasksPage() {
                     isExpanded ? "text-base" : "text-sm"
                   }`}
                 >
-                  {selectedTask.description}
+                  {selectedTask.content}
                 </p>
               )}
             </div>
@@ -658,29 +734,34 @@ export default function TasksPage() {
               {isEditing ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Type
+                    </label>
                     <Select
-                      value={editedTask?.type.toString()}
+                      value={editedTask?.subType.toString()}
                       onValueChange={(value) => {
                         const type = parseInt(value);
                         setSelectedSubType(type);
-                        setEditedTask({ ...editedTask!, type });
+                        setEditedTask({ ...editedTask!, subType: type });
                       }}
                     >
                       <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
                         <SelectValue>
-                          {taskTypes.find(type => parseInt(type.subType) === editedTask?.type)?.description || "Select type"}
+                          {taskTypes.find(
+                            (type) =>
+                              parseInt(type.subType) === editedTask?.subType
+                          )?.content || "Select type"}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
                         <SelectGroup>
                           {taskTypes.map((type) => (
-                            <SelectItem 
-                              key={type.id} 
+                            <SelectItem
+                              key={type.id}
                               value={type.subType}
                               className="text-gray-100 hover:bg-gray-700"
                             >
-                              {type.description}
+                              {type.content}
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -688,10 +769,17 @@ export default function TasksPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Status
+                    </label>
                     <Select
                       value={editedTask?.status.toString() || "1"}
-                      onValueChange={(value) => setEditedTask({ ...editedTask!, status: parseInt(value) })}
+                      onValueChange={(value) =>
+                        setEditedTask({
+                          ...editedTask!,
+                          status: parseInt(value),
+                        })
+                      }
                     >
                       <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
                         <SelectValue>
@@ -700,29 +788,63 @@ export default function TasksPage() {
                       </SelectTrigger>
                       <SelectContent className="bg-gray-800 border-gray-700">
                         <SelectGroup>
-                          <SelectItem value="1" className="text-gray-100 hover:bg-gray-700">Not Started</SelectItem>
-                          <SelectItem value="2" className="text-gray-100 hover:bg-gray-700">In Progress</SelectItem>
-                          <SelectItem value="3" className="text-gray-100 hover:bg-gray-700">Completed</SelectItem>
-                          <SelectItem value="4" className="text-gray-100 hover:bg-gray-700">Overdue</SelectItem>
+                          <SelectItem
+                            value="1"
+                            className="text-gray-100 hover:bg-gray-700"
+                          >
+                            Not Started
+                          </SelectItem>
+                          <SelectItem
+                            value="2"
+                            className="text-gray-100 hover:bg-gray-700"
+                          >
+                            In Progress
+                          </SelectItem>
+                          <SelectItem
+                            value="3"
+                            className="text-gray-100 hover:bg-gray-700"
+                          >
+                            Completed
+                          </SelectItem>
+                          <SelectItem
+                            value="4"
+                            className="text-gray-100 hover:bg-gray-700"
+                          >
+                            Overdue
+                          </SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Start Date
+                    </label>
                     <input
                       type="date"
-                      value={editedTask?.startedAt?.split('T')[0] || ""}
-                      onChange={(e) => setEditedTask({ ...editedTask!, startedAt: e.target.value })}
+                      value={editedTask?.startedAt?.split("T")[0] || ""}
+                      onChange={(e) =>
+                        setEditedTask({
+                          ...editedTask!,
+                          startedAt: e.target.value,
+                        })
+                      }
                       className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Due Date</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Due Date
+                    </label>
                     <input
                       type="date"
-                      value={editedTask?.dueTime?.split('T')[0] || ""}
-                      onChange={(e) => setEditedTask({ ...editedTask!, dueTime: e.target.value })}
+                      value={editedTask?.dueTime?.split("T")[0] || ""}
+                      onChange={(e) =>
+                        setEditedTask({
+                          ...editedTask!,
+                          dueTime: e.target.value,
+                        })
+                      }
                       className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -732,8 +854,13 @@ export default function TasksPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Calendar size={16} />
                     <span>
-                      {format(new Date(selectedTask.startedAt), "dd/MM/yyyy", { locale: vi })} -{" "}
-                      {format(new Date(selectedTask.dueTime), "dd/MM/yyyy", { locale: vi })}
+                      {format(new Date(selectedTask.startedAt), "dd/MM/yyyy", {
+                        locale: vi,
+                      })}{" "}
+                      -{" "}
+                      {format(new Date(selectedTask.dueTime), "dd/MM/yyyy", {
+                        locale: vi,
+                      })}
                       {isOverdue(selectedTask.dueTime) && (
                         <span className="ml-2 text-red-500">(Overdue)</span>
                       )}
@@ -754,7 +881,12 @@ export default function TasksPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Clock size={16} />
                     <span>
-                      Cập nhật: {format(new Date(selectedTask.updatedAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                      Cập nhật:{" "}
+                      {format(
+                        new Date(selectedTask.updatedAt),
+                        "dd/MM/yyyy HH:mm",
+                        { locale: vi }
+                      )}
                     </span>
                   </div>
                 </div>
@@ -806,7 +938,12 @@ export default function TasksPage() {
                 </>
               ) : (
                 <span className="text-xs text-gray-400">
-                  Created: {format(new Date(selectedTask.startedAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                  Created:{" "}
+                  {format(
+                    new Date(selectedTask.startedAt),
+                    "dd/MM/yyyy HH:mm",
+                    { locale: vi }
+                  )}
                 </span>
               )}
             </div>
@@ -815,4 +952,4 @@ export default function TasksPage() {
       )}
     </div>
   );
-} 
+}

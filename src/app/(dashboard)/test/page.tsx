@@ -1,28 +1,72 @@
-"use client"
+"use client";
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { CustomButton } from "@/components/common/button";
+import { useState } from "react";
+import { CustomSelect } from "@/components/common/select";
+import axios from "axios";
+import { Types } from "@/app/enums/types";
+import { backendUrl } from "@/app/baseUrl";
+import { useEffect } from "react";
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-]
+interface SelectItem {
+  id: number;
+  value: string;
+}
 
 export default function ChartPage() {
+  const [number, setNumber] = useState(0);
+  const [selectedValue, setSelectedValue] = useState("");
+  const [token, setToken] = useState("");
+  const [selectData, setSelectData] = useState<SelectItem[]>([]);
+  const baseUrl = backendUrl();
+  useEffect(() => {
+    setToken(token || "");
+    fetchTypes();
+  }, []);
+
+  const fetchTypes = async (type?: Types) => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await axios.get(`${baseUrl}/types`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = response.data.map(
+        (item: { id: number; content: string }) => ({
+          id: item.id,
+          value: item.content,
+        })
+      );
+      setSelectData(data);
+
+      console.log("select data", data[0].id);
+    } catch (err) {
+      console.error("Error fetching types:", err);
+    }
+  };
+
+  const handleButton = () => {
+    setNumber(number + 1);
+  };
+  const handleChange = (value: number) => {
+    setSelectedValue(value.toString());
+  };
   return (
-    <div className="w-full h-[300px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData}>
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="desktop" fill="#2563eb" />
-          <Bar dataKey="mobile" fill="#60a5fa" />
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="flex justify-center items-center  h-screen">
+      <CustomButton
+        text="Get all types"
+        variant="destructive"
+        onClick={handleButton}
+      />
+
+      <div>
+        <p>number upp</p>
+        <p>{number}</p>
+      </div>
+
+      <p>value {selectedValue}</p>
     </div>
-  )
+  );
 }

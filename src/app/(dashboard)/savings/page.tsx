@@ -43,7 +43,7 @@ interface Transaction {
   type: number;
   subType: number;
   amount: number;
-  description: string;
+  content: string;
   createdAt: string;
   date: string;
 }
@@ -54,8 +54,12 @@ export default function SavingsPage() {
     { name: string; value: string }[]
   >([]);
 
-  const [totalChartData, setTotalChartData] = useState<{ name: string; total: number }[]>([]);
-  const [monthChartData, setMonthChartData] = useState<{ name: string; total: number }[]>([]);
+  const [totalChartData, setTotalChartData] = useState<
+    { name: string; total: number }[]
+  >([]);
+  const [monthChartData, setMonthChartData] = useState<
+    { name: string; total: number }[]
+  >([]);
   //
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -68,7 +72,7 @@ export default function SavingsPage() {
     type: Types.EXPENSE.toString(),
     subtype: "",
     amount: "",
-    description: "",
+    content: "",
     date: format(new Date(), "yyyy-MM-dd"),
   });
   const [selectedMonth, setSelectedMonth] = useState(
@@ -81,11 +85,15 @@ export default function SavingsPage() {
     type: "",
     subtype: "",
     amount: "",
-    description: "",
+    content: "",
     date: "",
   });
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedSubtype, setSelectedSubtype] = useState<string>("all");
+  const [incomeSubtypes, setIncomeSubtypes] = useState<{ name: string; value: string }[]>([]);
+  const [expenseSubtypes, setExpenseSubtypes] = useState<{ name: string; value: string }[]>([]);
 
   const baseUrl = backendUrl();
   const router = useRouter();
@@ -152,7 +160,12 @@ export default function SavingsPage() {
       );
 
       const nameMap = Object.fromEntries(
-        typeResponse.data.map((item: { subType: number; description: string }) => [item.subType, item.description])
+        typeResponse.data.map(
+          (item: { subType: number; content: string }) => [
+            item.subType,
+            item.content,
+          ]
+        )
       );
       const renamedResult = Object.entries(result).reduce(
         (acc, [subType, total]) => {
@@ -164,10 +177,12 @@ export default function SavingsPage() {
       );
       setSumTransactions(renamedResult);
 
-      const totalChartData = Object.entries(renamedResult).map(([name, total]) => ({
-        name,
-        total: total as number,
-      }));
+      const totalChartData = Object.entries(renamedResult).map(
+        ([name, total]) => ({
+          name,
+          total: total as number,
+        })
+      );
 
       const monthResult = monthResponse.data.reduce(
         (acc: Record<number, number>, item: Transaction) => {
@@ -178,20 +193,24 @@ export default function SavingsPage() {
       );
 
       const monthNameMap = Object.fromEntries(
-        typeResponse.data.map((item: { subType: number; description: string }) => [item.subType, item.description])
+        typeResponse.data.map(
+          (item: { subType: number; content: string }) => [
+            item.subType,
+            item.content,
+          ]
+        )
       );
 
-      const monthChartData = Object.entries(monthResult).map(([name, total]) => ({
-        name: monthNameMap[Number(name)] || name,
-        total: total as number,
-      }));
+      const monthChartData = Object.entries(monthResult).map(
+        ([name, total]) => ({
+          name: monthNameMap[Number(name)] || name,
+          total: total as number,
+        })
+      );
 
-      console.log("totalChartData", totalChartData);
-      console.log("monthChartData", monthChartData);
 
       setTotalChartData(totalChartData);
       setMonthChartData(monthChartData);
-
 
       setMonthTransactions(monthResponse.data);
     } catch (err) {
@@ -209,6 +228,23 @@ export default function SavingsPage() {
 
       console.log("saving sum from type", sumTransactions);
       setSavingResponse(savingResponse.data);
+
+      // Set income and expense subtypes
+      const incomeSubtypes = savingResponse.data
+        .filter((item: { type: number; subType: number; content: string }) => item.type === Types.INCOME)
+        .map((item: { subType: number; content: string }) => ({
+          name: item.content,
+          value: String(item.subType),
+        }));
+      setIncomeSubtypes(incomeSubtypes);
+
+      const expenseSubtypes = savingResponse.data
+        .filter((item: { type: number; subType: number; content: string }) => item.type === Types.EXPENSE)
+        .map((item: { subType: number; content: string }) => ({
+          name: item.content,
+          value: String(item.subType),
+        }));
+      setExpenseSubtypes(expenseSubtypes);
     } catch (err) {
       console.error("Error fetching subtypes:", err);
       toast.error("Failed to fetch subtypes");
@@ -218,40 +254,44 @@ export default function SavingsPage() {
   const handleTypeChange = (value: string) => {
     if (value === Types.INCOME.toString()) {
       const incomeSubtypes = savingResponse
-        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.INCOME)
-        .map((item: { subType: number; description: string }) => ({
-          name: item.description,
+        .filter((item: { type: number; subType: number; content: string }) => item.type === Types.INCOME)
+        .map((item: { subType: number; content: string }) => ({
+          name: item.content,
           value: String(item.subType),
         }));
-
       setSubtypeList(incomeSubtypes);
     } else if (value === Types.EXPENSE.toString()) {
       const expenseSubtypes = savingResponse
-        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.EXPENSE)
-        .map((item: { subType: number; description: string }) => ({
-          name: item.description,
+        .filter((item: { type: number; subType: number; content: string }) => item.type === Types.EXPENSE)
+        .map((item: { subType: number; content: string }) => ({
+          name: item.content,
           value: String(item.subType),
         }));
       setSubtypeList(expenseSubtypes);
     }
-
     setFormData((prev) => ({ ...prev, type: value, subtype: "" }));
   };
 
   const handleEditTypeChange = (value: string) => {
     if (value === Types.INCOME.toString()) {
       const incomeSubtypes = savingResponse
-        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.INCOME)
-        .map((item: { subType: number; description: string }) => ({
-          name: item.description,
+        .filter(
+          (item: { type: number; subType: number; content: string }) =>
+            item.type === Types.INCOME
+        )
+        .map((item: { subType: number; content: string }) => ({
+          name: item.content,
           value: String(item.subType),
         }));
       setSubtypeList(incomeSubtypes);
     } else if (value === Types.EXPENSE.toString()) {
       const expenseSubtypes = savingResponse
-        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.EXPENSE)
-        .map((item: { subType: number; description: string }) => ({
-          name: item.description,
+        .filter(
+          (item: { type: number; subType: number; content: string }) =>
+            item.type === Types.EXPENSE
+        )
+        .map((item: { subType: number; content: string }) => ({
+          name: item.content,
           value: String(item.subType),
         }));
       setSubtypeList(expenseSubtypes);
@@ -266,7 +306,7 @@ export default function SavingsPage() {
     if (
       formData.subtype === "" ||
       formData.amount === "" ||
-      formData.description === ""
+      formData.content === ""
     ) {
       toast.error("Please fill all the fields");
       return;
@@ -278,7 +318,7 @@ export default function SavingsPage() {
           type: Number(formData.type),
           subType: Number(formData.subtype),
           amount: Number(formData.amount),
-          description: formData.description,
+          content: formData.content,
           createdAt: formData.date,
         },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -288,7 +328,7 @@ export default function SavingsPage() {
         type: Types.EXPENSE.toString(),
         subtype: "",
         amount: "",
-        description: "",
+        content: "",
         date: "",
       });
       fetchTransactions(selectedMonth);
@@ -345,7 +385,7 @@ export default function SavingsPage() {
           type: Number(editFormData.type),
           subType: Number(editFormData.subtype),
           amount: Number(editFormData.amount),
-          description: editFormData.description,
+          content: editFormData.content,
           createdAt: new Date(editFormData.date),
         },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -366,17 +406,23 @@ export default function SavingsPage() {
     // Set subtypeList based on transaction type
     if (transaction.type === Types.INCOME) {
       const incomeSubtypes = savingResponse
-        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.INCOME)
-        .map((item: { subType: number; description: string }) => ({
-          name: item.description,
+        .filter(
+          (item: { type: number; subType: number; content: string }) =>
+            item.type === Types.INCOME
+        )
+        .map((item: { subType: number; content: string }) => ({
+          name: item.content,
           value: String(item.subType),
         }));
       setSubtypeList(incomeSubtypes);
     } else if (transaction.type === Types.EXPENSE) {
       const expenseSubtypes = savingResponse
-        .filter((item: { type: number; subType: number; description: string }) => item.type === Types.EXPENSE)
-        .map((item: { subType: number; description: string }) => ({
-          name: item.description,
+        .filter(
+          (item: { type: number; subType: number; content: string }) =>
+            item.type === Types.EXPENSE
+        )
+        .map((item: { subType: number; content: string }) => ({
+          name: item.content,
           value: String(item.subType),
         }));
       setSubtypeList(expenseSubtypes);
@@ -388,7 +434,7 @@ export default function SavingsPage() {
       type: transaction.type.toString(),
       subtype: defaultSubtype,
       amount: transaction.amount.toString(),
-      description: transaction.description,
+      content: transaction.content,
       date: transaction.createdAt,
     });
 
@@ -407,11 +453,27 @@ export default function SavingsPage() {
       type: Types.EXPENSE.toString(),
       subtype: "",
       amount: "",
-      description: "",
+      content: "",
       date: format(new Date(), "yyyy-MM-dd"),
     });
+    // Set subtypeList based on default type (EXPENSE)
+    const expenseSubtypes = savingResponse
+      .filter((item: { type: number; subType: number; content: string }) => item.type === Types.EXPENSE)
+      .map((item: { subType: number; content: string }) => ({
+        name: item.content,
+        value: String(item.subType),
+      }));
+    setSubtypeList(expenseSubtypes);
     setIsCreateModalOpen(true);
   };
+
+  const filteredTransactions = monthTransactions.filter((t) => {
+    if (selectedType === "all") return true;
+    if (selectedType === "income" && t.type !== Types.INCOME) return false;
+    if (selectedType === "expense" && t.type !== Types.EXPENSE) return false;
+    if (selectedSubtype === "all") return true;
+    return t.subType.toString() === selectedSubtype;
+  });
 
   return (
     <div className={`flex h-screen ${customStyle.containerBg}`}>
@@ -480,13 +542,14 @@ export default function SavingsPage() {
             </div>
           </div>
 
+        <div className={` ${customStyle.pageBg} rounded-lg p-4`}>
           <div className="w-full flex flex-col sm:flex-row gap-3 h-[600px] sm:h-[300px]">
             {/* Chart total */}
             <div className="w-full sm:w-1/2 h-1/2 sm:h-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={totalChartData}>
-                <XAxis dataKey="name" tick={{ fill: '#FFFFFF' }} /> 
-                  <YAxis tick={{ fill: '#FFFFFF' }} />
+                  <XAxis dataKey="name" tick={{ fill: "#FFFFFF" }} />
+                  <YAxis tick={{ fill: "#FFFFFF" }} />
                   <Tooltip />
                   <Bar dataKey="total" fill="#2563eb" />
                 </BarChart>
@@ -497,17 +560,17 @@ export default function SavingsPage() {
             <div className="w-full sm:w-1/2 h-1/2 sm:h-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthChartData}>
-                  <XAxis dataKey="name" tick={{ fill: '#FFFFFF' }} />
-                  <YAxis tick={{ fill: '#FFFFFF' }} />
+                  <XAxis dataKey="name" tick={{ fill: "#FFFFFF" }} />
+                  <YAxis tick={{ fill: "#FFFFFF" }} />
                   <Tooltip />
                   <Bar dataKey="total" fill="#2563eb" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </div></div>
 
           {/* New Transaction Button and Modal */}
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end mb-4 mt-5">
             <Button
               onClick={handleOpenCreateModal}
               className="bg-blue-600 hover:bg-blue-700"
@@ -561,7 +624,6 @@ export default function SavingsPage() {
                     <Select
                       value={formData.subtype}
                       onValueChange={(value) => {
-                        console.log("value", value);
                         setFormData((prev) => ({ ...prev, subtype: value }));
                       }}
                     >
@@ -571,7 +633,7 @@ export default function SavingsPage() {
                         <SelectValue placeholder="Subtype" />
                       </SelectTrigger>
                       <SelectContent
-                        className={`${customStyle.selectBg} ${customStyle.borderColor}`}
+                        className={`${customStyle.selectBg} text-white`}
                       >
                         <SelectGroup>
                           {subtypeList.map((item) => (
@@ -619,13 +681,13 @@ export default function SavingsPage() {
                 <div className="flex-1">
                   <Input
                     type="text"
-                    placeholder="Description"
+                    placeholder="Content"
                     required
-                    value={formData.description}
+                    value={formData.content}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        description: e.target.value,
+                        content: e.target.value,
                       }))
                     }
                     className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-9`}
@@ -635,6 +697,11 @@ export default function SavingsPage() {
                   <Button
                     type="submit"
                     className="bg-blue-600 hover:bg-blue-700 h-9"
+                    disabled={
+                      !formData.subtype ||
+                      !formData.amount ||
+                      !formData.content
+                    }
                   >
                     Add
                   </Button>
@@ -652,6 +719,67 @@ export default function SavingsPage() {
                 Transactions
               </h2>
               <div className="flex gap-2">
+                <Select
+                  value={selectedType}
+                  onValueChange={(value) => {
+                    setSelectedType(value);
+                    setSelectedSubtype("all");
+                  }}
+                >
+                  <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-100 h-8 w-32">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectGroup>
+                      <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">
+                        All Types
+                      </SelectItem>
+                      <SelectItem value="income" className="text-gray-100 hover:bg-gray-700">
+                        Income
+                      </SelectItem>
+                      <SelectItem value="expense" className="text-gray-100 hover:bg-gray-700">
+                        Expense
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedSubtype}
+                  onValueChange={setSelectedSubtype}
+                >
+                  <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-100 h-8 w-32">
+                    <SelectValue placeholder="Subtype" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectGroup>
+                      <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">
+                        All Subtypes
+                      </SelectItem>
+                      {selectedType === "all" || selectedType === "income"
+                        ? incomeSubtypes.map((item) => (
+                            <SelectItem
+                              key={item.value}
+                              value={item.value}
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
+                              {item.name}
+                            </SelectItem>
+                          ))
+                        : null}
+                      {selectedType === "all" || selectedType === "expense"
+                        ? expenseSubtypes.map((item) => (
+                            <SelectItem
+                              key={item.value}
+                              value={item.value}
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
+                              {item.name}
+                            </SelectItem>
+                          ))
+                        : null}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
                 <input
                   type="month"
                   value={selectedMonth}
@@ -693,7 +821,7 @@ export default function SavingsPage() {
               </TabsList>
               <TabsContent value="all">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
-                  {monthTransactions.map((t) => (
+                  {filteredTransactions.map((t) => (
                     <div
                       key={t.id}
                       onClick={() => openTransactionModal(t)}
@@ -706,7 +834,7 @@ export default function SavingsPage() {
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="text-sm font-medium text-gray-100">
-                            {t.description}
+                            {t.content}
                           </p>
                           <p className="text-xs text-gray-400">
                             {format(new Date(t.createdAt), "MMM dd, yyyy")}
@@ -734,12 +862,13 @@ export default function SavingsPage() {
                     .map((t) => (
                       <div
                         key={t.id}
-                        className="p-3 rounded-lg bg-gray-900/50 border border-green-900/50"
+                        onClick={() => openTransactionModal(t)}
+                        className="p-3 rounded-lg bg-gray-900/50 border border-green-900/50 cursor-pointer"
                       >
                         <div className="flex justify-between items-center">
                           <div>
                             <p className="text-sm font-medium text-gray-100">
-                              {t.description}
+                              {t.content}
                             </p>
                             <p className="text-xs text-gray-400">
                               {format(new Date(t.createdAt), "MMM dd, yyyy")}
@@ -760,12 +889,13 @@ export default function SavingsPage() {
                     .map((t) => (
                       <div
                         key={t.id}
-                        className="p-3 rounded-lg bg-gray-900/50 border border-red-900/50"
+                        onClick={() => openTransactionModal(t)}
+                        className="p-3 rounded-lg bg-gray-900/50 border border-red-900/50 cursor-pointer"
                       >
                         <div className="flex justify-between items-center">
                           <div>
                             <p className="text-sm font-medium text-gray-100">
-                              {t.description}
+                              {t.content}
                             </p>
                             <p className="text-xs text-gray-400">
                               {format(new Date(t.createdAt), "MMM dd, yyyy")}
@@ -878,13 +1008,13 @@ export default function SavingsPage() {
               </div>
               <Input
                 type="text"
-                placeholder="Description"
+                placeholder="Content"
                 required
-                value={editFormData.description}
+                value={editFormData.content}
                 onChange={(e) =>
                   setEditFormData((prev) => ({
                     ...prev,
-                    description: e.target.value,
+                    content: e.target.value,
                   }))
                 }
                 className="bg-gray-900 border-gray-700 text-gray-100"
@@ -901,7 +1031,16 @@ export default function SavingsPage() {
               >
                 Delete
               </Button>
-              <Button type="submit">Save changes</Button>
+              <Button
+                type="submit"
+                disabled={
+                  !editFormData.subtype ||
+                  !editFormData.amount ||
+                  !editFormData.content
+                }
+              >
+                Save changes
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

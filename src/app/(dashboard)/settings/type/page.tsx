@@ -24,7 +24,7 @@ interface Type {
   id: string;
   type: string;
   subtype: string;
-  description: string;
+  content: string;
 }
 
 export default function TypeSettingsPage() {
@@ -254,7 +254,7 @@ export default function TypeSettingsPage() {
               <SheetSide 
                 handleEdit={(newDescription) => handleEdit(type.id, newDescription)} 
                 title={TypeLabels[type.type as unknown as Types]} 
-                description={type.description} 
+                description={type.content} 
                 handleDelete={() => handleDelete(type.id)}
               />
             </div>
