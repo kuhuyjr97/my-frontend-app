@@ -65,7 +65,7 @@ export default function ChartPage() {
         <p>{number}</p>
       </div>
 
-      <p>value {selectedValue}</p>
+<p>asdd</p>      <p>value {selectedValue}</p>
     </div>
   );
 }
