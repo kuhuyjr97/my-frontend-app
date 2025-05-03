@@ -35,7 +35,7 @@ export default function TypeSettingsPage() {
   const [formData, setFormData] = useState({
     type: "",
     subtype: "",
-    description: "",
+    content: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -108,7 +108,7 @@ export default function TypeSettingsPage() {
         `${baseUrl}/types`,
         {
           type: Number(selectedType),
-          description: description,
+          content: description,
         },
         {
           headers: {
@@ -126,10 +126,10 @@ export default function TypeSettingsPage() {
     }
   };
 
-  const handleEdit = async (id: string, description: string) => {
+  const handleEdit = async (id: string, content: string) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.patch(`${baseUrl}/types/${id}`, { description }, {
+      await axios.patch(`${baseUrl}/types/${id}`, { content }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

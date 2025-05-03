@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { customStyle } from "@/app/style/custom-style";
-import { utimes } from "fs";
 
 export function CustomSelect({
   data,
@@ -42,7 +41,7 @@ export function CustomSelect({
               value={item.id.toString()}
               className="text-gray-900 hover:bg-blue-100 cursor-pointer"
             >
-              {item.value} {item.id}
+              {item.value} 
             </SelectItem>
           ))}
         </SelectGroup>

@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { CustomSelect } from "@/components/common/select";
 
 interface Task {
   id: string;
@@ -57,6 +58,11 @@ interface Type {
   content: string;
 }
 
+interface SelectType {
+  id: number;
+  value: string;
+}
+
 export default function TasksPage() {
   const [selectedStatus, setSelectedStatus] = useState<"all" | number>("all");
   const [showForm, setShowForm] = useState(false);
@@ -73,7 +79,8 @@ export default function TasksPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [taskTypes, setTaskTypes] = useState<Type[]>([]);
   const [selectedType, setSelectedType] = useState<string>("all");
-  const [selectedSubType, setSelectedSubType] = useState<number>(1);
+  const [selectedSubType, setSelectedSubType] = useState<number | null>(null);
+  const [formSelectedSubType, setFormSelectedSubType] = useState<number>(1);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -85,6 +92,10 @@ export default function TasksPage() {
   });
   const baseUrl = backendUrl();
   const router = useRouter();
+  const [customSubtypeSelect, setCustomSubtypeSelect] = useState<SelectType[]>(
+    []
+  );
+
   useEffect(() => {
     async function fetchData() {
       const token = localStorage.getItem("token");
@@ -140,6 +151,15 @@ export default function TasksPage() {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      const subtypeSelect = [
+        { id: 0, value: "All" },
+        ...response.data.map((item: Type) => ({
+          id: item.subType,
+          value: item.content,
+        }))
+      ];
+      setCustomSubtypeSelect(subtypeSelect);
       setTaskTypes(response.data);
     } catch (err) {
       console.error("Error fetching task types:", err);
@@ -254,31 +274,35 @@ export default function TasksPage() {
     }
   };
 
-
-
   const isOverdue = (dueTime: string) => {
     return isAfter(endOfDay(new Date()), new Date(dueTime));
   };
 
   const getFilteredTasks = () => {
-    console.log("selectedStatus", selectedStatus);
-    console.log("taskTypes", tasks);
+    let filteredTasks = [...tasks];
+
+    // Filter by status
     if (selectedStatus === 0) {
-      return tasks.filter(
+      filteredTasks = filteredTasks.filter(
         (task) =>
           Number(task.status) === Status.IN_PROGRESS ||
-        Number(task.status) === Status.NOT_STARTED ||
-        Number(task.status) === Status.OVERDUE
+          Number(task.status) === Status.NOT_STARTED ||
+          Number(task.status) === Status.OVERDUE
+      );
+    } else if (selectedStatus !== "all") {
+      filteredTasks = filteredTasks.filter(
+        (task) => Number(task.status) === selectedStatus
       );
     }
 
-    return tasks.filter((task) => {
-      const matchesType =
-        selectedType === "all" || task.type === Number(selectedType);
-      const matchesStatus =
-        selectedStatus === "all" || Number(task.status) === selectedStatus;
-      return matchesType && matchesStatus;
-    });
+    // Filter by subtype
+    if (selectedSubType !== null) {
+      filteredTasks = filteredTasks.filter(
+        (task) => task.subType === selectedSubType
+      );
+    }
+
+    return filteredTasks;
   };
 
   if (loading)
@@ -308,7 +332,16 @@ export default function TasksPage() {
                 Manage and track your tasks
               </p>
             </div>
+
             <div className="flex items-center gap-4">
+              <CustomSelect
+              placeholder="Select Subtype"
+                data={customSubtypeSelect}
+                onChange={(value) => {
+                  setSelectedSubType(value === 0 ? null : Number(value));
+                }}
+              />
+
               <Select
                 value={
                   selectedStatus === "all" ? "all" : selectedStatus.toString()
@@ -389,10 +422,7 @@ export default function TasksPage() {
                 <span className="flex items-center gap-1">
                   <span>type:</span>
                   <span className="font-medium text-gray-100">
-                    {
-                      taskTypes.find((t) => t.subType === selectedType)
-                        ?.content
-                    }
+                    {taskTypes.find((t) => t.subType === selectedType)?.content}
                   </span>
                 </span>
               )}
@@ -411,7 +441,9 @@ export default function TasksPage() {
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
             <DialogContent className="sm:max-w-[600px] bg-gray-800 border-gray-700">
               <DialogHeader>
-                <DialogTitle className="text-gray-100">Create New Task</DialogTitle>
+                <DialogTitle className="text-gray-100">
+                  Create New Task
+                </DialogTitle>
                 <DialogDescription className="text-gray-400">
                   Fill in the task details below. Click save when you re done.
                 </DialogDescription>
@@ -419,21 +451,29 @@ export default function TasksPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-300">Title</label>
+                    <label className="text-sm font-medium text-gray-300">
+                      Title
+                    </label>
                     <input
                       type="text"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
                       className="w-full px-3 py-2 mt-1 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="text-sm font-medium text-gray-300">Content</label>
+                    <label className="text-sm font-medium text-gray-300">
+                      Content
+                    </label>
                     <textarea
                       value={formData.content}
-                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, content: e.target.value })
+                      }
                       className="w-full px-3 py-2 mt-1 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
                       required
                     />
@@ -441,18 +481,23 @@ export default function TasksPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-300">Sub Type</label>
+                      <label className="text-sm font-medium text-gray-300">
+                        Sub Type
+                      </label>
                       <Select
-                        value={selectedSubType.toString()}
+                        value={formSelectedSubType.toString()}
                         onValueChange={(value) => {
                           const subType = parseInt(value);
-                          setSelectedSubType(subType);
+                          setFormSelectedSubType(subType);
                           setFormData({ ...formData, subType: subType });
                         }}
                       >
                         <SelectTrigger className="w-full mt-1 bg-gray-900 border-gray-700 text-gray-100">
                           <SelectValue>
-                            {taskTypes.find((type) => parseInt(type.subType) === selectedSubType)?.content || "Select type"}
+                            {selectedSubType !== null ? taskTypes.find(
+                              (type) =>
+                                parseInt(type.subType) === selectedSubType
+                            )?.content || "Select type" : "Select type"}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="bg-gray-800 border-gray-700">
@@ -472,26 +517,42 @@ export default function TasksPage() {
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-300">Status</label>
+                      <label className="text-sm font-medium text-gray-300">
+                        Status
+                      </label>
                       <Select
                         value={formData.status.toString()}
-                        onValueChange={(value) => setFormData({ ...formData, status: parseInt(value) })}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, status: parseInt(value) })
+                        }
                       >
                         <SelectTrigger className="w-full mt-1 bg-gray-900 border-gray-700 text-gray-100">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-800 border-gray-700">
                           <SelectGroup>
-                            <SelectItem value="1" className="text-gray-100 hover:bg-gray-700">
+                            <SelectItem
+                              value="1"
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
                               {StatusLabels[1]}
                             </SelectItem>
-                            <SelectItem value="2" className="text-gray-100 hover:bg-gray-700">
+                            <SelectItem
+                              value="2"
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
                               {StatusLabels[2]}
                             </SelectItem>
-                            <SelectItem value="3" className="text-gray-100 hover:bg-gray-700">
+                            <SelectItem
+                              value="3"
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
                               {StatusLabels[3]}
                             </SelectItem>
-                            <SelectItem value="4" className="text-gray-100 hover:bg-gray-700">
+                            <SelectItem
+                              value="4"
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
                               {StatusLabels[4]}
                             </SelectItem>
                           </SelectGroup>
@@ -500,21 +561,32 @@ export default function TasksPage() {
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-300">Start Date</label>
+                      <label className="text-sm font-medium text-gray-300">
+                        Start Date
+                      </label>
                       <input
                         type="date"
                         value={formData.startedAt}
-                        onChange={(e) => setFormData({ ...formData, startedAt: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            startedAt: e.target.value,
+                          })
+                        }
                         className="w-full px-3 py-2 mt-1 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-300">Due Date</label>
+                      <label className="text-sm font-medium text-gray-300">
+                        Due Date
+                      </label>
                       <input
                         type="date"
                         value={formData.dueTime}
-                        onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, dueTime: e.target.value })
+                        }
                         className="w-full px-3 py-2 mt-1 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
