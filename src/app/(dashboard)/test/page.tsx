@@ -26,7 +26,6 @@ export default function ChartPage() {
 
   const fetchTypes = async (type?: Types) => {
     const token = localStorage.getItem("token");
-    console.log("test token");
     try {
       const response = await axios.get(`${baseUrl}/types`, {
         headers: {
