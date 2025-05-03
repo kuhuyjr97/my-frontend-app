@@ -64,7 +64,6 @@ export default function ChartPage() {
         <p>number upp</p>
         <p>{number}</p>
       </div>
-      <div>asdasd test</div>
 
       <p>value {selectedValue}</p>
     </div>
