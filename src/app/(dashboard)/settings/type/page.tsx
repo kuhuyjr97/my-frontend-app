@@ -170,7 +170,6 @@ export default function TypeSettingsPage() {
     <div className="container mx-auto px-4 py-8 bg-gray-900">
       <DialogComponent title="Type Settings" description="Type Settings" />
       <h1 className="text-2xl font-bold mb-6 text-gray-100">Type Settings</h1>
-
       {/* Display Section */}
       <div className="bg-gray-800 p-6 rounded-lg shadow-md mb-6">
         <h2 className="text-lg font-semibold mb-4 text-gray-100">Main Type</h2>

@@ -61,7 +61,6 @@ export default function ChartPage() {
       />
 
       <div>
-        <p>number upp</p>
         <p>{number}</p>
       </div>
 
