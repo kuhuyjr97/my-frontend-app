@@ -746,7 +746,7 @@ export default function SavingsPage() {
           <div className={`p-4 rounded-lg ${customStyle.cardBg} mt-4 mb-32`}>
             <div className="flex justify-between items-center mb-3">
               <h2
-                className={`text-lg font-semibold ${customStyle.textTitleWhite}`}
+                className={`hidden lg:block text-lg font-semibold ${customStyle.textTitleWhite}`}
               >
                 Transactions
               </h2>
