@@ -37,7 +37,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { CustomSelect } from "@/components/common/select";
-
+import { toast } from "sonner";
 interface Task {
   id: string;
   title: string;
@@ -87,8 +87,8 @@ export default function TasksPage() {
     type: 1,
     startedAt: new Date().toISOString().split("T")[0],
     dueTime: new Date().toISOString().split("T")[0],
-    status: 1,
-    subType: 1,
+    status: 0,
+    subType: 0,
   });
   const baseUrl = backendUrl();
   const router = useRouter();
@@ -157,7 +157,7 @@ export default function TasksPage() {
         ...response.data.map((item: Type) => ({
           id: item.subType,
           value: item.content,
-        }))
+        })),
       ];
       setCustomSubtypeSelect(subtypeSelect);
       setTaskTypes(response.data);
@@ -171,6 +171,16 @@ export default function TasksPage() {
     e.preventDefault();
     const token = localStorage.getItem("token");
     try {
+      console.log("formData", formData);
+      if (
+        formData.title === "" ||
+        formData.content === "" ||
+        formData.subType === 0 ||
+        formData.status ===0
+      ) {
+        toast.error("Some fields are missing");
+        return;
+      }
       await axios.post(`${baseUrl}/tasks`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -178,6 +188,7 @@ export default function TasksPage() {
       });
 
       setIsCreateModalOpen(false);
+      toast.success("Task created successfully");
       setFormData({
         title: "",
         content: "",
@@ -285,13 +296,13 @@ export default function TasksPage() {
     if (selectedStatus === 0) {
       filteredTasks = filteredTasks.filter(
         (task) =>
-          Number(task.status) === Status.IN_PROGRESS ||
-          Number(task.status) === Status.NOT_STARTED ||
-          Number(task.status) === Status.OVERDUE
+          Number(task.status) === Number(Status.IN_PROGRESS) ||
+          Number(task.status) === Number(Status.NOT_STARTED) ||
+          Number(task.status) === Number(Status.OVERDUE)
       );
     } else if (selectedStatus !== "all") {
       filteredTasks = filteredTasks.filter(
-        (task) => Number(task.status) === selectedStatus
+        (task) => Number(task.status) === Number(selectedStatus)
       );
     }
 
@@ -335,7 +346,7 @@ export default function TasksPage() {
 
             <div className="flex items-center gap-4">
               <CustomSelect
-              placeholder="Select Subtype"
+                placeholder="Select Subtype"
                 data={customSubtypeSelect}
                 onChange={(value) => {
                   setSelectedSubType(value === 0 ? null : Number(value));
@@ -369,7 +380,7 @@ export default function TasksPage() {
                       value="0"
                       className="text-gray-100 hover:bg-gray-700"
                     >
-                      Need to to
+                      Need to do
                     </SelectItem>
                     <SelectItem
                       value="1"
@@ -484,6 +495,19 @@ export default function TasksPage() {
                       <label className="text-sm font-medium text-gray-300">
                         Sub Type
                       </label>
+                      <CustomSelect
+                        placeholder="Select Subtype"
+                        data={customSubtypeSelect}
+                        onChange={(value: number) => {
+                          const subType = Number(value);
+                          setFormSelectedSubType(subType);
+                          setFormData({ ...formData, subType: subType });
+                        }}
+                      />
+
+                      {/* <label className="text-sm font-medium text-gray-300">
+                        Sub Type
+                      </label>
                       <Select
                         value={formSelectedSubType.toString()}
                         onValueChange={(value) => {
@@ -494,10 +518,12 @@ export default function TasksPage() {
                       >
                         <SelectTrigger className="w-full mt-1 bg-gray-900 border-gray-700 text-gray-100">
                           <SelectValue>
-                            {selectedSubType !== null ? taskTypes.find(
-                              (type) =>
-                                parseInt(type.subType) === selectedSubType
-                            )?.content || "Select type" : "Select type"}
+                            {selectedSubType !== null
+                              ? taskTypes.find(
+                                  (type) =>
+                                    parseInt(type.subType) === selectedSubType
+                                )?.content || "Select type"
+                              : "Select type"}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="bg-gray-800 border-gray-700">
@@ -513,7 +539,7 @@ export default function TasksPage() {
                             ))}
                           </SelectGroup>
                         </SelectContent>
-                      </Select>
+                      </Select> */}
                     </div>
 
                     <div>
