@@ -92,8 +92,12 @@ export default function SavingsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedSubtype, setSelectedSubtype] = useState<string>("all");
-  const [incomeSubtypes, setIncomeSubtypes] = useState<{ name: string; value: string }[]>([]);
-  const [expenseSubtypes, setExpenseSubtypes] = useState<{ name: string; value: string }[]>([]);
+  const [incomeSubtypes, setIncomeSubtypes] = useState<
+    { name: string; value: string }[]
+  >([]);
+  const [expenseSubtypes, setExpenseSubtypes] = useState<
+    { name: string; value: string }[]
+  >([]);
 
   const baseUrl = backendUrl();
   const router = useRouter();
@@ -160,12 +164,10 @@ export default function SavingsPage() {
       );
 
       const nameMap = Object.fromEntries(
-        typeResponse.data.map(
-          (item: { subType: number; content: string }) => [
-            item.subType,
-            item.content,
-          ]
-        )
+        typeResponse.data.map((item: { subType: number; content: string }) => [
+          item.subType,
+          item.content,
+        ])
       );
       const renamedResult = Object.entries(result).reduce(
         (acc, [subType, total]) => {
@@ -177,12 +179,12 @@ export default function SavingsPage() {
       );
       setSumTransactions(renamedResult);
 
-      const totalChartData = Object.entries(renamedResult).map(
-        ([name, total]) => ({
+      const totalChartData = Object.entries(renamedResult)
+        .map(([name, total]) => ({
           name,
           total: total as number,
-        })
-      );
+        }))
+        .sort((a, b) => b.total - a.total);
 
       const monthResult = monthResponse.data.reduce(
         (acc: Record<number, number>, item: Transaction) => {
@@ -193,21 +195,18 @@ export default function SavingsPage() {
       );
 
       const monthNameMap = Object.fromEntries(
-        typeResponse.data.map(
-          (item: { subType: number; content: string }) => [
-            item.subType,
-            item.content,
-          ]
-        )
+        typeResponse.data.map((item: { subType: number; content: string }) => [
+          item.subType,
+          item.content,
+        ])
       );
 
-      const monthChartData = Object.entries(monthResult).map(
-        ([name, total]) => ({
+      const monthChartData = Object.entries(monthResult)
+        .map(([name, total]) => ({
           name: monthNameMap[Number(name)] || name,
           total: total as number,
-        })
-      );
-
+        }))
+        .sort((a, b) => b.total - a.total);
 
       setTotalChartData(totalChartData);
       setMonthChartData(monthChartData);
@@ -231,7 +230,10 @@ export default function SavingsPage() {
 
       // Set income and expense subtypes
       const incomeSubtypes = savingResponse.data
-        .filter((item: { type: number; subType: number; content: string }) => item.type === Types.INCOME)
+        .filter(
+          (item: { type: number; subType: number; content: string }) =>
+            item.type === Types.INCOME
+        )
         .map((item: { subType: number; content: string }) => ({
           name: item.content,
           value: String(item.subType),
@@ -239,7 +241,10 @@ export default function SavingsPage() {
       setIncomeSubtypes(incomeSubtypes);
 
       const expenseSubtypes = savingResponse.data
-        .filter((item: { type: number; subType: number; content: string }) => item.type === Types.EXPENSE)
+        .filter(
+          (item: { type: number; subType: number; content: string }) =>
+            item.type === Types.EXPENSE
+        )
         .map((item: { subType: number; content: string }) => ({
           name: item.content,
           value: String(item.subType),
@@ -254,7 +259,10 @@ export default function SavingsPage() {
   const handleTypeChange = (value: string) => {
     if (value === Types.INCOME.toString()) {
       const incomeSubtypes = savingResponse
-        .filter((item: { type: number; subType: number; content: string }) => item.type === Types.INCOME)
+        .filter(
+          (item: { type: number; subType: number; content: string }) =>
+            item.type === Types.INCOME
+        )
         .map((item: { subType: number; content: string }) => ({
           name: item.content,
           value: String(item.subType),
@@ -262,7 +270,10 @@ export default function SavingsPage() {
       setSubtypeList(incomeSubtypes);
     } else if (value === Types.EXPENSE.toString()) {
       const expenseSubtypes = savingResponse
-        .filter((item: { type: number; subType: number; content: string }) => item.type === Types.EXPENSE)
+        .filter(
+          (item: { type: number; subType: number; content: string }) =>
+            item.type === Types.EXPENSE
+        )
         .map((item: { subType: number; content: string }) => ({
           name: item.content,
           value: String(item.subType),
@@ -458,7 +469,10 @@ export default function SavingsPage() {
     });
     // Set subtypeList based on default type (EXPENSE)
     const expenseSubtypes = savingResponse
-      .filter((item: { type: number; subType: number; content: string }) => item.type === Types.EXPENSE)
+      .filter(
+        (item: { type: number; subType: number; content: string }) =>
+          item.type === Types.EXPENSE
+      )
       .map((item: { subType: number; content: string }) => ({
         name: item.content,
         value: String(item.subType),
@@ -542,32 +556,52 @@ export default function SavingsPage() {
             </div>
           </div>
 
-        <div className={` ${customStyle.pageBg} rounded-lg p-4`}>
-          <div className="w-full flex flex-col sm:flex-row gap-3 h-[600px] sm:h-[300px]">
-            {/* Chart total */}
-            <div className="w-full sm:w-1/2 h-1/2 sm:h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={totalChartData}>
-                  <XAxis dataKey="name" tick={{ fill: "#FFFFFF" }} />
-                  <YAxis tick={{ fill: "#FFFFFF" }} />
-                  <Tooltip />
-                  <Bar dataKey="total" fill="#2563eb" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          {/* Tabs chứa Chart */}
+          {/* Tabs with Chart: Monthly first, Total after */}
+          <div className={`${customStyle.pageBg} rounded-lg p-4 mb-4`}>
+            <Tabs defaultValue="month" className="w-full">
+              <TabsList className="w-full grid grid-cols-2 mb-4">
+                <TabsTrigger
+                  value="month"
+                  className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                >
+                  Monthly
+                </TabsTrigger>
+                <TabsTrigger
+                  value="total"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Total
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Chart month */}
-            <div className="w-full sm:w-1/2 h-1/2 sm:h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthChartData}>
-                  <XAxis dataKey="name" tick={{ fill: "#FFFFFF" }} />
-                  <YAxis tick={{ fill: "#FFFFFF" }} />
-                  <Tooltip />
-                  <Bar dataKey="total" fill="#2563eb" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div></div>
+              <TabsContent value="month">
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthChartData}>
+                      <XAxis dataKey="name" tick={{ fill: "#FFFFFF" }} />
+                      <YAxis tick={{ fill: "#FFFFFF" }} />
+                      <Tooltip />
+                      <Bar dataKey="total" fill="#10b981" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="total">
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={totalChartData}>
+                      <XAxis dataKey="name" tick={{ fill: "#FFFFFF" }} />
+                      <YAxis tick={{ fill: "#FFFFFF" }} />
+                      <Tooltip />
+                      <Bar dataKey="total" fill="#2563eb" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
 
           {/* New Transaction Button and Modal */}
           <div className="flex justify-end mb-4 mt-5">
@@ -698,9 +732,7 @@ export default function SavingsPage() {
                     type="submit"
                     className="bg-blue-600 hover:bg-blue-700 h-9"
                     disabled={
-                      !formData.subtype ||
-                      !formData.amount ||
-                      !formData.content
+                      !formData.subtype || !formData.amount || !formData.content
                     }
                   >
                     Add
@@ -731,13 +763,22 @@ export default function SavingsPage() {
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
                     <SelectGroup>
-                      <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">
+                      <SelectItem
+                        value="all"
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
                         All Types
                       </SelectItem>
-                      <SelectItem value="income" className="text-gray-100 hover:bg-gray-700">
+                      <SelectItem
+                        value="income"
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
                         Income
                       </SelectItem>
-                      <SelectItem value="expense" className="text-gray-100 hover:bg-gray-700">
+                      <SelectItem
+                        value="expense"
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
                         Expense
                       </SelectItem>
                     </SelectGroup>
@@ -752,7 +793,10 @@ export default function SavingsPage() {
                   </SelectTrigger>
                   <SelectContent className="bg-gray-800 border-gray-700">
                     <SelectGroup>
-                      <SelectItem value="all" className="text-gray-100 hover:bg-gray-700">
+                      <SelectItem
+                        value="all"
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
                         All Subtypes
                       </SelectItem>
                       {selectedType === "all" || selectedType === "income"
