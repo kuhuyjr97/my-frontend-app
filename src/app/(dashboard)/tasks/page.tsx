@@ -309,7 +309,7 @@ export default function TasksPage() {
     // Filter by subtype
     if (selectedSubType !== null) {
       filteredTasks = filteredTasks.filter(
-        (task) => task.subType === selectedSubType
+        (task) => Number(task.subType) === Number(selectedSubType)
       );
     }
 
