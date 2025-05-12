@@ -1,8 +1,6 @@
 import {
-  Calendar,
   Home,
   Settings,
-  HelpCircle,
   Wallet,
   List,
   FileText,
@@ -16,18 +14,11 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 // Application items.
 const applicationItems = [
@@ -50,6 +41,11 @@ const applicationItems = [
     title: "Savings",
     url: "/savings",
     icon: Wallet,
+  },
+  {
+    title: "Time",
+    url: "/times",
+    icon: Settings,
   },
   {
     title: "Types",
