@@ -80,7 +80,11 @@ export default function TimesPage() {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const newTimeLeft: Record<string, any> = {};
+      const newTimeLeft: Record<string, {
+        remainingDays: number;
+        totalPeriodDays: number;
+        progress: number;
+      }> = {};
       const now = new Date();
       
       countdowns.forEach((countdown) => {
