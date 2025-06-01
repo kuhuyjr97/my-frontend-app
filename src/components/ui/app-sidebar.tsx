@@ -4,6 +4,7 @@ import {
   Wallet,
   List,
   FileText,
+  ChartBar,
 } from "lucide-react";
 
 import { customStyle } from "@/app/style/custom-style";
@@ -41,6 +42,11 @@ const applicationItems = [
     title: "Savings",
     url: "/savings",
     icon: Wallet,
+  },
+  {
+    title: "Analytics",
+    url: "/analytics",
+    icon: ChartBar,
   },
   {
     title: "Time",

@@ -1,4 +1,5 @@
 "use client";
+import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { backendUrl } from "@/app/baseUrl";
@@ -9,6 +10,15 @@ import { toast } from "sonner";
 import { customStyle } from "@/app/style/custom-style";
 
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+import {
   Select,
   SelectContent,
   SelectGroup,
@@ -16,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -490,7 +501,109 @@ export default function SavingsPage() {
               </h1>
             </div>
           </div>
-          F{/* New Transaction Button and Modal */}
+
+          {/* Summary total */}
+
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 ${customStyle.pageBg} rounded-lg mb-4`}
+          >
+            {/* Total Summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Total Income</p>
+                <p className="text-lg font-bold text-green-400">
+                  {totalIncome}
+                </p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Expense</p>
+                <p className="text-lg font-bold text-red-400">{totalExpense}</p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Balance</p>
+                <p
+                  className={`text-lg font-bold ${
+                    balance >= 0 ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {balance}
+                </p>
+              </div>
+            </div>
+
+            {/* Monthly Summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Month Income</p>
+                <p className="text-lg font-bold text-green-400">
+                  {monthIncome}
+                </p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Expense</p>
+                <p className="text-lg font-bold text-red-400">{monthExpense}</p>
+              </div>
+              <div className={`p-3 rounded-lg ${customStyle.cardBg}`}>
+                <p className="text-sm text-gray-400">Balance</p>
+                <p
+                  className={`text-lg font-bold ${
+                    balance >= 0 ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {monthBalance}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs chứa Chart */}
+          {/* Tabs with Chart: Monthly first, Total after */}
+          <div className={`${customStyle.pageBg} rounded-lg p-4 mb-4`}>
+            <Tabs defaultValue="month" className="w-full">
+              <TabsList className="w-full grid grid-cols-2 mb-4">
+                <TabsTrigger
+                  value="month"
+                  className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                >
+                  Monthly
+                </TabsTrigger>
+                <TabsTrigger
+                  value="total"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Total
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="month">
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthChartData}>
+                      <XAxis dataKey="name" tick={{ fill: "#FFFFFF" }} />
+                      <YAxis tick={{ fill: "#FFFFFF" }} />
+                      <Tooltip />
+                      <Bar dataKey="total" fill="#10b981" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="total">
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={totalChartData}>
+                      <XAxis dataKey="name" tick={{ fill: "#FFFFFF" }} />
+                      <YAxis tick={{ fill: "#FFFFFF" }} />
+                      <Tooltip />
+                      <Bar dataKey="total" fill="#2563eb" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* New Transaction Button and Modal */}
           <div className="flex justify-end mb-4 mt-5">
             <Button
               onClick={handleOpenCreateModal}
@@ -628,6 +741,220 @@ export default function SavingsPage() {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Transaction History */}
+          <div className={`p-4 rounded-lg ${customStyle.cardBg} mt-4 mb-32`}>
+            <div className="flex justify-between items-center mb-3">
+              <h2
+                className={`hidden lg:block text-lg font-semibold ${customStyle.textTitleWhite}`}
+              >
+                Transactions
+              </h2>
+              <div className="flex gap-2">
+                <Select
+                  value={selectedType}
+                  onValueChange={(value) => {
+                    setSelectedType(value);
+                    setSelectedSubtype("all");
+                  }}
+                >
+                  <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-100 h-8 w-32">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectGroup>
+                      <SelectItem
+                        value="all"
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
+                        All Types
+                      </SelectItem>
+                      <SelectItem
+                        value="income"
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
+                        Income
+                      </SelectItem>
+                      <SelectItem
+                        value="expense"
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
+                        Expense
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedSubtype}
+                  onValueChange={setSelectedSubtype}
+                >
+                  <SelectTrigger className="bg-gray-900 border-gray-700 text-gray-100 h-8 w-32">
+                    <SelectValue placeholder="Subtype" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectGroup>
+                      <SelectItem
+                        value="all"
+                        className="text-gray-100 hover:bg-gray-700"
+                      >
+                        All Subtypes
+                      </SelectItem>
+                      {selectedType === "all" || selectedType === "income"
+                        ? incomeSubtypes.map((item) => (
+                            <SelectItem
+                              key={item.value}
+                              value={item.value}
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
+                              {item.name}
+                            </SelectItem>
+                          ))
+                        : null}
+                      {selectedType === "all" || selectedType === "expense"
+                        ? expenseSubtypes.map((item) => (
+                            <SelectItem
+                              key={item.value}
+                              value={item.value}
+                              className="text-gray-100 hover:bg-gray-700"
+                            >
+                              {item.name}
+                            </SelectItem>
+                          ))
+                        : null}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className={`${customStyle.selectBg} ${customStyle.borderColor} ${customStyle.textContentGrey} h-8 w-32`}
+                />
+                <Button
+                  onClick={() => setSelectedMonth("2099-99")}
+                  variant="outline"
+                  className="h-8"
+                >
+                  All
+                </Button>
+              </div>
+            </div>
+
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList
+                className={`grid w-full grid-cols-3 ${customStyle.selectBg}`}
+              >
+                <TabsTrigger
+                  value="all"
+                  className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  All
+                </TabsTrigger>
+                <TabsTrigger
+                  value="income"
+                  className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                >
+                  Income
+                </TabsTrigger>
+                <TabsTrigger
+                  value="expense"
+                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                >
+                  Expense
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="all">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
+                  {filteredTransactions.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => openTransactionModal(t)}
+                      className={`p-3 rounded-lg cursor-pointer ${
+                        t.type === Types.INCOME
+                          ? "bg-gray-900/50 border border-green-900/50"
+                          : "bg-gray-900/50 border border-red-900/50"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium text-gray-100">
+                            {t.content}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {format(new Date(t.createdAt), "MMM dd, yyyy")}
+                          </p>
+                        </div>
+                        <p
+                          className={`text-sm font-bold ${
+                            t.type === Types.INCOME
+                              ? "text-green-400"
+                              : "text-red-400"
+                          }`}
+                        >
+                          {t.type === Types.INCOME ? "+ " : "- "}
+                          {t.amount}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="income">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
+                  {monthTransactions
+                    .filter((t) => t.type === Types.INCOME)
+                    .map((t) => (
+                      <div
+                        key={t.id}
+                        onClick={() => openTransactionModal(t)}
+                        className="p-3 rounded-lg bg-gray-900/50 border border-green-900/50 cursor-pointer"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-sm font-medium text-gray-100">
+                              {t.content}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {format(new Date(t.createdAt), "MMM dd, yyyy")}
+                            </p>
+                          </div>
+                          <p className="text-sm font-bold text-green-400">
+                            + {t.amount}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="expense">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[500px] overflow-y-auto">
+                  {monthTransactions
+                    .filter((t) => t.type === Types.EXPENSE)
+                    .map((t) => (
+                      <div
+                        key={t.id}
+                        onClick={() => openTransactionModal(t)}
+                        className="p-3 rounded-lg bg-gray-900/50 border border-red-900/50 cursor-pointer"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-sm font-medium text-gray-100">
+                              {t.content}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {format(new Date(t.createdAt), "MMM dd, yyyy")}
+                            </p>
+                          </div>
+                          <p className="text-sm font-bold text-red-400">
+                            - {t.amount}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
 
