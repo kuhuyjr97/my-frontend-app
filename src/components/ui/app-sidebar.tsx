@@ -36,6 +36,11 @@ const applicationItems = [
   {
     title: "Tasks",
     url: "/tasks",
+    icon: FileText,
+  },
+  {
+    title: "Report",
+    url: "/taskss",
     icon: List,
   },
   {

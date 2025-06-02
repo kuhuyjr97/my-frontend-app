@@ -38,6 +38,23 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { CustomSelect } from "@/components/common/select";
 import { toast } from "sonner";
+
+const ReportStatus = {
+  RELEASED: 0,
+  TESTING: 1,
+  DOING: 2,
+  NOTSTARTED: 3,
+  PREPARING: 4,
+} as const;
+
+const ReportStatusLabel = {
+  [ReportStatus.RELEASED]: 'released',
+  [ReportStatus.TESTING]: 'testing',
+  [ReportStatus.DOING]: 'doing',
+  [ReportStatus.NOTSTARTED]: 'not_started',
+  [ReportStatus.PREPARING]: 'preparing',
+} as const;
+
 interface Task {
   id: string;
   title: string;
@@ -50,6 +67,11 @@ interface Task {
   assigner: string;
   status: Status;
   updatedAt: string;
+  isMainTask?: boolean;
+  progress?: number;
+  reportGroupId?: number;
+  reportStatus?: number;
+  mainTaskId?: number;
 }
 
 interface Type {
@@ -250,6 +272,11 @@ export default function TasksPage() {
           startedAt: new Date(editedTask.startedAt),
           dueTime: new Date(editedTask.dueTime),
           status: String(editedTask.status),
+          isMainTask: editedTask.isMainTask,
+          progress: editedTask.progress,
+          reportGroupId: editedTask.reportGroupId,
+          reportStatus: String(editedTask.reportStatus),
+          mainTaskId: editedTask.mainTaskId,
         },
         {
           headers: {
@@ -643,9 +670,9 @@ export default function TasksPage() {
                   )}
 
                   <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <Clock size={16} />
+                    <span>{task.id} </span><Clock size={16} />
                     <span>
-                      Cập nhật:{" "}
+                     Cập nhật:{" "}
                       {format(new Date(task.updatedAt), "dd/MM/yyyy HH:mm", {
                         locale: vi,
                       })}
@@ -662,12 +689,12 @@ export default function TasksPage() {
       {isModalOpen && selectedTask && (
         <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-[1px] flex items-center justify-center z-50">
           <div
-            className={`bg-gray-800 rounded-lg p-6 mx-4 transform transition-all duration-300 animate-fadeIn shadow-xl overflow-hidden ${
-              isExpanded ? "w-[90%] h-[90vh]" : "w-full max-w-lg max-h-[80vh]"
+            className={`bg-gray-800 rounded-lg p-6 mx-4 transform transition-all duration-300 animate-fadeIn shadow-xl ${
+              isExpanded ? "w-[90%] h-[90vh]" : "w-full max-w-lg h-[80vh]"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex flex-col h-full relative">
+            <div className="flex flex-col h-full">
               {/* Header - Fixed */}
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
@@ -724,7 +751,7 @@ export default function TasksPage() {
                           onClick={startEditing}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
                         >
-                          Chỉnh sửa
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDelete(selectedTask.id)}
@@ -757,206 +784,335 @@ export default function TasksPage() {
               </div>
 
               {/* Content - Scrollable */}
-              <div className="flex-1 overflow-y-auto min-h-0">
-                <div className="prose max-w-none">
-                  {isEditing ? (
-                    <textarea
-                      value={editedTask?.content || ""}
-                      onChange={(e) =>
-                        setEditedTask({
-                          ...editedTask!,
-                          content: e.target.value,
-                        })
-                      }
-                      className={`w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        isExpanded ? "h-[500px]" : "h-[200px]"
-                      }`}
-                    />
-                  ) : (
-                    <p className="text-gray-300 whitespace-pre-wrap break-words">
-                      {selectedTask.content}
-                    </p>
-                  )}
-                </div>
+              <div className="flex-1 overflow-y-auto min-h-0 pr-2 -mr-2">
+                <div className="space-y-4">
+                  <div className="prose max-w-none">
+                    {isEditing ? (
+                      <textarea
+                        value={editedTask?.content || ""}
+                        onChange={(e) =>
+                          setEditedTask({
+                            ...editedTask!,
+                            content: e.target.value,
+                          })
+                        }
+                        className={`w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          isExpanded ? "h-[200px]" : "h-[100px]"
+                        }`}
+                      />
+                    ) : (
+                      <p className="text-gray-300 whitespace-pre-wrap break-words">
+                        {selectedTask.content}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="mt-4 space-y-2">
-                  {isEditing ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
-                          Type
-                        </label>
-                        <Select
-                          value={editedTask?.subType.toString()}
-                          onValueChange={(value) => {
-                            const type = parseInt(value);
-                            setEditingSubType(type);
-                            setEditedTask({ ...editedTask!, subType: type });
-                          }}
-                        >
-                          <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
-                            <SelectValue>
-                              {taskTypes.find(
-                                (type) =>
-                                  parseInt(type.subType) === editedTask?.subType
-                              )?.content || "Select type"}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent className="bg-gray-800 border-gray-700">
-                            <SelectGroup>
-                              {taskTypes.map((type) => (
+                  <div className="mt-4 space-y-4">
+                    {isEditing ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Type
+                          </label>
+                          <Select
+                            value={editedTask?.subType.toString()}
+                            onValueChange={(value) => {
+                              const type = parseInt(value);
+                              setEditingSubType(type);
+                              setEditedTask({ ...editedTask!, subType: type });
+                            }}
+                          >
+                            <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
+                              <SelectValue>
+                                {taskTypes.find(
+                                  (type) =>
+                                    parseInt(type.subType) === editedTask?.subType
+                                )?.content || "Select type"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectGroup>
+                                {taskTypes.map((type) => (
+                                  <SelectItem
+                                    key={type.id}
+                                    value={type.subType}
+                                    className="text-gray-100 hover:bg-gray-700"
+                                  >
+                                    {type.content}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Status
+                          </label>
+                          <Select
+                            value={editedTask?.status.toString() || "1"}
+                            onValueChange={(value) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                status: parseInt(value),
+                              })
+                            }
+                          >
+                            <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
+                              <SelectValue>
+                                {StatusLabels[editedTask?.status || 1]}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectGroup>
                                 <SelectItem
-                                  key={type.id}
-                                  value={type.subType}
+                                  value="1"
                                   className="text-gray-100 hover:bg-gray-700"
                                 >
-                                  {type.content}
+                                  Not Started
                                 </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
-                          Status
-                        </label>
-                        <Select
-                          value={editedTask?.status.toString() || "1"}
-                          onValueChange={(value) =>
-                            setEditedTask({
-                              ...editedTask!,
-                              status: parseInt(value),
-                            })
-                          }
-                        >
-                          <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
-                            <SelectValue>
-                              {StatusLabels[editedTask?.status || 1]}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent className="bg-gray-800 border-gray-700">
-                            <SelectGroup>
-                              <SelectItem
-                                value="1"
-                                className="text-gray-100 hover:bg-gray-700"
-                              >
-                                Not Started
-                              </SelectItem>
-                              <SelectItem
-                                value="2"
-                                className="text-gray-100 hover:bg-gray-700"
-                              >
-                                In Progress
-                              </SelectItem>
-                              <SelectItem
-                                value="3"
-                                className="text-gray-100 hover:bg-gray-700"
-                              >
-                                Completed
-                              </SelectItem>
-                              <SelectItem
-                                value="4"
-                                className="text-gray-100 hover:bg-gray-700"
-                              >
-                                Overdue
-                              </SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
-                          Start Date
-                        </label>
-                        <input
-                          type="date"
-                          value={editedTask?.startedAt?.split("T")[0] || ""}
-                          onChange={(e) =>
-                            setEditedTask({
-                              ...editedTask!,
-                              startedAt: e.target.value,
-                            })
-                          }
-                          className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
-                          Due Date
-                        </label>
-                        <input
-                          type="date"
-                          value={editedTask?.dueTime?.split("T")[0] || ""}
-                          onChange={(e) =>
-                            setEditedTask({
-                              ...editedTask!,
-                              dueTime: e.target.value,
-                            })
-                          }
-                          className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Calendar size={16} />
-                        <span>
-                          {format(new Date(selectedTask.startedAt), "dd/MM/yyyy", {
-                            locale: vi,
-                          })}{" "}
-                          -{" "}
-                          {format(new Date(selectedTask.dueTime), "dd/MM/yyyy", {
-                            locale: vi,
-                          })}
-                          {isOverdue(selectedTask.dueTime) && Number(selectedTask.status) !== Status.COMPLETED && (
-                            <span className="ml-2 text-red-500">(Overdue)</span>
-                          )}
-                        </span>
-                      </div>
-                      {selectedTask.issuer && (
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                          <User size={16} />
-                          <span>Người giao: {selectedTask.issuer}</span>
+                                <SelectItem
+                                  value="2"
+                                  className="text-gray-100 hover:bg-gray-700"
+                                >
+                                  In Progress
+                                </SelectItem>
+                                <SelectItem
+                                  value="3"
+                                  className="text-gray-100 hover:bg-gray-700"
+                                >
+                                  Completed
+                                </SelectItem>
+                                <SelectItem
+                                  value="4"
+                                  className="text-gray-100 hover:bg-gray-700"
+                                >
+                                  Overdue
+                                </SelectItem>
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
                         </div>
-                      )}
-                      {selectedTask.assigner && (
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                          <User size={16} />
-                          <span>Người thực hiện: {selectedTask.assigner}</span>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Start Date
+                          </label>
+                          <input
+                            type="date"
+                            value={editedTask?.startedAt?.split("T")[0] || ""}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                startedAt: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
                         </div>
-                      )}
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Clock size={16} />
-                        <span>
-                          Cập nhật:{" "}
-                          {format(
-                            new Date(selectedTask.updatedAt),
-                            "dd/MM/yyyy HH:mm",
-                            { locale: vi }
-                          )}
-                        </span>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Due Date
+                          </label>
+                          <input
+                            type="date"
+                            value={editedTask?.dueTime?.split("T")[0] || ""}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                dueTime: e.target.value,
+                              })
+                            }
+                            className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Is Main Task
+                          </label>
+                          <Select
+                            value={editedTask?.isMainTask?.toString() || "false"}
+                            onValueChange={(value) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                isMainTask: value === "true",
+                              })
+                            }
+                          >
+                            <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
+                              <SelectValue>
+                                {editedTask?.isMainTask ? "Yes" : "No"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectGroup>
+                                <SelectItem
+                                  value="true"
+                                  className="text-gray-100 hover:bg-gray-700"
+                                >
+                                  Yes
+                                </SelectItem>
+                                <SelectItem
+                                  value="false"
+                                  className="text-gray-100 hover:bg-gray-700"
+                                >
+                                  No
+                                </SelectItem>
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Progress
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={editedTask?.progress || 0}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                progress: parseInt(e.target.value),
+                              })
+                            }
+                            className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Report Group ID
+                          </label>
+                          <input
+                            type="number"
+                            value={editedTask?.reportGroupId || ""}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                reportGroupId: parseInt(e.target.value),
+                              })
+                            }
+                            className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Report Status
+                          </label>
+                          <Select
+                            value={editedTask?.reportStatus?.toString() || ""}
+                            onValueChange={(value) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                reportStatus: parseInt(value),
+                              })
+                            }
+                          >
+                            <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectGroup>
+                                {Object.entries(ReportStatus)
+                                  .filter(([key]) => isNaN(Number(key)))
+                                  .map(([key, value]) => (
+                                    <SelectItem
+                                      key={key}
+                                      value={value.toString()}
+                                      className="text-gray-100 hover:bg-gray-700"
+                                    >
+                                      {ReportStatusLabel[value as keyof typeof ReportStatusLabel]}
+                                    </SelectItem>
+                                  ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            Main Task ID
+                          </label>
+                          <input
+                            type="number"
+                            value={editedTask?.mainTaskId || ""}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                mainTaskId: parseInt(e.target.value),
+                              })
+                            }
+                            className="w-full p-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <Calendar size={16} />
+                          <span>
+                            {format(new Date(selectedTask.startedAt), "dd/MM/yyyy", {
+                              locale: vi,
+                            })}{" "}
+                            -{" "}
+                            {format(new Date(selectedTask.dueTime), "dd/MM/yyyy", {
+                              locale: vi,
+                            })}
+                            {isOverdue(selectedTask.dueTime) && Number(selectedTask.status) !== Status.COMPLETED && (
+                              <span className="ml-2 text-red-500">(Overdue)</span>
+                            )}
+                          </span>
+                        </div>
+                        {selectedTask.issuer && (
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <User size={16} />
+                            <span>Người giao: {selectedTask.issuer}</span>
+                          </div>
+                        )}
+                        {selectedTask.assigner && (
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <User size={16} />
+                            <span>Người thực hiện: {selectedTask.assigner}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <Clock size={16} />
+                          <span>
+                            Cập nhật:{" "}
+                            {format(
+                              new Date(selectedTask.updatedAt),
+                              "dd/MM/yyyy HH:mm",
+                              { locale: vi }
+                            )}
+                          </span>
+                        </div>
+                        {selectedTask.reportStatus !== undefined && (
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
+                            <Clock size={16} />
+                            <span>
+                              Report Status: {ReportStatusLabel[selectedTask.reportStatus as keyof typeof ReportStatusLabel]}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Footer - Fixed */}
-              <div className="mt-4 pt-4 border-t border-gray-700 flex justify-between items-center">
+              <div className="mt-4 pt-4 border-t border-gray-700 flex justify-between items-center sticky bottom-0 bg-gray-800">
                 {isEditing ? (
                   <>
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="text-sm text-gray-400 hover:text-gray-100"
+                      className="px-4 py-2 text-sm text-gray-400 hover:text-gray-100 bg-gray-700 rounded-md"
                       disabled={isSaving}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleEditTask}
-                      className="text-sm text-blue-400 hover:text-blue-300 flex items-center space-x-1"
+                      className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center space-x-1"
                       disabled={isSaving}
                     >
                       {isSaving ? (
@@ -983,7 +1139,7 @@ export default function TasksPage() {
                           <span>Saving...</span>
                         </>
                       ) : (
-                        <span>Save</span>
+                        <span>Save Changes</span>
                       )}
                     </button>
                   </>
