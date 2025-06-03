@@ -82,8 +82,23 @@ function SubTaskCard({
       <CardContent className="p-3 -mt-5">
         <div className="space-y-2">
           <h4 className="text-sm font-medium truncate">{subtask.title}</h4>
-          <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+          {/* <p className="text-xs text-muted-foreground line-clamp-2 min-h-[2.5rem]">
             {subtask.content}
+          </p> */}
+
+          <p className="text-sm text-muted-foreground line-clamp-3 min-h-[4rem]">
+            {isValidUrl(subtask.content) ? (
+              <a
+                href={subtask.content}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline hover:text-blue-600"
+              >
+                {subtask.content}
+              </a>
+            ) : (
+              subtask.content
+            )}
           </p>
 
           <div className="space-y-1">
@@ -102,6 +117,15 @@ function SubTaskCard({
       </CardContent>
     </Card>
   );
+}
+
+function isValidUrl(str: string) {
+  try {
+    new URL(str);
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 function TaskCard({
@@ -131,7 +155,18 @@ function TaskCard({
         </CardHeader>
         <CardContent className="space-y-3 -mt-4">
           <p className="text-sm text-muted-foreground line-clamp-3 min-h-[4rem]">
-            {task.description}
+            {isValidUrl(task.description) ? (
+              <a
+                href={task.description}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline hover:text-blue-600"
+              >
+                {task.description}
+              </a>
+            ) : (
+              task.description
+            )}
           </p>
 
           <div className="flex items-center gap-4  text-sm text-muted-foreground">
