@@ -74,7 +74,7 @@ function SubTaskCard({
 
   return (
     <Card
-      className={`h-32 bg-gradient-to-br ${
+      className={`h-32 bg-gray-900 bg-gradient-to-br ${
         gradientColors[index % 2]
       } border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer hover:brightness-105`}
       onClick={onClick}
@@ -86,7 +86,7 @@ function SubTaskCard({
             {subtask.content}
           </p> */}
 
-          <p className="text-sm text-muted-foreground line-clamp-3 min-h-[4rem]">
+          <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2rem]">
             {isValidUrl(subtask.content) ? (
               <a
                 href={subtask.content}
