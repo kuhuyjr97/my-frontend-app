@@ -39,6 +39,11 @@ const applicationItems = [
     icon: FileText,
   },
   {
+    title: "Tasks Analytics",
+    url: "/tasks-analytic",
+    icon: FileText,
+  },
+  {
     title: "Report",
     url: "/taskss",
     icon: List,
