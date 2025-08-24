@@ -23,7 +23,26 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { data } from "./data"
+
+// Task interface
+interface Task {
+  id: number;
+  title: string;
+  content?: string;
+  type?: string | number;
+  subType?: number;
+  status?: string;
+  startedAt?: Date | string;
+  dueTime?: Date | string;
+  dueDate: string;
+  issuer?: string;
+  assigner?: string;
+  isMainTask?: boolean;
+  progress?: number | null;
+  reportGroupId?: number | null;
+  reportStatus?: string;
+  mainTaskId?: number | null;
+}
 
 // Helper function to format date
 const formatDate = (dateString: string) => {
@@ -45,7 +64,7 @@ const isOverdue = (dueDate: string) => {
 
 // Task Card Component - Beautiful version
 interface TaskCardProps {
-  task: any
+  task: Task
   onClick?: () => void
 }
 
@@ -110,14 +129,16 @@ function TaskCard({ task, onClick }: TaskCardProps) {
 export default function TasksAnalytic() {
   const router = useRouter();
   const [currentTab, setCurrentTab] = useState<string>("Vinh's task")
-  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState<any>(null);
+  const [editedTask, setEditedTask] = useState<Task | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const baseUrl = backendUrl();
+
+  const [data, setData] = useState<Record<string, Task[]> | null>(null);
 
   const fetchTasks = async () => {
     const token = localStorage.getItem("token");
@@ -128,16 +149,17 @@ export default function TasksAnalytic() {
     }
 
     try {
-      const check = await axios.get(`${baseUrl}/auth/check`, {
+      const check = await axios.get(`${baseUrl}/tasks/limit/5`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log(check.data);
+      setData(check.data);
     } catch (error) {
       console.error("Error:", error);
     }
   };
 
-  const handleView = (task: any) => {
+  const handleView = (task: Task) => {
     setSelectedTask(task);
     setEditedTask({ ...task });
     setIsModalOpen(true);
@@ -202,7 +224,7 @@ export default function TasksAnalytic() {
     }
   };
 
-  const handleDelete = async (taskId: string) => {
+  const handleDelete = async (taskId: number) => {
     if (!confirm("Are you sure you want to delete this task?")) return;
 
     const token = localStorage.getItem("token");
@@ -229,15 +251,15 @@ export default function TasksAnalytic() {
       <div className="max-w-7xl mx-auto p-6">
         <Tabs value={currentTab} onValueChange={setCurrentTab}>
           <TabsList className="mb-6 bg-white dark:bg-gray-800 shadow-sm">
-            {Object.keys(data).map((key) => (
+            {data && Object.keys(data).map((key) => (
               <TabsTrigger key={key} value={key}>
                 {key}
               </TabsTrigger>
             ))}
           </TabsList>
           
-          {Object.keys(data).map((tabKey) => {
-            const tabData = data[tabKey as keyof typeof data] as any
+          {data && Object.keys(data).map((tabKey) => {
+            const tabData = data[tabKey as keyof typeof data] as Task[]
             
             return (
               <TabsContent key={tabKey} value={tabKey} className="mt-0">
@@ -265,7 +287,7 @@ export default function TasksAnalytic() {
                     <div className="p-4">
                       <div className="space-y-3">
                         {tabData["1"] && Array.isArray(tabData["1"]) && tabData["1"].length > 0 ? (
-                          tabData["1"].map((item: any) => (
+                          tabData["1"].map((item: Task) => (
                             <TaskCard key={item.id} task={item} onClick={() => handleView(item)} />
                           ))
                         ) : (
@@ -293,7 +315,7 @@ export default function TasksAnalytic() {
                     <div className="p-4">
                       <div className="space-y-3">
                         {tabData["2"] && Array.isArray(tabData["2"]) && tabData["2"].length > 0 ? (
-                          tabData["2"].map((item: any) => (
+                          tabData["2"].map((item: Task) => (
                             <TaskCard key={item.id} task={item} onClick={() => handleView(item)} />
                           ))
                         ) : (
@@ -321,7 +343,7 @@ export default function TasksAnalytic() {
                     <div className="p-4">
                       <div className="space-y-3">
                         {tabData["3"] && Array.isArray(tabData["3"]) && tabData["3"].length > 0 ? (
-                          tabData["3"].map((item: any) => (
+                          tabData["3"].map((item: Task) => (
                             <TaskCard key={item.id} task={item} onClick={() => handleView(item)} />
                           ))
                         ) : (
