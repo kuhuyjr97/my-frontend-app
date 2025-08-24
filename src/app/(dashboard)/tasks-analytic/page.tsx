@@ -24,6 +24,8 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 // Task interface
 interface Task {
   id: number;
@@ -35,6 +37,7 @@ interface Task {
   startedAt?: Date | string;
   dueTime?: Date | string;
   dueDate: string;
+  link?: string;
   issuer?: string;
   assigner?: string;
   isMainTask?: boolean;
@@ -66,9 +69,10 @@ const isOverdue = (dueDate: string) => {
 interface TaskCardProps {
   task: Task
   onClick?: () => void
+  taskTypes: Array<{ id: number; type: number; subType: number; content: string }>
 }
 
-function TaskCard({ task, onClick }: TaskCardProps) {
+function TaskCard({ task, onClick, taskTypes }: TaskCardProps) {
   const isOverdueTask = isOverdue(task.dueDate)
   
   return (
@@ -85,12 +89,31 @@ function TaskCard({ task, onClick }: TaskCardProps) {
         </div>
       </div>
 
+      {/* Content */}
       {task.content && (
         <p className="text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 leading-relaxed text-xs">
           {task.content}
         </p>
       )}
 
+      {/* Link as a separate row */}
+      {task.link && (
+        <div className="mb-3">
+          <a 
+            href={task.link} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="flex items-center text-blue-400 hover:text-blue-300 text-xs break-all"
+          >
+            <svg className="h-3 w-3 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            {task.link}
+          </a>
+        </div>
+      )}
+
+      {/* Tags row */}
       <div className="flex flex-wrap gap-2">
         {task.dueDate && (
           <div
@@ -100,6 +123,18 @@ function TaskCard({ task, onClick }: TaskCardProps) {
           >
             <Calendar className="h-3 w-3 mr-1.5" />
             {formatDate(task.dueDate)}
+          </div>
+        )}
+
+        {task.subType && (
+          <div className="flex items-center text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md text-xs font-medium">
+            <svg className="h-3 w-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            {taskTypes.find(
+              (type) =>
+                type.subType === task.subType
+            )?.content || `Type: ${task.subType}`}
           </div>
         )}
 
@@ -135,10 +170,12 @@ export default function TasksAnalytic() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Task | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [subTypes, setSubTypes] = useState<Array<{ id: number; type: number; subType: number; content: string }>>([]);
 
   const baseUrl = backendUrl();
 
   const [data, setData] = useState<Record<string, Task[]> | null>(null);
+  const [taskTypes, setTaskTypes] = useState<Array<{ id: number; type: number; subType: number; content: string }>>([]);
 
   const fetchTasks = async () => {
     const token = localStorage.getItem("token");
@@ -152,16 +189,50 @@ export default function TasksAnalytic() {
       const check = await axios.get(`${baseUrl}/tasks/limit/5`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log(check.data);
       setData(check.data);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+    
+    try {
+      const subTypes = await axios.get(`${baseUrl}/types/3`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSubTypes(subTypes.data);
     } catch (error) {
       console.error("Error:", error);
     }
   };
 
+  const fetchTaskTypes = async () => {
+    // Sử dụng dữ liệu từ response bạn cung cấp
+    const mockTaskTypes = [
+      {
+        "id": 3,
+        "type": 3,
+        "subType": 301,
+        "content": "Thang's tasks"
+      },
+      {
+        "id": 4,
+        "type": 3,
+        "subType": 302,
+        "content": "Personal tasks"
+      },
+      {
+        "id": 33,
+        "type": 3,
+        "subType": 303,
+        "content": "Vinh's task"
+      }
+    ];
+    console.log("Setting taskTypes:", mockTaskTypes);
+    setTaskTypes(mockTaskTypes);
+  };
+
   const handleView = (task: Task) => {
     setSelectedTask(task);
-    setEditedTask({ ...task });
+    setEditedTask(task);
     setIsModalOpen(true);
     setIsExpanded(false);
     setIsEditing(false);
@@ -189,36 +260,64 @@ export default function TasksAnalytic() {
     const token = localStorage.getItem("token");
     try {
       setIsSaving(true);
-      await axios.patch(
-        `${baseUrl}/tasks/${editedTask.id}`,
-        {
+      if (selectedTask) {
+        // Edit existing task
+        await axios.patch(
+          `${baseUrl}/tasks/${editedTask.id}`,
+          {
+            title: editedTask.title,
+            content: editedTask.content,
+            type: 3, // Fixed type for tasks
+            subType: editedTask.subType,
+            startedAt: new Date().toISOString(),
+            dueTime: new Date(editedTask.dueDate).toISOString(),
+            link: editedTask.link,
+            status: editedTask.status,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        toast.success("Task updated successfully");
+      } else {
+        // Create new task
+        console.log("Creating task with data:", {
           title: editedTask.title,
           content: editedTask.content,
-          type: editedTask.type,
-          startedAt: editedTask.startedAt,
-          dueTime: editedTask.dueTime,
-          issuer: editedTask.issuer,
-          assigner: editedTask.assigner,
+          type: 3, // Fixed type for tasks
           subType: editedTask.subType,
+          startedAt: new Date().toISOString(),
+          dueTime: new Date(editedTask.dueDate).toISOString(),
           status: editedTask.status,
-          isMainTask: editedTask.isMainTask,
-          progress: editedTask.progress || null,
-          reportGroupId: editedTask.reportGroupId,
-          reportStatus: editedTask.reportStatus,
-          mainTaskId: editedTask.mainTaskId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        });
+        const response = await axios.post(
+          `${baseUrl}/tasks`,
+          {
+            title: editedTask.title,
+            content: editedTask.content,
+            type: 3, // Fixed type for tasks
+            subType: editedTask.subType,
+            startedAt: new Date().toISOString(),
+            dueTime: new Date(editedTask.dueDate).toISOString(),
+            status: editedTask.status,
           },
-        }
-      );
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log("Create task response:", response.data);
+        toast.success("Task created successfully");
+      }
 
       closeModal();
-      toast.success("Task updated successfully");
+      fetchTasks(); // Refresh tasks list
     } catch (err) {
-      console.error("Error editing task:", err);
-      toast.error("Failed to update task");
+      console.error("Error saving task:", err);
+      toast.error(selectedTask ? "Failed to update task" : "Failed to create task");
     } finally {
       setIsSaving(false);
     }
@@ -244,6 +343,7 @@ export default function TasksAnalytic() {
 
   useEffect(() => {
     fetchTasks();
+    fetchTaskTypes();
   }, []);
   
   return (
@@ -263,9 +363,30 @@ export default function TasksAnalytic() {
             
             return (
               <TabsContent key={tabKey} value={tabKey} className="mt-0">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{tabKey}</h2>
-                  <p className="text-gray-600 dark:text-gray-400">Manage your tasks efficiently</p>
+                <div className="mb-6 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{tabKey}</h2>
+                    <p className="text-gray-600 dark:text-gray-400">Manage your tasks efficiently</p>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setSelectedTask(null);
+                      setEditedTask({
+                        title: "",
+                        content: "",
+                        subType: 0,
+                        dueDate: new Date().toISOString().split("T")[0],
+                        status: "1"
+                      } as Task);
+                      setIsModalOpen(true);
+                      setIsExpanded(false);
+                      setIsEditing(true);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Task
+                  </Button>
                 </div>
                 
                 {/* Beautiful Kanban Board Layout - 3 columns */}
@@ -288,7 +409,7 @@ export default function TasksAnalytic() {
                       <div className="space-y-3">
                         {tabData["1"] && Array.isArray(tabData["1"]) && tabData["1"].length > 0 ? (
                           tabData["1"].map((item: Task) => (
-                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} />
+                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} taskTypes={taskTypes} />
                           ))
                         ) : (
                           <div className="text-center py-8 text-gray-400 text-sm">
@@ -316,7 +437,7 @@ export default function TasksAnalytic() {
                       <div className="space-y-3">
                         {tabData["2"] && Array.isArray(tabData["2"]) && tabData["2"].length > 0 ? (
                           tabData["2"].map((item: Task) => (
-                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} />
+                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} taskTypes={taskTypes} />
                           ))
                         ) : (
                           <div className="text-center py-8 text-gray-400 text-sm">
@@ -344,7 +465,7 @@ export default function TasksAnalytic() {
                       <div className="space-y-3">
                         {tabData["3"] && Array.isArray(tabData["3"]) && tabData["3"].length > 0 ? (
                           tabData["3"].map((item: Task) => (
-                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} />
+                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} taskTypes={taskTypes} />
                           ))
                         ) : (
                           <div className="text-center py-8 text-gray-400 text-sm">
@@ -361,7 +482,7 @@ export default function TasksAnalytic() {
         </Tabs>
 
         {/* Task Modal */}
-        {isModalOpen && selectedTask && (
+        {isModalOpen && (
           <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-[1px] flex items-center justify-center z-50">
             <div
               className={`bg-gray-800 rounded-lg transform transition-all duration-300 animate-fadeIn shadow-xl ${
@@ -387,9 +508,9 @@ export default function TasksAnalytic() {
                           className="text-lg font-bold text-gray-100 border-b border-gray-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                         />
                       ) : (
-                        <h2 className="text-lg font-bold text-gray-100 break-words">
-                          {selectedTask.title}
-                        </h2>
+                                                  <h2 className="text-lg font-bold text-gray-100 break-words">
+                            {selectedTask?.title || "New Task"}
+                          </h2>
                       )}
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
@@ -427,14 +548,16 @@ export default function TasksAnalytic() {
                           </svg>
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(selectedTask.id)}
-                        className="h-8 w-8 text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {selectedTask && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(selectedTask.id)}
+                          className="h-8 w-8 text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                       <button
                         onClick={closeModal}
                         className="text-gray-400 hover:text-gray-100 transition-colors duration-300"
@@ -478,55 +601,160 @@ export default function TasksAnalytic() {
                         />
                       ) : (
                         <p className="text-gray-300 whitespace-pre-wrap break-words bg-gray-700 px-3 py-2 rounded-md min-h-[80px]">
-                          {selectedTask.content || "No content"}
+                          {selectedTask?.content || "No content"}
                         </p>
                       )}
                     </div>
 
-                    {/* Progress */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">
-                        Progress
-                      </label>
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={editedTask?.progress || 0}
-                          onChange={(e) =>
-                            setEditedTask({
-                              ...editedTask!,
-                              progress: parseInt(e.target.value) || null,
-                            })
-                          }
-                          className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      ) : (
-                        <div className="space-y-2">
-                          <p className="text-gray-300 text-sm">
-                            {selectedTask.progress || 0}%
-                          </p>
-                          <div className="w-full bg-gray-700 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                              style={{ width: `${selectedTask.progress || 0}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Task Info */}
+                                        {/* Task Info */}
                     <div className="flex flex-wrap gap-3">
-                      {/* Task ID */}
+
+                      {/* Type */}
                       <div className="flex-shrink-0">
                         <label className="block text-sm font-medium text-gray-400 mb-1">
-                          Task ID
+                          Type
                         </label>
-                        <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
-                          {selectedTask.id}
-                        </p>
+                        {isEditing ? (
+                          <Select
+                            // value={editedTask?.subType?.toString()}
+                            value = {subTypes.find(
+                              (type) =>
+                                type.subType === editedTask?.subType
+                            )?.subType.toString() || "Not set"}
+                            onValueChange={(value) => {
+                              const subType = parseInt(value);
+                              setEditedTask({ ...editedTask!, subType: subType });
+                            }}
+                          >
+                            <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
+                              <SelectValue>
+                                {taskTypes.find(
+                                  (type) =>
+                                    type.subType === editedTask?.subType
+                                )?.content || "Select type"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectGroup>
+                                {taskTypes.map((type) => (
+                                  <SelectItem
+                                    key={type.id}
+                                    value={type.subType.toString()}
+                                    className="text-gray-100 hover:bg-gray-700"
+                                  >
+                                    {type.content}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                            {taskTypes.find(
+                              (type) =>
+                                type.subType === editedTask?.subType
+                            )?.content || editedTask?.subType || "Not set"}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Due Date */}
+                      <div className="flex-shrink-0">
+                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                          Due Date
+                        </label>
+                        {isEditing ? (
+                          <input
+                            type="date"
+                            value={editedTask?.dueDate || ""}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                dueDate: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                            {selectedTask?.dueDate ? formatDate(selectedTask.dueDate) : "Not set"}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Status */}
+                      <div className="flex-shrink-0">
+                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                          Status
+                        </label>
+                        {isEditing ? (
+                          <Select
+                            value={editedTask?.status?.toString()}
+                            onValueChange={(value) => {
+                              setEditedTask({ ...editedTask!, status: value });
+                            }}
+                          >
+                            <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
+                              <SelectValue>
+                                {editedTask?.status === "1" ? "To Do" :
+                                 editedTask?.status === "2" ? "In Progress" :
+                                 editedTask?.status === "3" ? "Completed" : "To Do"}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectGroup>
+                                {[
+                                  { value: "1", label: "To Do" },
+                                  { value: "2", label: "In Progress" },
+                                  { value: "3", label: "Completed" }
+                                ].map((status) => (
+                                  <SelectItem 
+                                    key={status.value} 
+                                    value={status.value} 
+                                    className="text-gray-100 hover:bg-gray-700"
+                                  >
+                                    {status.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                            {selectedTask?.status === "1" ? "To Do" :
+                             selectedTask?.status === "2" ? "In Progress" :
+                             selectedTask?.status === "3" ? "Completed" : "To Do"}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Link */}
+                      <div className="flex-shrink-0">
+                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                          Link
+                        </label>
+                        {isEditing ? (
+                          <input
+                            type="url"
+                            value={editedTask?.link || ""}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                link: e.target.value,
+                              })
+                            }
+                            placeholder="https://example.com"
+                            className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        ) : (
+                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                            {selectedTask?.link ? (
+                              <a href={selectedTask.link} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+                                {selectedTask.link}
+                              </a>
+                            ) : "Not set"}
+                          </p>
+                        )}
                       </div>
 
                       {/* Main Task ID */}
@@ -548,7 +776,7 @@ export default function TasksAnalytic() {
                           />
                         ) : (
                           <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
-                            {selectedTask.mainTaskId ? `ID: ${selectedTask.mainTaskId}` : "Not set"}
+                            {selectedTask?.mainTaskId ? `ID: ${selectedTask.mainTaskId}` : "Not set"}
                           </p>
                         )}
                       </div>
@@ -575,7 +803,7 @@ export default function TasksAnalytic() {
                           </select>
                         ) : (
                           <>
-                            {selectedTask.isMainTask && (
+                            {selectedTask?.isMainTask && (
                               <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
                                 Yes
                               </p>
@@ -631,13 +859,7 @@ export default function TasksAnalytic() {
                         )}
                       </Button>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">
-                        Task ID: {selectedTask.id}
-                      </span>
-                    </div>
-                  )}
+                                    ) : null}
                 </div>
               </div>
             </div>
