@@ -153,7 +153,7 @@ function TaskCard({ task, onClick, taskTypes }: TaskCardProps) {
 
         {!task.mainTaskId && task.isMainTask && (
           <div className="text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-md text-xs font-medium">
-            isMainTask: true
+            Main Task
           </div>
         )}
       </div>
@@ -176,6 +176,7 @@ export default function TasksAnalytic() {
 
   const [data, setData] = useState<Record<string, Task[]> | null>(null);
   const [taskTypes, setTaskTypes] = useState<Array<{ id: number; type: number; subType: number; content: string }>>([]);
+  const [displayLimit, setDisplayLimit] = useState<string>("all");
 
   const fetchTasks = async () => {
     const token = localStorage.getItem("token");
@@ -186,7 +187,8 @@ export default function TasksAnalytic() {
     }
 
     try {
-      const check = await axios.get(`${baseUrl}/tasks/limit/5`, {
+      const limit = displayLimit === "all" ? 999 : parseInt(displayLimit);
+      const check = await axios.get(`${baseUrl}/tasks/limit/${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setData(check.data);
@@ -199,36 +201,13 @@ export default function TasksAnalytic() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSubTypes(subTypes.data);
+      setTaskTypes(subTypes.data);
     } catch (error) {
       console.error("Error:", error);
     }
   };
 
-  const fetchTaskTypes = async () => {
-    // Sử dụng dữ liệu từ response bạn cung cấp
-    const mockTaskTypes = [
-      {
-        "id": 3,
-        "type": 3,
-        "subType": 301,
-        "content": "Thang's tasks"
-      },
-      {
-        "id": 4,
-        "type": 3,
-        "subType": 302,
-        "content": "Personal tasks"
-      },
-      {
-        "id": 33,
-        "type": 3,
-        "subType": 303,
-        "content": "Vinh's task"
-      }
-    ];
-    console.log("Setting taskTypes:", mockTaskTypes);
-    setTaskTypes(mockTaskTypes);
-  };
+  
 
   const handleView = (task: Task) => {
     setSelectedTask(task);
@@ -291,6 +270,7 @@ export default function TasksAnalytic() {
           startedAt: new Date().toISOString(),
           dueTime: new Date(editedTask.dueDate).toISOString(),
           status: editedTask.status,
+          link: editedTask.link,
         });
         const response = await axios.post(
           `${baseUrl}/tasks`,
@@ -302,6 +282,7 @@ export default function TasksAnalytic() {
             startedAt: new Date().toISOString(),
             dueTime: new Date(editedTask.dueDate).toISOString(),
             status: editedTask.status,
+            link: editedTask.link,
           },
           {
             headers: {
@@ -309,7 +290,6 @@ export default function TasksAnalytic() {
             },
           }
         );
-        console.log("Create task response:", response.data);
         toast.success("Task created successfully");
       }
 
@@ -335,6 +315,7 @@ export default function TasksAnalytic() {
       });
       closeModal();
       toast.success("Task deleted successfully");
+      fetchTasks(); // Reload tasks after deletion
     } catch (err) {
       console.error("Error deleting task:", err);
       toast.error("Failed to delete task");
@@ -343,12 +324,11 @@ export default function TasksAnalytic() {
 
   useEffect(() => {
     fetchTasks();
-    fetchTaskTypes();
   }, []);
   
   return (
     <div className="w-full bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6 mb-19">
         <Tabs value={currentTab} onValueChange={setCurrentTab}>
           <TabsList className="mb-6 bg-white dark:bg-gray-800 shadow-sm">
             {data && Object.keys(data).map((key) => (
@@ -362,13 +342,49 @@ export default function TasksAnalytic() {
             const tabData = data[tabKey as keyof typeof data] as Task[]
             
             return (
-              <TabsContent key={tabKey} value={tabKey} className="mt-0">
-                <div className="mb-6 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{tabKey}</h2>
-                    <p className="text-gray-600 dark:text-gray-400">Manage your tasks efficiently</p>
-                  </div>
-                  <Button
+                              <TabsContent key={tabKey} value={tabKey} className="mt-0">
+                  <div className="mb-6 flex justify-between items-center">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Label htmlFor="displayLimit" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Show
+                        </Label>
+                        <Select
+                          value={displayLimit}
+                          onValueChange={async (value) => {
+                            setDisplayLimit(value);
+                            const token = localStorage.getItem("token");
+                            if (!token) {
+                              localStorage.removeItem("token");
+                              router.push("/login");
+                              return;
+                            }
+                            try {
+                              const limit = value === "all" ? 999 : parseInt(value);
+                              const response = await axios.get(`${baseUrl}/tasks/limit/${limit}`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                              });
+                              setData(response.data);
+                            } catch (error) {
+                              console.error("Error fetching tasks:", error);
+                              toast.error("Failed to fetch tasks");
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Select limit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10 tasks</SelectItem>
+                            <SelectItem value="20">20 tasks</SelectItem>
+                            <SelectItem value="30">30 tasks</SelectItem>
+                            <SelectItem value="all">All tasks</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <Button
                     onClick={() => {
                       setSelectedTask(null);
                       setEditedTask({
