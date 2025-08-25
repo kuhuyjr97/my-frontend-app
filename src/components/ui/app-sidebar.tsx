@@ -33,21 +33,21 @@ const applicationItems = [
     url: "/notes",
     icon: FileText,
   },
+  // {
+  //   title: "Tasks",
+  //   url: "/tasks",
+  //   icon: FileText,
+  // },
   {
-    title: "Tasks",
-    url: "/tasks",
-    icon: FileText,
-  },
-  {
-    title: "Tasks Analytics",
+    title: "Tasks ",
     url: "/tasks-analytic",
     icon: FileText,
   },
-  {
-    title: "Report",
-    url: "/taskss",
-    icon: List,
-  },
+  // {
+  //   title: "Report",
+  //   url: "/taskss",
+  //   icon: List,
+  // },
   {
     title: "Savings",
     url: "/savings",
