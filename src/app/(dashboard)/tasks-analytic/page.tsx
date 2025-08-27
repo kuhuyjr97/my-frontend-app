@@ -43,9 +43,26 @@ interface Task {
   isMainTask?: boolean;
   progress?: number | null;
   reportGroupId?: number | null;
-  reportStatus?: string;
+  reportStatus?: string | null;
   mainTaskId?: number | null;
 }
+
+
+const ReportStatus = {
+  RELEASED: 0,
+  TESTING: 1,
+  DOING: 2,
+  NOTSTARTED: 3,
+  PREPARING: 4,
+} as const;
+
+const ReportStatusLabel = {
+  [ReportStatus.RELEASED]: "released",
+  [ReportStatus.TESTING]: "testing",
+  [ReportStatus.DOING]: "doing",
+  [ReportStatus.NOTSTARTED]: "not_started",
+  [ReportStatus.PREPARING]: "preparing",
+} as const;
 
 // Helper function to format date
 const formatDate = (dateString: string) => {
@@ -176,7 +193,7 @@ export default function TasksAnalytic() {
 
   const [data, setData] = useState<Record<string, Task[]> | null>(null);
   const [taskTypes, setTaskTypes] = useState<Array<{ id: number; type: number; subType: number; content: string }>>([]);
-  const [displayLimit, setDisplayLimit] = useState<string>("all");
+  const [displayLimit, setDisplayLimit] = useState<string>("start");
 
   const fetchTasks = async () => {
     const token = localStorage.getItem("token");
@@ -187,7 +204,13 @@ export default function TasksAnalytic() {
     }
 
     try {
-      const limit = displayLimit === "all" ? 999 : parseInt(displayLimit);
+const limit =
+  displayLimit === "all"
+    ? 999
+    : displayLimit === "start"
+      ? 10
+      : parseInt(displayLimit);
+
       const check = await axios.get(`${baseUrl}/tasks/limit/${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -252,6 +275,9 @@ export default function TasksAnalytic() {
             dueTime: new Date(editedTask.dueDate).toISOString(),
             link: editedTask.link,
             status: editedTask.status,
+            reportGroupId: editedTask.reportGroupId || null,
+            reportStatus: editedTask.reportStatus?.toString() || null,
+            isMainTask: editedTask.isMainTask || false,
           },
           {
             headers: {
@@ -331,26 +357,31 @@ export default function TasksAnalytic() {
       <div className="max-w-7xl mx-auto p-6 mb-19">
         <Tabs value={currentTab} onValueChange={setCurrentTab}>
           <TabsList className="mb-6 bg-white dark:bg-gray-800 shadow-sm">
-            {data && Object.keys(data).map((key) => (
-              <TabsTrigger key={key} value={key}>
-                {key}
-              </TabsTrigger>
-            ))}
+            {data &&
+              Object.keys(data).map((key) => (
+                <TabsTrigger key={key} value={key}>
+                  {key}
+                </TabsTrigger>
+              ))}
           </TabsList>
-          
-          {data && Object.keys(data).map((tabKey) => {
-            const tabData = data[tabKey as keyof typeof data] as Task[]
-            
-            return (
-                              <TabsContent key={tabKey} value={tabKey} className="mt-0">
+
+          {data &&
+            Object.keys(data).map((tabKey) => {
+              const tabData = data[tabKey as keyof typeof data] as Task[];
+
+              return (
+                <TabsContent key={tabKey} value={tabKey} className="mt-0">
                   <div className="mb-6 flex justify-between items-center">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
-                        <Label htmlFor="displayLimit" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <Label
+                          htmlFor="displayLimit"
+                          className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                        >
                           Show
                         </Label>
                         <Select
-                          value={displayLimit}
+                          value={`${displayLimit === "start" ? 10 : parseInt(displayLimit)}`}
                           onValueChange={async (value) => {
                             setDisplayLimit(value);
                             const token = localStorage.getItem("token");
@@ -360,10 +391,14 @@ export default function TasksAnalytic() {
                               return;
                             }
                             try {
-                              const limit = value === "all" ? 999 : parseInt(value);
-                              const response = await axios.get(`${baseUrl}/tasks/limit/${limit}`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                              });
+                              const limit =
+                                value === "all" ? 999 : parseInt(value);
+                              const response = await axios.get(
+                                `${baseUrl}/tasks/limit/${limit}`,
+                                {
+                                  headers: { Authorization: `Bearer ${token}` },
+                                }
+                              );
                               setData(response.data);
                             } catch (error) {
                               console.error("Error fetching tasks:", error);
@@ -383,118 +418,144 @@ export default function TasksAnalytic() {
                         </Select>
                       </div>
                     </div>
-                    
+
                     <Button
-                    onClick={() => {
-                      setSelectedTask(null);
-                      setEditedTask({
-                        title: "",
-                        content: "",
-                        subType: 0,
-                        dueDate: new Date().toISOString().split("T")[0],
-                        status: "1"
-                      } as Task);
-                      setIsModalOpen(true);
-                      setIsExpanded(false);
-                      setIsEditing(true);
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Task
-                  </Button>
-                </div>
-                
-                {/* Beautiful Kanban Board Layout - 3 columns */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  
-                  {/* Status 1: To Do */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                    <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                          To Do
-                        </h3>
-                        <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-sm font-semibold px-3 py-1 rounded-full">
-                          {tabData["1"] && Array.isArray(tabData["1"]) ? tabData["1"].length : 0}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        {tabData["1"] && Array.isArray(tabData["1"]) && tabData["1"].length > 0 ? (
-                          tabData["1"].map((item: Task) => (
-                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} taskTypes={taskTypes} />
-                          ))
-                        ) : (
-                          <div className="text-center py-8 text-gray-400 text-sm">
-                            No tasks
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      onClick={() => {
+                        setSelectedTask(null);
+                        setEditedTask({
+                          title: "",
+                          content: "",
+                          subType: 0,
+                          dueDate: new Date().toISOString().split("T")[0],
+                          status: "1",
+                        } as Task);
+                        setIsModalOpen(true);
+                        setIsExpanded(false);
+                        setIsEditing(true);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Task
+                    </Button>
                   </div>
 
-                  {/* Status 2: In Progress */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                    <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-300">
-                          In Progress
-                        </h3>
-                        <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 text-sm font-semibold px-3 py-1 rounded-full">
-                          {tabData["2"] && Array.isArray(tabData["2"]) ? tabData["2"].length : 0}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        {tabData["2"] && Array.isArray(tabData["2"]) && tabData["2"].length > 0 ? (
-                          tabData["2"].map((item: Task) => (
-                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} taskTypes={taskTypes} />
-                          ))
-                        ) : (
-                          <div className="text-center py-8 text-gray-400 text-sm">
-                            No tasks
+                  {/* Beautiful Kanban Board Layout - 3 columns */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Status 1: To Do */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                      <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                            To Do
+                          </h3>
+                          <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-sm font-semibold px-3 py-1 rounded-full">
+                            {tabData["1"] && Array.isArray(tabData["1"])
+                              ? tabData["1"].length
+                              : 0}
+                          </span>
                         </div>
-                        )}
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Status 3: Completed */}
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                    <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-green-800 dark:text-green-300">
-                          Completed
-                        </h3>
-                        <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-sm font-semibold px-3 py-1 rounded-full">
-                          {tabData["3"] && Array.isArray(tabData["3"]) ? tabData["3"].length : 0}
-                        </span>
+                      <div className="p-4">
+                        <div className="space-y-3">
+                          {tabData["1"] &&
+                          Array.isArray(tabData["1"]) &&
+                          tabData["1"].length > 0 ? (
+                            tabData["1"].map((item: Task) => (
+                              <TaskCard
+                                key={item.id}
+                                task={item}
+                                onClick={() => handleView(item)}
+                                taskTypes={taskTypes}
+                              />
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-gray-400 text-sm">
+                              No tasks
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        {tabData["3"] && Array.isArray(tabData["3"]) && tabData["3"].length > 0 ? (
-                          tabData["3"].map((item: Task) => (
-                            <TaskCard key={item.id} task={item} onClick={() => handleView(item)} taskTypes={taskTypes} />
-                          ))
-                        ) : (
-                          <div className="text-center py-8 text-gray-400 text-sm">
-                            No tasks
-                          </div>
-                        )}
+
+                    {/* Status 2: In Progress */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                      <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-300">
+                            In Progress
+                          </h3>
+                          <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 text-sm font-semibold px-3 py-1 rounded-full">
+                            {tabData["2"] && Array.isArray(tabData["2"])
+                              ? tabData["2"].length
+                              : 0}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-4">
+                        <div className="space-y-3">
+                          {tabData["2"] &&
+                          Array.isArray(tabData["2"]) &&
+                          tabData["2"].length > 0 ? (
+                            tabData["2"].map((item: Task) => (
+                              <TaskCard
+                                key={item.id}
+                                task={item}
+                                onClick={() => handleView(item)}
+                                taskTypes={taskTypes}
+                              />
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-gray-400 text-sm">
+                              No tasks
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status 3: Completed */}
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                      <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-green-800 dark:text-green-300">
+                            Completed
+                          </h3>
+                          <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-sm font-semibold px-3 py-1 rounded-full">
+                            {tabData["3"] && Array.isArray(tabData["3"])
+                              ? tabData["3"].length
+                              : 0}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-4">
+                        <div className="space-y-3">
+                          {tabData["3"] &&
+                          Array.isArray(tabData["3"]) &&
+                          tabData["3"].length > 0 ? (
+                            tabData["3"].map((item: Task) => (
+                              <TaskCard
+                                key={item.id}
+                                task={item}
+                                onClick={() => handleView(item)}
+                                taskTypes={taskTypes}
+                              />
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-gray-400 text-sm">
+                              No tasks
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
-            )
-          })}
+                </TabsContent>
+              );
+            })}
         </Tabs>
 
         {/* Task Modal */}
@@ -502,7 +563,9 @@ export default function TasksAnalytic() {
           <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-[1px] flex items-center justify-center z-50">
             <div
               className={`bg-gray-800 rounded-lg transform transition-all duration-300 animate-fadeIn shadow-xl ${
-                isExpanded ? "w-[90%] h-[90vh]" : "w-full max-w-lg h-[70vh] mx-4"
+                isExpanded
+                  ? "w-[90%] h-[90vh]"
+                  : "w-full max-w-lg h-[70vh] mx-4"
               }`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -524,9 +587,9 @@ export default function TasksAnalytic() {
                           className="text-lg font-bold text-gray-100 border-b border-gray-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                         />
                       ) : (
-                                                  <h2 className="text-lg font-bold text-gray-100 break-words">
-                            {selectedTask?.title || "New Task"}
-                          </h2>
+                        <h2 className="text-lg font-bold text-gray-100 break-words">
+                          {selectedTask?.title || "New Task"}
+                        </h2>
                       )}
                     </div>
                     <div className="flex items-center space-x-2 flex-shrink-0">
@@ -613,139 +676,156 @@ export default function TasksAnalytic() {
                               content: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 h-28 resize-none"
+                          className={`w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${isExpanded ? 'h-96' : 'h-28'}`}
                         />
                       ) : (
-                        <p className="text-gray-300 whitespace-pre-wrap break-words bg-gray-700 px-3 py-2 rounded-md min-h-[80px]">
+                        <p className={`text-gray-300 whitespace-pre-wrap break-words bg-gray-700 px-3 py-2 rounded-md ${isExpanded ? 'min-h-[384px]' : 'min-h-[80px]'}`}>
                           {selectedTask?.content || "No content"}
                         </p>
                       )}
                     </div>
 
-                                        {/* Task Info */}
-                    <div className="flex flex-wrap gap-3">
+                    {/* Task Info */}
+                    <div className="space-y-4">
+                      {/* First Row: Type and Due Date */}
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-gray-400 mb-1">
+                            Type
+                          </label>
+                          {isEditing ? (
+                            <Select
+                              value={
+                                subTypes
+                                  .find(
+                                    (type) => type.subType === editedTask?.subType
+                                  )
+                                  ?.subType.toString() || "Not set"
+                              }
+                              onValueChange={(value) => {
+                                const subType = parseInt(value);
+                                setEditedTask({
+                                  ...editedTask!,
+                                  subType: subType,
+                                });
+                              }}
+                            >
+                              <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
+                                <SelectValue>
+                                  {taskTypes.find(
+                                    (type) => type.subType === editedTask?.subType
+                                  )?.content || "Select type"}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-800 border-gray-700">
+                                <SelectGroup>
+                                  {taskTypes.map((type) => (
+                                    <SelectItem
+                                      key={type.id}
+                                      value={type.subType.toString()}
+                                      className="text-gray-100 hover:bg-gray-700"
+                                    >
+                                      {type.content}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                              {taskTypes.find(
+                                (type) => type.subType === editedTask?.subType
+                              )?.content ||
+                                editedTask?.subType ||
+                                "Not set"}
+                            </p>
+                          )}
+                        </div>
 
-                      {/* Type */}
-                      <div className="flex-shrink-0">
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
-                          Type
-                        </label>
-                        {isEditing ? (
-                          <Select
-                            // value={editedTask?.subType?.toString()}
-                            value = {subTypes.find(
-                              (type) =>
-                                type.subType === editedTask?.subType
-                            )?.subType.toString() || "Not set"}
-                            onValueChange={(value) => {
-                              const subType = parseInt(value);
-                              setEditedTask({ ...editedTask!, subType: subType });
-                            }}
-                          >
-                            <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
-                              <SelectValue>
-                                {taskTypes.find(
-                                  (type) =>
-                                    type.subType === editedTask?.subType
-                                )?.content || "Select type"}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-700">
-                              <SelectGroup>
-                                {taskTypes.map((type) => (
-                                  <SelectItem
-                                    key={type.id}
-                                    value={type.subType.toString()}
-                                    className="text-gray-100 hover:bg-gray-700"
-                                  >
-                                    {type.content}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
-                            {taskTypes.find(
-                              (type) =>
-                                type.subType === editedTask?.subType
-                            )?.content || editedTask?.subType || "Not set"}
-                          </p>
-                        )}
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-gray-400 mb-1">
+                            Due Date
+                          </label>
+                          {isEditing ? (
+                            <input
+                              type="date"
+                              value={editedTask?.dueDate || ""}
+                              onChange={(e) =>
+                                setEditedTask({
+                                  ...editedTask!,
+                                  dueDate: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          ) : (
+                            <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                              {selectedTask?.dueDate
+                                ? formatDate(selectedTask.dueDate)
+                                : "Not set"}
+                            </p>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Due Date */}
-                      <div className="flex-shrink-0">
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
-                          Due Date
-                        </label>
-                        {isEditing ? (
-                          <input
-                            type="date"
-                            value={editedTask?.dueDate || ""}
-                            onChange={(e) =>
-                              setEditedTask({
-                                ...editedTask!,
-                                dueDate: e.target.value,
-                              })
-                            }
-                            className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        ) : (
-                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
-                            {selectedTask?.dueDate ? formatDate(selectedTask.dueDate) : "Not set"}
-                          </p>
-                        )}
+                      {/* Second Row: Status */}
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-gray-400 mb-1">
+                            Status
+                          </label>
+                          {isEditing ? (
+                            <Select
+                              value={editedTask?.status?.toString()}
+                              onValueChange={(value) => {
+                                setEditedTask({ ...editedTask!, status: value });
+                              }}
+                            >
+                              <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
+                                <SelectValue>
+                                  {editedTask?.status === "1"
+                                    ? "To Do"
+                                    : editedTask?.status === "2"
+                                      ? "In Progress"
+                                      : editedTask?.status === "3"
+                                        ? "Completed"
+                                        : "To Do"}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-800 border-gray-700">
+                                <SelectGroup>
+                                  {[
+                                    { value: "1", label: "To Do" },
+                                    { value: "2", label: "In Progress" },
+                                    { value: "3", label: "Completed" },
+                                  ].map((status) => (
+                                    <SelectItem
+                                      key={status.value}
+                                      value={status.value}
+                                      className="text-gray-100 hover:bg-gray-700"
+                                    >
+                                      {status.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                              {selectedTask?.status === "1"
+                                ? "To Do"
+                                : selectedTask?.status === "2"
+                                  ? "In Progress"
+                                  : selectedTask?.status === "3"
+                                    ? "Completed"
+                                    : "To Do"}
+                            </p>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Status */}
-                      <div className="flex-shrink-0">
-                        <label className="block text-sm font-medium text-gray-400 mb-1">
-                          Status
-                        </label>
-                        {isEditing ? (
-                          <Select
-                            value={editedTask?.status?.toString()}
-                            onValueChange={(value) => {
-                              setEditedTask({ ...editedTask!, status: value });
-                            }}
-                          >
-                            <SelectTrigger className="w-full bg-gray-900 border-gray-700 text-gray-100">
-                              <SelectValue>
-                                {editedTask?.status === "1" ? "To Do" :
-                                 editedTask?.status === "2" ? "In Progress" :
-                                 editedTask?.status === "3" ? "Completed" : "To Do"}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-700">
-                              <SelectGroup>
-                                {[
-                                  { value: "1", label: "To Do" },
-                                  { value: "2", label: "In Progress" },
-                                  { value: "3", label: "Completed" }
-                                ].map((status) => (
-                                  <SelectItem 
-                                    key={status.value} 
-                                    value={status.value} 
-                                    className="text-gray-100 hover:bg-gray-700"
-                                  >
-                                    {status.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
-                            {selectedTask?.status === "1" ? "To Do" :
-                             selectedTask?.status === "2" ? "In Progress" :
-                             selectedTask?.status === "3" ? "Completed" : "To Do"}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Link */}
-                      <div className="flex-shrink-0">
+                      {/* Third Row: Link (Full Width) */}
+                      <div className="w-full">
                         <label className="block text-sm font-medium text-gray-400 mb-1">
                           Link
                         </label>
@@ -765,16 +845,26 @@ export default function TasksAnalytic() {
                         ) : (
                           <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
                             {selectedTask?.link ? (
-                              <a href={selectedTask.link} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+                              <a
+                                href={selectedTask.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300"
+                              >
                                 {selectedTask.link}
                               </a>
-                            ) : "Not set"}
+                            ) : (
+                              "Not set"
+                            )}
                           </p>
                         )}
                       </div>
+                    </div>
 
+                    <hr />
+                    <div className="flex gap-4">
                       {/* Main Task ID */}
-                      <div className="flex-shrink-0">
+                      <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-400 mb-1">
                           Main Task ID
                         </label>
@@ -785,20 +875,23 @@ export default function TasksAnalytic() {
                             onChange={(e) =>
                               setEditedTask({
                                 ...editedTask!,
-                                mainTaskId: parseInt(e.target.value) || undefined,
+                                mainTaskId:
+                                  parseInt(e.target.value) || undefined,
                               })
                             }
                             className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         ) : (
                           <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
-                            {selectedTask?.mainTaskId ? `ID: ${selectedTask.mainTaskId}` : "Not set"}
+                            {selectedTask?.mainTaskId
+                              ? `ID: ${selectedTask.mainTaskId}`
+                              : "Not set"}
                           </p>
                         )}
                       </div>
 
                       {/* Is Main Task */}
-                      <div className="flex-shrink-0">
+                      <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-400 mb-1">
                           Is Main Task
                         </label>
@@ -825,6 +918,70 @@ export default function TasksAnalytic() {
                               </p>
                             )}
                           </>
+                        )}
+                      </div>
+
+                      {/* Report Group ID */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                          Report Group
+                        </label>
+                                                  {isEditing ? (
+                          <select
+                            value={editedTask?.reportGroupId?.toString() || ""}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                reportGroupId: e.target.value ? parseInt(e.target.value) : null,
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">Select group</option>
+                            {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
+                              <option key={num} value={num}>
+                                Group {num}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                            {selectedTask?.reportGroupId
+                              ? `Group ${selectedTask.reportGroupId}`
+                              : "Not set"}
+                          </p>
+                        )}
+                      </div>
+                    
+                      {/* Report Status */}
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-400 mb-1">
+                          Report Status
+                        </label>
+                        {isEditing ? (
+                          <select
+                            value={editedTask?.reportStatus || ""}
+                            onChange={(e) =>
+                              setEditedTask({
+                                ...editedTask!,
+                                reportStatus: e.target.value || null,
+                              })
+                            }
+                            className="w-full px-3 py-2 border border-gray-700 rounded-md bg-gray-900 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">Select status</option>
+                            {Object.entries(ReportStatus).map(([key, value]) => (
+                              <option key={key} value={value.toString()}>
+                                {ReportStatusLabel[value]}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <p className="text-gray-300 bg-gray-700 px-3 py-2 rounded-md">
+                            {selectedTask?.reportStatus
+                              ? ReportStatusLabel[parseInt(selectedTask.reportStatus) as keyof typeof ReportStatusLabel]
+                              : "Not set"}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -875,7 +1032,7 @@ export default function TasksAnalytic() {
                         )}
                       </Button>
                     </div>
-                                    ) : null}
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -883,5 +1040,5 @@ export default function TasksAnalytic() {
         )}
       </div>
     </div>
-  )
+  );
 }
