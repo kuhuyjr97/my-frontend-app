@@ -10,6 +10,7 @@ import {
   Target,
   BarChart2,
   Settings,
+  Droplets,
 } from 'lucide-react'
 
 const modules = [
@@ -18,6 +19,7 @@ const modules = [
   { href: '/v2/notes', icon: FileText, label: 'Notes', color: '#4a7c3f', bg: '#f0f5ee' },
   null,
   { href: '/v2/finance', icon: Wallet, label: 'Finance', color: '#a07030', bg: '#faf4ee' },
+  { href: '/v2/sumy', icon: Droplets, label: 'Sữa mẹ', color: '#c97a8a', bg: '#fbeaf0' },
   { href: '/v2/time', icon: Clock, label: 'Time', color: '#7040a0', bg: '#f5eefa' },
   { href: '/v2/goals', icon: Target, label: 'Goals', color: '#b05040', bg: '#faeeed' },
   null,

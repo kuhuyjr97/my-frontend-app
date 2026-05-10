@@ -6,6 +6,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/v2/tasks': 'Tasks',
   '/v2/notes': 'Notes',
   '/v2/finance': 'Finance',
+  '/v2/sumy': 'Sữa mẹ',
   '/v2/time': 'Time Tracking',
   '/v2/goals': 'Goals',
   '/v2/analytics': 'Analytics',
