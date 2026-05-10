@@ -10,6 +10,15 @@ export interface Transaction {
   category: TransactionCategory
   date: string
   note?: string
+  /** Saving.type từ API cũ (4 thu, 5 chi, …) */
+  sourceType?: number
+  subType?: number
+  /** Chi tiêu: nhóm theo TypeEnum — có thì breakdown theo subtype thay vì gom 7 nhóm */
+  expenseBucketKey?: string
+  expenseBucketLabel?: string
+  /** Thu nhập: nhóm theo TypeEnum (subtype) — tương tự chi tiêu */
+  incomeBucketKey?: string
+  incomeBucketLabel?: string
 }
 
 export interface Subtask {
