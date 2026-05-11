@@ -4,7 +4,8 @@ export default function V2Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f7f6f3' }}>
       <V2Sidebar />
-      <div style={{ marginLeft: 68, paddingTop: 56 }}>
+      {/* Desktop: margin-left for sidebar. Mobile: margin-left 0, padding-bottom for bottom nav */}
+      <div className="sm:ml-[68px] pb-16 sm:pb-0" style={{ paddingTop: 56 }}>
         <div className="max-w-[1280px] mx-auto">
           {children}
         </div>

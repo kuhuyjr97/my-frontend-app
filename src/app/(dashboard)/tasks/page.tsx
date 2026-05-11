@@ -124,7 +124,7 @@ export default function TasksPage() {
       const token = localStorage.getItem("token");
       if (!token) {
         localStorage.removeItem("token");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
 
@@ -134,20 +134,21 @@ export default function TasksPage() {
         });
         if (!check.data) {
           localStorage.removeItem("token");
-          router.push("/login");
+          router.push("/v2/login");
           return;
         }
       } catch (error) {
         console.log("error", error);
         localStorage.removeItem("token");
         console.log("navifte to login");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
     }
     fetchTasks();
     fetchTaskTypes();
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTasks = async () => {

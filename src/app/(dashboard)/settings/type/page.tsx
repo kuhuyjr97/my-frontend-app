@@ -68,6 +68,7 @@ export default function TypeSettingsPage() {
   useEffect(() => {
     setToken(token || "");
     fetchTypes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTypes = async (type?: Types) => {

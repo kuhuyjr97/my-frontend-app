@@ -11,6 +11,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/v2/goals': 'Goals',
   '/v2/analytics': 'Analytics',
   '/v2/settings': 'Settings',
+  '/v2/types': 'Quản lý loại',
 }
 
 interface TopbarProps {

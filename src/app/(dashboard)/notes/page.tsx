@@ -72,7 +72,7 @@ export default function NotesPage() {
       const token = localStorage.getItem("token");
       if (!token) {
         localStorage.removeItem("token");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
 
@@ -82,19 +82,20 @@ export default function NotesPage() {
         });
         if (!check.data) {
           localStorage.removeItem("token");
-          router.push("/login");
+          router.push("/v2/login");
           return;
         }
       } catch (error) {
         console.log("error", error);
         localStorage.removeItem("token");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
     }
     fetchNotes();
     fetchNoteTypes();
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

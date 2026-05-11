@@ -3,14 +3,15 @@
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { clearSessionTokens } from '@/lib/v2/auth-session'
 
 export function AppBar() {
   const router = useRouter()
   const pathname = usePathname()
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    router.push('/login')
+    clearSessionTokens()
+    router.push('/v2/login')
   }
 
   return (

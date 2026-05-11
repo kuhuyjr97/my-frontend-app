@@ -1,15 +1,21 @@
 import { backendUrl } from '@/app/baseUrl'
+import { authFetch } from '@/lib/v2/auth-session'
 
 export type RecordType = 'pump' | 'feed'
 export type PumpSide = 'left' | 'right' | 'both'
+export type EntryKind = 'pump_dual' | 'pump_single' | 'feed'
 
 export interface MilkRecord {
   id: string
   type: RecordType
+  /** Một dòng JSON gộp trái/phải khi pump_dual */
+  entryKind?: EntryKind
   amount: number
+  leftMl?: number
+  rightMl?: number
   side?: PumpSide
   note?: string
-  date: string       // YYYY-MM-DD local date (for filtering)
+  date: string // YYYY-MM-DD local date (for filtering)
   recordedAt: string // UTC ISO (for time display)
   createdAt: string
 }
@@ -26,17 +32,9 @@ export interface DayStats extends DailySummary {
   date: string
 }
 
-function getToken(): string {
-  if (typeof window === 'undefined') return ''
-  return localStorage.getItem('token') ?? ''
-}
-
-function authHeaders(): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${getToken()}`,
-  }
-}
+const jsonHeaders = (): HeadersInit => ({
+  'Content-Type': 'application/json',
+})
 
 const base = () => `${backendUrl()}/api/v2/sumy`
 
@@ -44,22 +42,24 @@ export async function fetchRecords(params: { date?: string; month?: string } = {
   const q = new URLSearchParams()
   if (params.date) q.set('date', params.date)
   if (params.month) q.set('month', params.month)
-  const res = await fetch(`${base()}/records?${q}`, { headers: authHeaders() })
+  const res = await authFetch(`${base()}/records?${q}`, { headers: jsonHeaders() })
   if (!res.ok) throw new Error('Failed to fetch records')
   return res.json()
 }
 
 export async function createRecord(data: {
   type: RecordType
-  amount: number
+  amount?: number
   side?: PumpSide
+  leftMl?: number
+  rightMl?: number
   note?: string
   recordedAt: string
   localDate: string
 }): Promise<MilkRecord> {
-  const res = await fetch(`${base()}/records`, {
+  const res = await authFetch(`${base()}/records`, {
     method: 'POST',
-    headers: authHeaders(),
+    headers: jsonHeaders(),
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Failed to create record')
@@ -71,14 +71,16 @@ export async function updateRecord(
   data: {
     amount?: number
     side?: PumpSide
+    leftMl?: number
+    rightMl?: number
     note?: string
     recordedAt?: string
     localDate?: string
   },
 ): Promise<MilkRecord> {
-  const res = await fetch(`${base()}/records/${id}`, {
+  const res = await authFetch(`${base()}/records/${id}`, {
     method: 'PATCH',
-    headers: authHeaders(),
+    headers: jsonHeaders(),
     body: JSON.stringify(data),
   })
   if (!res.ok) throw new Error('Failed to update record')
@@ -86,8 +88,8 @@ export async function updateRecord(
 }
 
 export async function deleteRecord(id: string): Promise<void> {
-  await fetch(`${base()}/records/${id}`, {
+  await authFetch(`${base()}/records/${id}`, {
     method: 'DELETE',
-    headers: authHeaders(),
+    headers: jsonHeaders(),
   })
 }

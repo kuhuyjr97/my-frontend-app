@@ -199,7 +199,7 @@ export default function TasksAnalytic() {
     const token = localStorage.getItem("token");
     if (!token) {
       localStorage.removeItem("token");
-      router.push("/login");
+      router.push("/v2/login");
       return;
     }
 
@@ -350,8 +350,9 @@ const limit =
 
   useEffect(() => {
     fetchTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   return (
     <div className="w-full bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-7xl mx-auto p-6 mb-19">
@@ -387,7 +388,7 @@ const limit =
                             const token = localStorage.getItem("token");
                             if (!token) {
                               localStorage.removeItem("token");
-                              router.push("/login");
+                              router.push("/v2/login");
                               return;
                             }
                             try {

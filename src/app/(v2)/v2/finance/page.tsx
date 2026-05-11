@@ -19,6 +19,7 @@ import {
   deleteSavingTransaction,
   type FinanceTypeEnumRow,
 } from '@/lib/v2/finance-api'
+import { clearSessionTokens } from '@/lib/v2/auth-session'
 import type { Transaction, TransactionCategory } from '@/lib/v2/types'
 
 // ─── constants ───────────────────────────────────────────────────────────────
@@ -1227,7 +1228,7 @@ export default function FinancePage() {
       setTransactions(rows)
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
-      if (msg === 'UNAUTHORIZED') localStorage.removeItem('token')
+      if (msg === 'UNAUTHORIZED') clearSessionTokens()
       setLoadError(msg === 'UNAUTHORIZED' ? 'auth' : 'network')
       setTransactions([])
     } finally {
@@ -1349,7 +1350,7 @@ export default function FinancePage() {
             style={{ border: '1px solid #e8e6e1', backgroundColor: '#fff', color: '#555' }}
           >
             Sign in to load transactions from the server.{' '}
-            <Link href="/login" className="font-medium underline" style={{ color: '#1a1a1a' }}>
+            <Link href="/v2/login" className="font-medium underline" style={{ color: '#1a1a1a' }}>
               Login
             </Link>
           </div>

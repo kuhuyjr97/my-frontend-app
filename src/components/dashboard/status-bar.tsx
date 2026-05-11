@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { customStyle } from "@/app/style/custom-style";
 import { useRouter } from "next/navigation";
+import { clearSessionTokens } from "@/lib/v2/auth-session";
 
 interface StatusBarProps {
   title: string;
@@ -18,8 +19,8 @@ export function StatusBar({ title }: StatusBarProps) {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
+    clearSessionTokens();
+    router.push("/v2/login");
   };
 
   return (

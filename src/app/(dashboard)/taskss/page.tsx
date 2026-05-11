@@ -337,7 +337,7 @@ export default function TaskManagement() {
     const token = localStorage.getItem("token");
     if (!token) {
       localStorage.removeItem("token");
-      router.push("/login");
+      router.push("/v2/login");
       return;
     }
 
@@ -347,7 +347,7 @@ export default function TaskManagement() {
       });
       if (!check.data) {
         localStorage.removeItem("token");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
 
@@ -367,6 +367,7 @@ export default function TaskManagement() {
 
   useEffect(() => {
     fetchTasks(selectedMainType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMainType]);
 
   if (loading) {

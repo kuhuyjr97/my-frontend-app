@@ -106,7 +106,7 @@ export default function SavingsPage() {
       const token = localStorage.getItem("token");
       if (!token) {
         localStorage.removeItem("token");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
 
@@ -116,26 +116,28 @@ export default function SavingsPage() {
         });
         if (!check.data) {
           localStorage.removeItem("token");
-          router.push("/login");
+          router.push("/v2/login");
           return;
         }
       } catch (error) {
         console.log("error", error);
         localStorage.removeItem("token");
         console.log("navifte to login");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
     }
     fetchTransactions(selectedMonth);
     fetchAllSubtypes();
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [savingResponse, setSavingResponse] = useState<[]>([]);
   useEffect(() => {
     fetchTransactions(selectedMonth);
     fetchAllSubtypes();
     handleTypeChange(formData.type);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth]);
 
   const fetchTransactions = async (yearMonth: string) => {
