@@ -199,7 +199,7 @@ export default function TasksAnalytic() {
     const token = localStorage.getItem("token");
     if (!token) {
       localStorage.removeItem("token");
-      router.push("/login");
+      router.push("/v2/login");
       return;
     }
 
@@ -387,7 +387,7 @@ const limit =
                             const token = localStorage.getItem("token");
                             if (!token) {
                               localStorage.removeItem("token");
-                              router.push("/login");
+                              router.push("/v2/login");
                               return;
                             }
                             try {

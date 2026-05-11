@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   format,
   parseISO,
@@ -19,6 +20,7 @@ import {
   type RecordType,
   type PumpSide,
 } from '@/lib/v2/sumy-api'
+import { getSessionUsername } from '@/lib/v2/auth-session'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -901,6 +903,7 @@ function Modal({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SumyPage() {
+  const router = useRouter()
   const today = useMemo(() => todayStr(), [])
   const [allRecords, setAllRecords] = useState<MilkRecord[]>([])
   const [selectedDate, setSelectedDate] = useState(today)
@@ -908,6 +911,12 @@ export default function SumyPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingRecord, setEditingRecord] = useState<MilkRecord | null>(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (getSessionUsername() !== 'sumy') {
+      router.replace('/v2')
+    }
+  }, [router])
 
   const load = async () => {
     try {

@@ -106,7 +106,7 @@ export default function SavingsPage() {
       const token = localStorage.getItem("token");
       if (!token) {
         localStorage.removeItem("token");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
 
@@ -116,14 +116,14 @@ export default function SavingsPage() {
         });
         if (!check.data) {
           localStorage.removeItem("token");
-          router.push("/login");
+          router.push("/v2/login");
           return;
         }
       } catch (error) {
         console.log("error", error);
         localStorage.removeItem("token");
         console.log("navifte to login");
-        router.push("/login");
+        router.push("/v2/login");
         return;
       }
     }

@@ -1,4 +1,5 @@
 import { backendUrl } from '@/app/baseUrl'
+import { authFetch } from '@/lib/v2/auth-session'
 import type { Transaction, TransactionCategory } from '@/lib/v2/types'
 
 const CATEGORIES: TransactionCategory[] = [
@@ -56,10 +57,10 @@ const TYPE_EXPENSE = 5
 type LegacySavingRow = {
   id: number
   type: number
-  subType?: number | null
   amount: number
   content?: string | null
   createdAt: string
+  typeEnum?: { subType: number; content?: string | null } | null
 }
 
 type TypeEnumRow = { type: number; subType: number; content?: string | null }
@@ -81,8 +82,7 @@ async function getSharedTypeRows(token: string): Promise<TypeEnumRow[]> {
   let p = typeRowsInflight.get(token)
   if (!p) {
     p = (async () => {
-      const res = await fetch(`${backendUrl()}/types`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await authFetch(`${backendUrl()}/types`, {
         cache: 'no-store',
       })
       if (!res.ok) return []
@@ -123,7 +123,7 @@ function legacyToTransactions(
   const inc = incomes.map((row) => {
     const name = row.content?.trim() || 'Income'
     const date = row.createdAt.slice(0, 10)
-    const st = row.subType
+    const st = row.typeEnum?.subType ?? undefined
     const enumLabel =
       st != null ? typeLabels.get(`${TYPE_INCOME}-${st}`) : undefined
     const bucketKey =
@@ -145,7 +145,7 @@ function legacyToTransactions(
   const exp = expenses.map((row) => {
     const name = row.content?.trim() || 'Expense'
     const date = row.createdAt.slice(0, 10)
-    const st = row.subType
+    const st = row.typeEnum?.subType ?? undefined
     const enumLabel =
       st != null ? typeLabels.get(`${TYPE_EXPENSE}-${st}`) : undefined
     const bucketKey =
@@ -180,10 +180,9 @@ async function fetchLegacyIncomeExpense(
   typeLabels: Map<string, string>,
 ): Promise<Transaction[]> {
   const base = backendUrl()
-  const headers = { Authorization: `Bearer ${token}` }
   const [incRes, expRes] = await Promise.all([
-    fetch(`${base}/incomes`, { headers, cache: 'no-store' }),
-    fetch(`${base}/expenses`, { headers, cache: 'no-store' }),
+    authFetch(`${base}/incomes`, { cache: 'no-store' }),
+    authFetch(`${base}/expenses`, { cache: 'no-store' }),
   ])
   if (incRes.status === 401 || expRes.status === 401)
     throw new Error('UNAUTHORIZED')
@@ -247,8 +246,7 @@ export async function fetchFinanceTransactions(
 
   let v2: Transaction[] = []
   try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await authFetch(url, {
       cache: 'no-store',
     })
     if (res.status === 401) throw new Error('UNAUTHORIZED')
@@ -290,10 +288,9 @@ export async function createSavingTransaction(
     createdAt: string
   },
 ): Promise<void> {
-  const res = await fetch(`${backendUrl()}/savings`, {
+  const res = await authFetch(`${backendUrl()}/savings`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
@@ -320,10 +317,9 @@ export async function updateSavingTransaction(
     createdAt: string
   },
 ): Promise<void> {
-  const res = await fetch(`${backendUrl()}/savings/${numericId}`, {
+  const res = await authFetch(`${backendUrl()}/savings/${numericId}`, {
     method: 'PATCH',
     headers: {
-      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
@@ -336,9 +332,8 @@ export async function deleteSavingTransaction(
   token: string,
   numericId: number,
 ): Promise<void> {
-  const res = await fetch(`${backendUrl()}/savings/${numericId}`, {
+  const res = await authFetch(`${backendUrl()}/savings/${numericId}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
   })
   if (res.status === 401) throw new Error('UNAUTHORIZED')
   if (!res.ok) throw new Error(`HTTP_${res.status}`)

@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import { backendUrl } from '@/app/baseUrl'
+import {
+  clearSessionTokens,
+  setSessionTokens,
+  tryRefreshAccessToken,
+} from '@/lib/v2/auth-session'
 
 type Mode = 'login' | 'register'
 
@@ -23,15 +28,29 @@ export default function V2LoginPage() {
     async function checkExistingSession() {
       const token = localStorage.getItem('token')
       if (!token) return
-      try {
-        const res = await axios.get(`${baseUrl}/auth/check`, {
-          headers: { Authorization: `Bearer ${token}` },
+      const tryCheck = async (access: string) =>
+        axios.get(`${baseUrl}/auth/check`, {
+          headers: { Authorization: `Bearer ${access}` },
         })
+      try {
+        const res = await tryCheck(token)
         if (!cancelled && res.data === 1) {
           router.replace('/v2/finance')
         }
       } catch {
-        localStorage.removeItem('token')
+        const refreshed = await tryRefreshAccessToken()
+        if (!refreshed) {
+          clearSessionTokens()
+          return
+        }
+        try {
+          const next = localStorage.getItem('token')
+          if (!next) return
+          const res2 = await tryCheck(next)
+          if (!cancelled && res2.data === 1) router.replace('/v2/finance')
+        } catch {
+          clearSessionTokens()
+        }
       }
     }
     checkExistingSession()
@@ -40,8 +59,8 @@ export default function V2LoginPage() {
     }
   }, [baseUrl, router])
 
-  const persistTokenAndGoFinance = (token: string) => {
-    localStorage.setItem('token', token)
+  const persistTokenAndGoFinance = (accessToken: string, refreshToken?: string) => {
+    setSessionTokens(accessToken, refreshToken)
     router.push('/v2/finance')
   }
 
@@ -54,9 +73,10 @@ export default function V2LoginPage() {
         username,
         password,
       })
-      const token = response.data?.accessToken
+      const token = response.data?.accessToken as string | undefined
+      const refresh = response.data?.refreshToken as string | undefined
       if (token) {
-        persistTokenAndGoFinance(token)
+        persistTokenAndGoFinance(token, refresh)
       } else {
         setError('Không nhận được token từ server')
       }
@@ -93,9 +113,10 @@ export default function V2LoginPage() {
         username: username.trim(),
         password,
       })
-      const token = loginRes.data?.accessToken
+      const token = loginRes.data?.accessToken as string | undefined
+      const refresh = loginRes.data?.refreshToken as string | undefined
       if (token) {
-        persistTokenAndGoFinance(token)
+        persistTokenAndGoFinance(token, refresh)
       } else {
         setError('Đăng ký xong nhưng không đăng nhập được — thử đăng nhập thủ công')
       }
