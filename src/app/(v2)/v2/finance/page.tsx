@@ -23,6 +23,7 @@ import type { Transaction, TransactionCategory } from '@/lib/v2/types'
 
 // ─── constants ───────────────────────────────────────────────────────────────
 // ─── constants ───────────────────────────────────────────────────────────────
+// ─── constants ───────────────────────────────────────────────────────────────
 
 const CATEGORY_META: Record<TransactionCategory, { label: string; color: string; Icon: React.ElementType }> = {
   salary:    { label: 'Salary',     color: '#3a5fa0', Icon: Landmark },
