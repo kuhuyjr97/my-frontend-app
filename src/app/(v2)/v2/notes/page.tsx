@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { format, parseISO } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { Plus, Search, X, Trash2, Tag, Pencil, ChevronLeft } from 'lucide-react'
@@ -7,6 +7,85 @@ import { toast } from 'sonner'
 import { V2Topbar } from '@/components/v2/layout/Topbar'
 import { fetchNotes, createNote, updateNote, deleteNote, type NoteRow } from '@/lib/v2/notes-api'
 import { fetchTypes, type TypeEnumRow } from '@/lib/v2/types-api'
+
+// ─── simple markdown renderer (no external deps) ──────────────────────────────
+
+function renderInline(text: string): ReactNode {
+  const tokens = text.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|\[[^\]\n]+\]\([^)\n]+\))/)
+  return (
+    <>
+      {tokens.map((tok, i) => {
+        if (tok.startsWith('**') && tok.endsWith('**'))
+          return <strong key={i}>{tok.slice(2, -2)}</strong>
+        if (tok.startsWith('*') && tok.endsWith('*'))
+          return <em key={i}>{tok.slice(1, -1)}</em>
+        if (tok.startsWith('`') && tok.endsWith('`'))
+          return <code key={i} className="rounded px-1 text-[12px] font-mono" style={{ backgroundColor: '#f0eeea' }}>{tok.slice(1, -1)}</code>
+        const link = tok.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+        if (link)
+          return <a key={i} href={link[2]} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: '#3b73c8' }}>{link[1]}</a>
+        return tok
+      })}
+    </>
+  )
+}
+
+function SimpleMarkdown({ content }: { content: string }) {
+  if (!content) return <span style={{ color: '#bbb' }}>Chưa có nội dung</span>
+
+  const blocks: ReactNode[] = []
+  const lines = content.split('\n')
+  let i = 0
+  let listBuf: { ordered: boolean; text: string }[] = []
+  let inCode = false
+  let codeBuf: string[] = []
+
+  const flushList = () => {
+    if (!listBuf.length) return
+    const ordered = listBuf[0].ordered
+    const Tag = ordered ? 'ol' : 'ul'
+    blocks.push(
+      <Tag key={blocks.length} className={`${ordered ? 'list-decimal' : 'list-disc'} list-inside space-y-0.5 my-1`}>
+        {listBuf.map((item, j) => <li key={j}>{renderInline(item.text)}</li>)}
+      </Tag>
+    )
+    listBuf = []
+  }
+
+  while (i < lines.length) {
+    const line = lines[i]
+
+    if (line.trimStart().startsWith('```')) {
+      if (!inCode) { flushList(); inCode = true; codeBuf = [] }
+      else {
+        inCode = false
+        blocks.push(
+          <pre key={blocks.length} className="rounded-[8px] p-3 my-2 overflow-x-auto text-[12px] font-mono leading-relaxed" style={{ backgroundColor: '#f0eeea' }}>
+            <code>{codeBuf.join('\n')}</code>
+          </pre>
+        )
+      }
+      i++; continue
+    }
+    if (inCode) { codeBuf.push(line); i++; continue }
+
+    const h3 = line.match(/^### (.+)/); if (h3) { flushList(); blocks.push(<h3 key={blocks.length} className="text-[15px] font-semibold mt-4 mb-0.5">{renderInline(h3[1])}</h3>); i++; continue }
+    const h2 = line.match(/^## (.+)/);  if (h2) { flushList(); blocks.push(<h2 key={blocks.length} className="text-[17px] font-semibold mt-5 mb-1">{renderInline(h2[1])}</h2>); i++; continue }
+    const h1 = line.match(/^# (.+)/);   if (h1) { flushList(); blocks.push(<h1 key={blocks.length} className="text-[20px] font-bold mt-5 mb-1">{renderInline(h1[1])}</h1>); i++; continue }
+    if (line.match(/^[-*_]{3,}$/)) { flushList(); blocks.push(<hr key={blocks.length} className="my-3" style={{ borderColor: '#e8e6e1' }} />); i++; continue }
+
+    const ul = line.match(/^[-*+] (.+)/); if (ul) { listBuf.push({ ordered: false, text: ul[1] }); i++; continue }
+    const ol = line.match(/^\d+\. (.+)/); if (ol) { listBuf.push({ ordered: true, text: ol[1] }); i++; continue }
+
+    flushList()
+    if (line.trim() === '') { blocks.push(<div key={blocks.length} className="h-2" />) }
+    else { blocks.push(<p key={blocks.length} className="leading-relaxed">{renderInline(line)}</p>) }
+    i++
+  }
+
+  flushList()
+  return <div className="text-[13px]" style={{ color: '#1a1a1a' }}>{blocks}</div>
+}
 
 // ─── page ─────────────────────────────────────────────────────────────────────
 
@@ -24,6 +103,7 @@ export default function NotesPage() {
   const [draftContent, setDraftContent] = useState('')
   const [draftTypeId, setDraftTypeId]   = useState<number | null>(null)
   const [dirty, setDirty]               = useState(false)
+  const [previewMode, setPreviewMode]   = useState(false)
   const [mobileShowDetail, setMobileShowDetail] = useState(false)
 
   // ── load ──────────────────────────────────────────────────────────────────
@@ -63,6 +143,7 @@ export default function NotesPage() {
     setDraftTypeId(note.typeEnumId)
     setDirty(false)
     setEditing(false)
+    setPreviewMode(false)
     setMobileShowDetail(true)
   }
 
@@ -87,6 +168,7 @@ export default function NotesPage() {
       const note = await createNote({ title: 'Untitled', content: '' })
       setNotes((prev) => [note, ...prev])
       selectNote(note)
+      setEditing(true)
     } catch {
       toast.error('Không tạo được ghi chú')
     }
@@ -106,6 +188,7 @@ export default function NotesPage() {
       setNotes((prev) => prev.map((n) => n.id === updated.id ? updated : n))
       setDirty(false)
       setEditing(false)
+      setPreviewMode(false)
       toast.success('Đã lưu')
     } catch {
       toast.error('Không lưu được')
@@ -321,9 +404,28 @@ export default function NotesPage() {
               {/* Edit / Save buttons */}
               {editing ? (
                 <div className="shrink-0 flex items-center gap-1.5">
+                  {/* Write / Preview toggle */}
+                  <div className="flex rounded-[6px] overflow-hidden" style={{ border: '1px solid #e4e2dd' }}>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode(false)}
+                      className="h-[26px] px-2.5 text-[11px] font-medium transition-colors"
+                      style={{ backgroundColor: !previewMode ? '#1a1a1a' : 'transparent', color: !previewMode ? '#fff' : '#888' }}
+                    >
+                      Write
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode(true)}
+                      className="h-[26px] px-2.5 text-[11px] font-medium transition-colors"
+                      style={{ backgroundColor: previewMode ? '#1a1a1a' : 'transparent', color: previewMode ? '#fff' : '#888' }}
+                    >
+                      Preview
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => { setEditing(false); setDraftTitle(selectedNote.title); setDraftContent(selectedNote.content); setDraftTypeId(selectedNote.typeEnumId); setDirty(false) }}
+                    onClick={() => { setEditing(false); setPreviewMode(false); setDraftTitle(selectedNote.title); setDraftContent(selectedNote.content); setDraftTypeId(selectedNote.typeEnumId); setDirty(false) }}
                     className="h-[26px] px-3 rounded-[6px] text-[11px] font-medium transition-colors"
                     style={{ border: '1px solid #e4e2dd', color: '#888' }}
                   >
@@ -377,21 +479,16 @@ export default function NotesPage() {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-4 sm:py-5">
-              {editing ? (
+              {editing && !previewMode ? (
                 <textarea
                   value={draftContent}
                   onChange={(e) => { setDraftContent(e.target.value); setDirty(true) }}
                   placeholder="Bắt đầu viết…"
-                  className="w-full h-full min-h-[300px] text-[13px] leading-relaxed resize-none outline-none rounded-[10px] p-4"
+                  className="w-full h-full min-h-[300px] text-[13px] leading-relaxed resize-none outline-none rounded-[10px] p-4 font-mono"
                   style={{ color: '#1a1a1a', backgroundColor: '#f7f6f3', border: '1px solid #e8e6e1' }}
                 />
               ) : (
-                <div
-                  className="text-[13px] leading-relaxed whitespace-pre-wrap"
-                  style={{ color: draftContent ? '#1a1a1a' : '#bbb' }}
-                >
-                  {draftContent || 'Chưa có nội dung'}
-                </div>
+                <SimpleMarkdown content={draftContent} />
               )}
             </div>
           </div>
