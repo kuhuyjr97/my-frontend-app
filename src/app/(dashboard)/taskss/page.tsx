@@ -367,6 +367,7 @@ export default function TaskManagement() {
 
   useEffect(() => {
     fetchTasks(selectedMainType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMainType]);
 
   if (loading) {

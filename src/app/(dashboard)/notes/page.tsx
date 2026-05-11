@@ -95,6 +95,7 @@ export default function NotesPage() {
     fetchNotes();
     fetchNoteTypes();
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

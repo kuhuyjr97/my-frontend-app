@@ -148,6 +148,7 @@ export default function TasksPage() {
     fetchTasks();
     fetchTaskTypes();
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTasks = async () => {

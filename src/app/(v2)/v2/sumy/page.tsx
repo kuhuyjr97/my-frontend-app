@@ -8,7 +8,7 @@ import {
   getDaysInMonth,
 } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { Plus, Droplets, Baby, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Droplets, Baby, ChevronLeft, ChevronRight, X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { V2Topbar } from '@/components/v2/layout/Topbar'
 import {
@@ -245,6 +245,120 @@ function MonthCalendar({
             </button>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+// ─── DayPopup ─────────────────────────────────────────────────────────────────
+
+function DayPopup({
+  date,
+  records,
+  today,
+  onClose,
+  onEdit,
+  onDelete,
+}: {
+  date: string
+  records: MilkRecord[]
+  today: string
+  onClose: () => void
+  onEdit: (r: MilkRecord) => void
+  onDelete: (id: string) => void
+}) {
+  const dateLabel = format(parseISO(date), "EEEE, d/M/yyyy", { locale: vi })
+  const sum = computeSummary(records)
+  const sorted = [...records].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center"
+      style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="bg-white w-full sm:max-w-sm rounded-t-[20px] sm:rounded-[18px] overflow-hidden shadow-xl"
+        style={{ maxHeight: '80dvh', border: '1px solid #e8e6e1' }}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #f0eeea' }}>
+          <div>
+            <div className="text-[13px] font-medium capitalize" style={{ color: '#1a1a1a' }}>{dateLabel}</div>
+            <div className="flex items-center gap-3 mt-0.5">
+              <span className="text-[11px]" style={{ color: PINK }}>↑ {sum.pumpTotal} ml</span>
+              <span className="text-[11px]" style={{ color: BLUE }}>↓ {sum.feedTotal} ml</span>
+              <span className="text-[11px]" style={{ color: sum.balance >= 0 ? '#4a8a4a' : PINK }}>
+                {sum.balance >= 0 ? '+' : ''}{sum.balance} ml
+              </span>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="p-1 rounded-[6px] hover:bg-[#f0eeea]">
+            <X size={16} color="#999" />
+          </button>
+        </div>
+
+        {/* List */}
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(80dvh - 72px)' }}>
+          {sorted.length === 0 ? (
+            <div className="px-4 py-6 text-center text-[12px]" style={{ color: '#bbb' }}>
+              {date === today ? 'Chưa có ghi chép hôm nay' : 'Không có ghi chép'}
+            </div>
+          ) : (
+            sorted.map((rec) => {
+              const isPump = rec.type === 'pump'
+              const time = format(parseISO(rec.recordedAt), 'HH:mm')
+              const label = !isPump
+                ? 'Bé uống'
+                : rec.entryKind === 'pump_dual'
+                  ? `Hút · Trái ${rec.leftMl ?? '—'} · Phải ${rec.rightMl ?? '—'}`
+                  : `Hút sữa${rec.side ? ` · ${rec.side === 'left' ? 'Trái' : rec.side === 'right' ? 'Phải' : 'Hai bên'}` : ''}`
+              return (
+                <div
+                  key={rec.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => { onEdit(rec); onClose() }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onEdit(rec); onClose() } }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#faf9f7] transition-colors cursor-pointer"
+                  style={{ borderBottom: '0.5px solid #f0eeea' }}
+                >
+                  <span className="text-[11px] w-9 shrink-0" style={{ color: '#999' }}>{time}</span>
+                  <div
+                    className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: isPump ? PINK_BG : BLUE_BG }}
+                  >
+                    {isPump ? <Droplets size={13} color={PINK} /> : <Baby size={13} color={BLUE} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px]" style={{ color: '#1a1a1a' }}>{label}</div>
+                    {rec.note && <div className="text-[10px] truncate" style={{ color: '#999' }}>{rec.note}</div>}
+                  </div>
+                  <span className="text-[13px] font-medium shrink-0" style={{ color: isPump ? PINK : BLUE }}>
+                    {rec.amount}ml
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onDelete(rec.id) }}
+                    className="w-6 h-6 flex items-center justify-center rounded-[6px] hover:bg-[#fbeaea] shrink-0"
+                  >
+                    <Trash2 size={12} color="#c97a8a" />
+                  </button>
+                </div>
+              )
+            })
+          )}
+        </div>
       </div>
     </div>
   )
@@ -910,6 +1024,7 @@ export default function SumyPage() {
   const [currentMonth, setCurrentMonth] = useState(today.slice(0, 7))
   const [showModal, setShowModal] = useState(false)
   const [editingRecord, setEditingRecord] = useState<MilkRecord | null>(null)
+  const [dayPopup, setDayPopup] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -1017,6 +1132,7 @@ export default function SumyPage() {
   const handleSelectDate = (date: string) => {
     setSelectedDate(date)
     setCurrentMonth(date.slice(0, 7))
+    setDayPopup(date)
   }
 
   if (loading) {
@@ -1043,93 +1159,103 @@ export default function SumyPage() {
         }
       />
 
-      <div className="max-w-[390px] mx-auto px-4 py-4">
+      {/* ── Laptop: 2 cột | Mobile: 1 cột ── */}
+      <div className="px-4 py-4 sm:px-6 sm:py-5 max-w-[900px] mx-auto">
         <div className="text-[11px] mb-3 capitalize" style={{ color: '#999' }}>
           {format(new Date(), "EEEE, d MMMM yyyy", { locale: vi })}
         </div>
 
-        <DetailCard date={selectedDate} records={selectedRecords} />
+        <div className="flex flex-col sm:flex-row sm:gap-5 sm:items-start">
 
-        {/* Quick-add */}
-        <button
-          type="button"
-          onClick={() => setShowModal(true)}
-          className="w-full rounded-[14px] mb-3 overflow-hidden transition-opacity active:opacity-85"
-          style={{
-            border: `1px solid ${PINK}`,
-            boxShadow: '0 2px 14px rgba(201,122,138,0.15)',
-          }}
-        >
-          <div className="flex items-stretch">
-            <div
-              className="flex-1 flex flex-col items-center justify-center py-3 px-2"
-              style={{ backgroundColor: PINK_BG }}
+          {/* Cột trái — detail + quick-add + log */}
+          <div className="sm:flex-1 sm:min-w-0">
+            <DetailCard date={selectedDate} records={selectedRecords} />
+
+            {/* Quick-add */}
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="w-full rounded-[14px] mb-3 overflow-hidden transition-opacity active:opacity-85"
+              style={{
+                border: `1px solid ${PINK}`,
+                boxShadow: '0 2px 14px rgba(201,122,138,0.15)',
+              }}
             >
-              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: PINK }}>
-                Trái
-              </span>
-              <span className="text-[9px] mt-0.5" style={{ color: '#b08090' }}>
-                ml
-              </span>
+              <div className="flex items-stretch">
+                <div
+                  className="flex-1 flex flex-col items-center justify-center py-3 px-2"
+                  style={{ backgroundColor: PINK_BG }}
+                >
+                  <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: PINK }}>Trái</span>
+                  <span className="text-[9px] mt-0.5" style={{ color: '#b08090' }}>ml</span>
+                </div>
+                <div
+                  className="flex flex-col items-center justify-center px-3 py-2.5 bg-white min-w-[120px]"
+                  style={{ borderLeft: `1px solid #f5e0e6`, borderRight: `1px solid #f5e0e6` }}
+                >
+                  <Plus size={16} color={PINK} className="mb-0.5" />
+                  <span className="text-[12px] font-semibold leading-tight" style={{ color: '#1a1a1a' }}>Ghi chép mới</span>
+                  <span className="text-[9px] mt-0.5 text-center" style={{ color: '#999' }}>Trái &amp; phải cùng lúc</span>
+                </div>
+                <div
+                  className="flex-1 flex flex-col items-center justify-center py-3 px-2"
+                  style={{ backgroundColor: BLUE_BG }}
+                >
+                  <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: BLUE }}>Phải</span>
+                  <span className="text-[9px] mt-0.5" style={{ color: '#7a90b0' }}>ml</span>
+                </div>
+              </div>
+            </button>
+
+            <div className="text-[11px] mb-2 capitalize" style={{ color: '#999' }}>
+              {selectedDate === today
+                ? 'Nhật ký hôm nay'
+                : `Nhật ký · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
             </div>
+            <Log
+              records={selectedRecords}
+              selectedDate={selectedDate}
+              today={today}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </div>
+
+          {/* Cột phải — calendar */}
+          <div className="sm:w-[340px] sm:shrink-0 mt-5 sm:mt-0">
             <div
-              className="flex flex-col items-center justify-center px-3 py-2.5 bg-white min-w-[120px]"
-              style={{ borderLeft: `1px solid #f5e0e6`, borderRight: `1px solid #f5e0e6` }}
+              className="rounded-[16px] p-4"
+              style={{
+                backgroundColor: '#f5f3ef',
+                border: '0.5px solid #e5e2dc',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+              }}
             >
-              <Plus size={16} color={PINK} className="mb-0.5" />
-              <span className="text-[12px] font-semibold leading-tight" style={{ color: '#1a1a1a' }}>
-                Ghi chép mới
-              </span>
-              <span className="text-[9px] mt-0.5 text-center" style={{ color: '#999' }}>
-                Trái &amp; phải cùng lúc
-              </span>
-            </div>
-            <div
-              className="flex-1 flex flex-col items-center justify-center py-3 px-2"
-              style={{ backgroundColor: BLUE_BG }}
-            >
-              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: BLUE }}>
-                Phải
-              </span>
-              <span className="text-[9px] mt-0.5" style={{ color: '#7a90b0' }}>
-                ml
-              </span>
+              <Legend />
+              <MonthCalendar
+                currentMonth={currentMonth}
+                selectedDate={selectedDate}
+                today={today}
+                records={allRecords}
+                onSelect={handleSelectDate}
+                onMonthChange={setCurrentMonth}
+              />
             </div>
           </div>
-        </button>
 
-        <div className="text-[11px] mb-2 capitalize" style={{ color: '#999' }}>
-          {selectedDate === today
-            ? 'Nhật ký hôm nay'
-            : `Nhật ký · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
-        </div>
-        <Log
-          records={selectedRecords}
-          selectedDate={selectedDate}
-          today={today}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-
-        <div
-          className="mt-5 rounded-[16px] p-4 mb-2"
-          style={{
-            backgroundColor: '#f5f3ef',
-            border: '0.5px solid #e5e2dc',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
-          }}
-        >
-          <Legend />
-          <MonthCalendar
-            currentMonth={currentMonth}
-            selectedDate={selectedDate}
-            today={today}
-            records={allRecords}
-            onSelect={handleSelectDate}
-            onMonthChange={setCurrentMonth}
-          />
         </div>
       </div>
+
+      {dayPopup && (
+        <DayPopup
+          date={dayPopup}
+          records={filterByDate(allRecords, dayPopup)}
+          today={today}
+          onClose={() => setDayPopup(null)}
+          onEdit={(rec) => { setEditingRecord(rec); setDayPopup(null) }}
+          onDelete={async (id) => { await handleDelete(id); setDayPopup(null) }}
+        />
+      )}
 
       {(showModal || editingRecord) && (
         <Modal

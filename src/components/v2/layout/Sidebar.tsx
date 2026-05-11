@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { getSessionUsername } from '@/lib/v2/auth-session'
+import { getSessionUsername, clearSessionTokens } from '@/lib/v2/auth-session'
 import {
   LayoutDashboard,
   ListChecks,
@@ -11,6 +11,7 @@ import {
   Droplets,
   Tags,
   Settings,
+  LogOut,
 } from 'lucide-react'
 
 const modules = [
@@ -27,6 +28,7 @@ const modules = [
 
 export function V2Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [isSumy, setIsSumy] = useState(false)
 
   useEffect(() => {
@@ -39,6 +41,11 @@ export function V2Sidebar() {
   const visibleModules = modules.map((item) =>
     item?.href === '/v2/sumy' && !isSumy ? null : item,
   )
+
+  const handleLogout = () => {
+    clearSessionTokens()
+    router.push('/v2/login')
+  }
 
   return (
     <>
@@ -57,9 +64,7 @@ export function V2Sidebar() {
         <div className="flex flex-col items-center gap-0.5 w-full px-2">
           {visibleModules.map((item, i) => {
             if (item === null) {
-              return (
-                <div key={`div-${i}`} className="w-8 h-px my-1" style={{ backgroundColor: '#e8e6e1' }} />
-              )
+              return <div key={`div-${i}`} className="w-8 h-px my-1" style={{ backgroundColor: '#e8e6e1' }} />
             }
             const Icon = item.icon
             const active = isActive(item.href)
@@ -81,6 +86,21 @@ export function V2Sidebar() {
               </Link>
             )
           })}
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Đăng xuất"
+            className="group relative w-10 h-10 rounded-xl flex items-center justify-center hover:bg-[#faeeed] transition-colors"
+          >
+            <LogOut size={19} style={{ color: '#c0bdb8' }} />
+            <span
+              className="absolute left-12 px-2 py-1 rounded text-[11px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"
+              style={{ backgroundColor: '#1a1a1a', color: '#fff', zIndex: 100 }}
+            >
+              Đăng xuất
+            </span>
+          </button>
         </div>
       </div>
 
@@ -113,6 +133,18 @@ export function V2Sidebar() {
             </Link>
           )
         })}
+        {/* Logout trên mobile */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 rounded-xl"
+          style={{ color: '#c0bdb8' }}
+        >
+          <div className="w-8 h-6 rounded-[8px] flex items-center justify-center">
+            <LogOut size={17} />
+          </div>
+          <span className="text-[9px] font-medium leading-none">Logout</span>
+        </button>
       </nav>
     </>
   )

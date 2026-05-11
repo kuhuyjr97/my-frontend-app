@@ -119,12 +119,14 @@ export default function SavingsPage() {
     fetchTransactions(selectedMonth);
     fetchAllSubtypes();
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [savingResponse, setSavingResponse] = useState<[]>([]);
   useEffect(() => {
     fetchTransactions(selectedMonth);
     fetchAllSubtypes();
     handleTypeChange(formData.type);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth]);
 
   const fetchTransactions = async (yearMonth: string) => {

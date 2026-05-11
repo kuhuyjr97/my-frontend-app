@@ -94,7 +94,7 @@ export async function authFetch(
   const headers = new Headers(init?.headers)
   if (access) headers.set('Authorization', `Bearer ${access}`)
 
-  let res = await fetch(input, { ...init, headers })
+  const res = await fetch(input, { ...init, headers })
 
   if (res.status !== 401 || isRefreshUrl(input)) return res
 
