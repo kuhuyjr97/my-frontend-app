@@ -2,14 +2,19 @@ import { backendUrl } from '@/app/baseUrl'
 
 export type RecordType = 'pump' | 'feed'
 export type PumpSide = 'left' | 'right' | 'both'
+export type EntryKind = 'pump_dual' | 'pump_single' | 'feed'
 
 export interface MilkRecord {
   id: string
   type: RecordType
+  /** Một dòng JSON gộp trái/phải khi pump_dual */
+  entryKind?: EntryKind
   amount: number
+  leftMl?: number
+  rightMl?: number
   side?: PumpSide
   note?: string
-  date: string       // YYYY-MM-DD local date (for filtering)
+  date: string // YYYY-MM-DD local date (for filtering)
   recordedAt: string // UTC ISO (for time display)
   createdAt: string
 }
@@ -51,8 +56,10 @@ export async function fetchRecords(params: { date?: string; month?: string } = {
 
 export async function createRecord(data: {
   type: RecordType
-  amount: number
+  amount?: number
   side?: PumpSide
+  leftMl?: number
+  rightMl?: number
   note?: string
   recordedAt: string
   localDate: string
@@ -71,6 +78,8 @@ export async function updateRecord(
   data: {
     amount?: number
     side?: PumpSide
+    leftMl?: number
+    rightMl?: number
     note?: string
     recordedAt?: string
     localDate?: string

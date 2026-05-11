@@ -3,8 +3,6 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   format,
   parseISO,
-  startOfWeek,
-  addDays,
   getDay,
   getDaysInMonth,
 } from 'date-fns'
@@ -24,7 +22,6 @@ import {
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
-const MAX_ML = 500
 const PINK = '#c97a8a'
 const BLUE = '#4a72b0'
 const GREEN = '#4a8a4a'
@@ -32,8 +29,6 @@ const PINK_BG = '#fbeaf0'
 const BLUE_BG = '#e8f0fb'
 
 const DAY_NAMES = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
-
-// ─── types ────────────────────────────────────────────────────────────────────
 
 interface DailySummary {
   pumpTotal: number
@@ -64,16 +59,18 @@ function computeSummary(records: MilkRecord[]): DailySummary {
   }
 }
 
-function filterByDate(records: MilkRecord[], date: string): MilkRecord[] {
-  return records.filter((r) => r.date === date)
+/** Chuẩn hoá ngày nhật ký (ưu tiên `date` từ API = localDate khi lưu). */
+function recordCalendarDay(r: MilkRecord): string {
+  if (r.date && /^\d{4}-\d{2}-\d{2}$/.test(r.date)) return r.date
+  try {
+    return format(parseISO(r.recordedAt), 'yyyy-MM-dd')
+  } catch {
+    return r.date ?? ''
+  }
 }
 
-function getWeekDates(date: string): string[] {
-  const d = parseISO(date)
-  const monday = startOfWeek(d, { weekStartsOn: 1 })
-  return Array.from({ length: 7 }, (_, i) =>
-    format(addDays(monday, i), 'yyyy-MM-dd'),
-  )
+function filterByDate(records: MilkRecord[], date: string): MilkRecord[] {
+  return records.filter((r) => recordCalendarDay(r) === date)
 }
 
 function getMonthGrid(yearMonth: string): { date: string; inMonth: boolean }[] {
@@ -109,141 +106,6 @@ function getMonthGrid(yearMonth: string): { date: string; inMonth: boolean }[] {
   return cells
 }
 
-// ─── StatsRow ─────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label,
-  value,
-  color,
-}: {
-  label: string
-  value: number
-  color: string
-}) {
-  return (
-    <div
-      className="flex-1 rounded-[12px] px-3 py-[10px] bg-white"
-      style={{ border: '0.5px solid #e8e6e1' }}
-    >
-      <div className="text-[16px] font-medium" style={{ color }}>
-        {value}
-      </div>
-      <div className="text-[10px] mt-0.5" style={{ color: '#999' }}>
-        {label}
-      </div>
-    </div>
-  )
-}
-
-function StatsRow({ summary }: { summary: DailySummary }) {
-  return (
-    <div className="flex gap-2 mb-3">
-      <StatCard label="Đã hút (ml)" value={summary.pumpTotal} color={PINK} />
-      <StatCard label="Bé uống (ml)" value={summary.feedTotal} color={BLUE} />
-      <StatCard
-        label={summary.balance >= 0 ? 'Dư (ml)' : 'Thiếu (ml)'}
-        value={Math.abs(summary.balance)}
-        color={summary.balance >= 0 ? GREEN : PINK}
-      />
-    </div>
-  )
-}
-
-// ─── ViewToggle ───────────────────────────────────────────────────────────────
-
-function ViewToggle({
-  mode,
-  onChange,
-}: {
-  mode: 'week' | 'month'
-  onChange: (m: 'week' | 'month') => void
-}) {
-  return (
-    <div
-      className="flex rounded-[10px] p-1 mb-3"
-      style={{ backgroundColor: '#f0eeea' }}
-    >
-      {(['week', 'month'] as const).map((m) => (
-        <button
-          key={m}
-          onClick={() => onChange(m)}
-          className="flex-1 rounded-[8px] py-1.5 text-[12px] font-medium transition-colors"
-          style={{
-            backgroundColor: mode === m ? '#fff' : 'transparent',
-            color: mode === m ? '#1a1a1a' : '#999',
-          }}
-        >
-          {m === 'week' ? 'Tuần' : 'Tháng'}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-// ─── WeekStrip ────────────────────────────────────────────────────────────────
-
-function WeekStrip({
-  weekDates,
-  selectedDate,
-  today,
-  records,
-  onSelect,
-}: {
-  weekDates: string[]
-  selectedDate: string
-  today: string
-  records: MilkRecord[]
-  onSelect: (date: string) => void
-}) {
-  return (
-    <div className="flex gap-1.5 mb-3">
-      {weekDates.map((date, i) => {
-        const dayRecs = filterByDate(records, date)
-        const sum = computeSummary(dayRecs)
-        const pumpH = Math.min(sum.pumpTotal / MAX_ML, 1) * 64
-        const feedH = Math.min(Math.max(64 - pumpH, 0), (sum.feedTotal / MAX_ML) * 64)
-        const isToday = date === today
-        const isSelected = date === selectedDate
-        const dayNum = parseInt(date.split('-')[2])
-
-        return (
-          <button
-            key={date}
-            onClick={() => onSelect(date)}
-            className="flex flex-col items-center gap-1 flex-1"
-          >
-            <span className="text-[10px]" style={{ color: '#999' }}>
-              {DAY_NAMES[i]}
-            </span>
-            <div
-              className="w-full rounded-[8px] overflow-hidden flex flex-col"
-              style={{
-                height: 64,
-                border: isToday
-                  ? `1.5px solid ${PINK}`
-                  : isSelected
-                    ? '1.5px solid #1a1a1a'
-                    : '1px solid #e8e6e1',
-                backgroundColor: '#f7f6f3',
-              }}
-            >
-              <div style={{ height: pumpH, backgroundColor: '#e8aab8' }} />
-              <div style={{ height: feedH, backgroundColor: '#a8bce8' }} />
-              <div style={{ flex: 1, backgroundColor: '#d0cdc8' }} />
-            </div>
-            <span
-              className="text-[10px] font-medium"
-              style={{ color: isToday ? PINK : '#666' }}
-            >
-              {dayNum}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 // ─── MonthCalendar ────────────────────────────────────────────────────────────
 
 function MonthCalendar({
@@ -274,7 +136,7 @@ function MonthCalendar({
     onMonthChange(format(new Date(year, month, 1), 'yyyy-MM'))
 
   return (
-    <div className="mb-3">
+    <div>
       <div className="flex items-center justify-between mb-2">
         <button onClick={prevMonth} className="p-1" style={{ color: '#999' }}>
           <ChevronLeft size={16} />
@@ -498,10 +360,14 @@ function DetailCard({
 
 function Log({
   records,
+  selectedDate,
+  today,
   onEdit,
   onDelete,
 }: {
   records: MilkRecord[]
+  selectedDate: string
+  today: string
   onEdit: (record: MilkRecord) => void
   onDelete: (id: string) => void
 }) {
@@ -514,7 +380,9 @@ function Log({
         style={{ border: '0.5px solid #e8e6e1' }}
       >
         <span className="text-[12px]" style={{ color: '#bbb' }}>
-          Chưa có ghi chép hôm nay
+          {selectedDate === today
+            ? 'Chưa có ghi chép hôm nay'
+            : 'Chưa có ghi chép cho ngày này'}
         </span>
       </div>
     )
@@ -532,9 +400,11 @@ function Log({
       {sorted.map((rec, i) => {
         const isPump = rec.type === 'pump'
         const time = format(parseISO(rec.recordedAt), 'HH:mm')
-        const label = isPump
-          ? `Hút sữa${rec.side ? ` · ${rec.side === 'left' ? 'Trái' : rec.side === 'right' ? 'Phải' : 'Hai bên'}` : ''}`
-          : 'Bé uống'
+        const label = !isPump
+          ? 'Bé uống'
+          : rec.entryKind === 'pump_dual'
+            ? `Hút sữa · Trái ${rec.leftMl ?? '—'} · Phải ${rec.rightMl ?? '—'}`
+            : `Hút sữa${rec.side ? ` · ${rec.side === 'left' ? 'Trái' : rec.side === 'right' ? 'Phải' : 'Hai bên'}` : ''}`
         const isSelected = selectedId === rec.id
 
         return (
@@ -607,97 +477,6 @@ function Log({
   )
 }
 
-// ─── Chart ────────────────────────────────────────────────────────────────────
-
-function Chart({
-  allRecords,
-  today,
-}: {
-  allRecords: MilkRecord[]
-  today: string
-}) {
-  const days = Array.from({ length: 8 }, (_, i) => {
-    const d = new Date(today)
-    d.setDate(d.getDate() - (7 - i))
-    return format(d, 'yyyy-MM-dd')
-  })
-
-  const data = days.map((date) => {
-    const recs = filterByDate(allRecords, date)
-    const sum = computeSummary(recs)
-    return { date, ...sum }
-  })
-
-  return (
-    <div
-      className="rounded-[14px] p-4 bg-white mb-6"
-      style={{ border: '0.5px solid #e8e6e1' }}
-    >
-      <div className="text-[11px] mb-3" style={{ color: '#999' }}>
-        8 ngày gần nhất
-      </div>
-      <div className="flex flex-col gap-2">
-        {data.map(({ date, pumpTotal, feedTotal }) => {
-          const pumpW = Math.min((pumpTotal / MAX_ML) * 100, 100)
-          const feedW = Math.min((feedTotal / MAX_ML) * 100, 100 - pumpW)
-          const total = pumpTotal + feedTotal
-          const [, m, d] = date.split('-').map(Number)
-
-          return (
-            <div key={date} className="flex items-center gap-2">
-              <span
-                className="text-[10px] w-6 shrink-0 text-right"
-                style={{ color: '#999' }}
-              >
-                {d}/{m}
-              </span>
-              <div
-                className="flex-1 rounded-[4px] overflow-hidden relative"
-                style={{ height: 16, backgroundColor: '#f0eeea' }}
-              >
-                <div className="absolute left-0 top-0 h-full flex">
-                  <div
-                    style={{ width: `${pumpW}%`, backgroundColor: '#e8aab8' }}
-                  />
-                  <div
-                    style={{ width: `${feedW}%`, backgroundColor: '#a8bce8' }}
-                  />
-                </div>
-              </div>
-              <span
-                className="text-[10px] w-8 shrink-0"
-                style={{ color: '#999' }}
-              >
-                {total > 0 ? total : '—'}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-      <div className="flex items-center gap-4 mt-3">
-        <div className="flex items-center gap-1">
-          <span
-            className="rounded-full"
-            style={{ width: 8, height: 8, backgroundColor: '#e8aab8' }}
-          />
-          <span className="text-[10px]" style={{ color: '#999' }}>
-            Hút (ml)
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span
-            className="rounded-full"
-            style={{ width: 8, height: 8, backgroundColor: '#a8bce8' }}
-          />
-          <span className="text-[10px]" style={{ color: '#999' }}>
-            Uống (ml)
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 function Modal({
@@ -709,16 +488,20 @@ function Modal({
   onClose: () => void
   onSave: (data: {
     type: RecordType
-    amount: number
+    amount?: number
     side?: PumpSide
+    leftMl?: number
+    rightMl?: number
     note?: string
     recordedAt: string
     localDate: string
   }) => Promise<void>
 }) {
+  const isEdit = !!initial
   const [type, setType] = useState<RecordType>(initial?.type ?? 'pump')
   const [amount, setAmount] = useState(initial ? String(initial.amount) : '')
-  const [side, setSide] = useState<PumpSide>(initial?.side ?? 'both')
+  const [leftMl, setLeftMl] = useState('')
+  const [rightMl, setRightMl] = useState('')
   const [note, setNote] = useState(initial?.note ?? '')
   const [recordedAt, setRecordedAt] = useState(() => {
     if (initial) {
@@ -730,7 +513,163 @@ function Modal({
   })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    if (!initial) {
+      setType('pump')
+      setAmount('')
+      setLeftMl('')
+      setRightMl('')
+      setNote('')
+      const now = new Date()
+      setRecordedAt(
+        `${format(now, 'yyyy-MM-dd')}T${format(now, 'HH:mm')}`,
+      )
+      return
+    }
+    setType(initial.type)
+    setNote(initial.note ?? '')
+    const dt = parseISO(initial.recordedAt)
+    setRecordedAt(`${format(dt, 'yyyy-MM-dd')}T${format(dt, 'HH:mm')}`)
+    setAmount(String(initial.amount))
+    if (initial.type === 'pump') {
+      if (initial.entryKind === 'pump_dual') {
+        setLeftMl(
+          initial.leftMl != null ? String(initial.leftMl) : '',
+        )
+        setRightMl(
+          initial.rightMl != null ? String(initial.rightMl) : '',
+        )
+      } else {
+        setLeftMl('')
+        setRightMl('')
+        if (initial.side === 'left') setLeftMl(String(initial.amount))
+        else if (initial.side === 'right')
+          setRightMl(String(initial.amount))
+        else if (initial.side === 'both') {
+          setLeftMl(String(initial.amount))
+          setRightMl(String(initial.amount))
+        } else {
+          setLeftMl(String(initial.amount))
+        }
+      }
+    } else {
+      setLeftMl('')
+      setRightMl('')
+    }
+  }, [initial])
+
   const handleSave = async () => {
+    const dt = new Date(recordedAt)
+    const recordedAtIso = dt.toISOString()
+    const localDate = format(dt, 'yyyy-MM-dd')
+    const noteTrim = note.trim() || undefined
+
+    // —— Tạo mới · Hút — một CustomRecord JSON (trái ± phải) ——————————
+    if (!isEdit && type === 'pump') {
+      const L = leftMl === '' ? NaN : Number(leftMl)
+      const R = rightMl === '' ? NaN : Number(rightMl)
+      const hasL = !isNaN(L) && L > 0
+      const hasR = !isNaN(R) && R > 0
+      if (!hasL && !hasR) {
+        toast.error('Nhập ml ít nhất một bên (trái hoặc phải)')
+        return
+      }
+      setSaving(true)
+      try {
+        await onSave({
+          type: 'pump',
+          leftMl: hasL ? Math.round(L) : undefined,
+          rightMl: hasR ? Math.round(R) : undefined,
+          note: noteTrim,
+          recordedAt: recordedAtIso,
+          localDate,
+        })
+        onClose()
+      } catch {
+        toast.error('Lỗi khi lưu')
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
+
+    // —— Sửa · Hút · pump_dual (một dòng JSON) ——————————————————————
+    if (isEdit && type === 'pump' && initial?.entryKind === 'pump_dual') {
+      const L = leftMl === '' ? NaN : Number(leftMl)
+      const R = rightMl === '' ? NaN : Number(rightMl)
+      const hasL = !isNaN(L) && L > 0
+      const hasR = !isNaN(R) && R > 0
+      if (!hasL && !hasR) {
+        toast.error('Nhập ml ít nhất một bên')
+        return
+      }
+      setSaving(true)
+      try {
+        await onSave({
+          type: 'pump',
+          leftMl: hasL ? Math.round(L) : 0,
+          rightMl: hasR ? Math.round(R) : 0,
+          note: noteTrim,
+          recordedAt: recordedAtIso,
+          localDate,
+        })
+        onClose()
+      } catch {
+        toast.error('Lỗi khi lưu')
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
+
+    // —— Sửa · Hút — pump_single (một mức ml) ———————————————————————
+    if (isEdit && type === 'pump') {
+      const L = leftMl === '' ? NaN : Number(leftMl)
+      const R = rightMl === '' ? NaN : Number(rightMl)
+      const hasL = !isNaN(L) && L > 0
+      const hasR = !isNaN(R) && R > 0
+      if (!hasL && !hasR) {
+        toast.error('Nhập ml ít nhất một bên')
+        return
+      }
+      if (hasL && hasR && Math.round(L) !== Math.round(R)) {
+        toast.error(
+          'Một dòng chỉ lưu một mức ml — khác trái/phải thì xóa dòng này và ghi chép mới (hai bên).',
+        )
+        return
+      }
+      let outAmount: number
+      let outSide: PumpSide
+      if (hasL && !hasR) {
+        outAmount = Math.round(L)
+        outSide = 'left'
+      } else if (!hasL && hasR) {
+        outAmount = Math.round(R)
+        outSide = 'right'
+      } else {
+        outAmount = Math.round(L)
+        outSide = 'both'
+      }
+      setSaving(true)
+      try {
+        await onSave({
+          type: 'pump',
+          amount: outAmount,
+          side: outSide,
+          note: noteTrim,
+          recordedAt: recordedAtIso,
+          localDate,
+        })
+        onClose()
+      } catch {
+        toast.error('Lỗi khi lưu')
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
+
+    // —— Bé uống (tạo / sửa) ————————————————————————————————————————
     const ml = Number(amount)
     if (!amount || isNaN(ml) || ml <= 0) {
       toast.error('Nhập số ml hợp lệ')
@@ -738,14 +677,12 @@ function Modal({
     }
     setSaving(true)
     try {
-      const dt = new Date(recordedAt)
       await onSave({
-        type,
+        type: 'feed',
         amount: Math.round(ml),
-        side: type === 'pump' ? side : undefined,
-        note: note.trim() || undefined,
-        recordedAt: dt.toISOString(),
-        localDate: format(dt, 'yyyy-MM-dd'),
+        note: noteTrim,
+        recordedAt: recordedAtIso,
+        localDate,
       })
       onClose()
     } catch {
@@ -754,6 +691,10 @@ function Modal({
       setSaving(false)
     }
   }
+
+  /** Hai cột Trái/Phải khi loại Hút (tạo mới + chỉnh sửa) */
+  const showPumpDualFields = type === 'pump'
+  const isSaveDualLabel = type === 'pump' && (!isEdit || initial?.entryKind === 'pump_dual')
 
   return (
     <>
@@ -771,11 +712,26 @@ function Modal({
           style={{ backgroundColor: '#e0ddd8' }}
         />
         <h2
-          className="text-[15px] font-medium mb-4"
+          className="text-[15px] font-medium mb-1"
           style={{ color: '#1a1a1a' }}
         >
           {initial ? 'Chỉnh sửa' : 'Ghi chép mới'}
         </h2>
+        {!isEdit && type === 'pump' && (
+          <p className="text-[11px] mb-4" style={{ color: '#999' }}>
+            Trái và phải lưu chung một dòng nhật ký (một bản ghi JSON).
+          </p>
+        )}
+        {isEdit && type === 'pump' && initial?.entryKind === 'pump_dual' && (
+          <p className="text-[11px] mb-4" style={{ color: '#999' }}>
+            Sửa ml trái/phải trong cùng một ghi chép.
+          </p>
+        )}
+        {isEdit && type === 'pump' && initial?.entryKind !== 'pump_dual' && (
+          <p className="text-[11px] mb-4" style={{ color: '#999' }}>
+            Một dòng chỉ lưu một mức ml mỗi bên — hai ô cùng số là hút hai bên; trái/phải khác số thì xóa dòng và ghi chép mới.
+          </p>
+        )}
 
         {/* Type */}
         <div className="mb-4">
@@ -794,7 +750,16 @@ function Modal({
             ).map(([t, label]) => (
               <button
                 key={t}
-                onClick={() => setType(t)}
+                type="button"
+                onClick={() => {
+                  setType(t)
+                  if (t === 'feed') {
+                    setLeftMl('')
+                    setRightMl('')
+                  } else {
+                    setAmount('')
+                  }
+                }}
                 className="flex-1 rounded-[8px] py-2 text-[12px] font-medium transition-colors"
                 style={{
                   backgroundColor: type === t ? '#fff' : 'transparent',
@@ -808,20 +773,83 @@ function Modal({
           </div>
         </div>
 
-        {/* Amount */}
-        <div className="mb-4">
-          <div className="text-[11px] mb-1.5" style={{ color: '#999' }}>
-            Số ml
+        {/* Pump: Trái + Phải (tạo mới & chỉnh sửa) */}
+        {showPumpDualFields ? (
+          <div className="mb-4">
+            <div className="text-[11px] mb-2" style={{ color: '#999' }}>
+              Số ml đã hút
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div
+                className="rounded-[14px] p-3"
+                style={{
+                  background: `linear-gradient(145deg, ${PINK_BG} 0%, #fff 100%)`,
+                  border: `1px solid ${PINK}`,
+                  boxShadow: '0 2px 12px rgba(201,122,138,0.12)',
+                }}
+              >
+                <div className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: PINK }}>
+                  Trái — L
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={leftMl}
+                    onChange={(e) => setLeftMl(e.target.value)}
+                    placeholder="—"
+                    className="w-full min-w-0 rounded-[10px] px-3 py-2.5 text-[20px] font-semibold outline-none bg-white/90"
+                    style={{ border: '1px solid #f0d8df', color: '#1a1a1a' }}
+                  />
+                  <span className="text-[12px] shrink-0" style={{ color: '#999' }}>
+                    ml
+                  </span>
+                </div>
+              </div>
+              <div
+                className="rounded-[14px] p-3"
+                style={{
+                  background: `linear-gradient(145deg, ${BLUE_BG} 0%, #fff 100%)`,
+                  border: `1px solid ${BLUE}`,
+                  boxShadow: '0 2px 12px rgba(74,114,176,0.12)',
+                }}
+              >
+                <div className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: BLUE }}>
+                  Phải — R
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={rightMl}
+                    onChange={(e) => setRightMl(e.target.value)}
+                    placeholder="—"
+                    className="w-full min-w-0 rounded-[10px] px-3 py-2.5 text-[20px] font-semibold outline-none bg-white/90"
+                    style={{ border: '1px solid #d8e4f6', color: '#1a1a1a' }}
+                  />
+                  <span className="text-[12px] shrink-0" style={{ color: '#999' }}>
+                    ml
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="VD: 120"
-            className="w-full rounded-[10px] px-3 py-2.5 text-[14px] outline-none"
-            style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
-          />
-        </div>
+        ) : (
+          /* Amount — một lần (bé uống / chỉnh sửa hút) */
+          <div className="mb-4">
+            <div className="text-[11px] mb-1.5" style={{ color: '#999' }}>
+              Số ml
+            </div>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="VD: 120"
+              className="w-full rounded-[10px] px-3 py-2.5 text-[14px] outline-none"
+              style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+            />
+          </div>
+        )}
 
         {/* Time */}
         <div className="mb-4">
@@ -836,40 +864,6 @@ function Modal({
             style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
           />
         </div>
-
-        {/* Side (pump only) */}
-        {type === 'pump' && (
-          <div className="mb-4">
-            <div className="text-[11px] mb-1.5" style={{ color: '#999' }}>
-              Bên hút
-            </div>
-            <div className="flex gap-2">
-              {(
-                [
-                  ['left', 'Trái'],
-                  ['right', 'Phải'],
-                  ['both', 'Hai bên'],
-                ] as [PumpSide, string][]
-              ).map(([s, label]) => (
-                <button
-                  key={s}
-                  onClick={() => setSide(s)}
-                  className="flex-1 rounded-[20px] py-2 text-[12px] transition-colors"
-                  style={{
-                    backgroundColor: side === s ? PINK_BG : '#f7f6f3',
-                    color: side === s ? PINK : '#999',
-                    border:
-                      side === s
-                        ? `1px solid ${PINK}`
-                        : '1px solid #e8e6e1',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Note */}
         <div className="mb-5">
@@ -890,10 +884,14 @@ function Modal({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-3 rounded-[14px] text-[14px] font-medium text-white"
+          className="w-full py-3 rounded-[14px] text-[14px] font-medium text-white shadow-sm"
           style={{ backgroundColor: PINK, opacity: saving ? 0.7 : 1 }}
         >
-          {saving ? 'Đang lưu...' : 'Lưu'}
+          {saving
+            ? 'Đang lưu...'
+            : isSaveDualLabel
+              ? 'Lưu ghi chép'
+              : 'Lưu'}
         </button>
       </div>
     </>
@@ -907,7 +905,6 @@ export default function SumyPage() {
   const [allRecords, setAllRecords] = useState<MilkRecord[]>([])
   const [selectedDate, setSelectedDate] = useState(today)
   const [currentMonth, setCurrentMonth] = useState(today.slice(0, 7))
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
   const [showModal, setShowModal] = useState(false)
   const [editingRecord, setEditingRecord] = useState<MilkRecord | null>(null)
   const [loading, setLoading] = useState(true)
@@ -927,27 +924,72 @@ export default function SumyPage() {
     load()
   }, [])
 
-  const todaySummary = useMemo(
-    () => computeSummary(filterByDate(allRecords, today)),
-    [allRecords, today],
-  )
   const selectedRecords = useMemo(
     () => filterByDate(allRecords, selectedDate),
     [allRecords, selectedDate],
   )
-  const todayRecords = useMemo(
-    () => filterByDate(allRecords, today),
-    [allRecords, today],
-  )
-  const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate])
 
-  const handleSave = async (data: Parameters<typeof createRecord>[0]) => {
+  const handleSave = async (data: {
+    type: RecordType
+    amount?: number
+    side?: PumpSide
+    leftMl?: number
+    rightMl?: number
+    note?: string
+    recordedAt: string
+    localDate: string
+  }) => {
     if (editingRecord) {
-      await updateRecord(editingRecord.id, data)
+      if (editingRecord.entryKind === 'pump_dual' && data.type === 'pump') {
+        await updateRecord(editingRecord.id, {
+          leftMl: data.leftMl,
+          rightMl: data.rightMl,
+          note: data.note,
+          recordedAt: data.recordedAt,
+          localDate: data.localDate,
+        })
+      } else {
+        await updateRecord(editingRecord.id, {
+          amount: data.amount,
+          side: data.side,
+          note: data.note,
+          recordedAt: data.recordedAt,
+          localDate: data.localDate,
+        })
+      }
       toast.success('Đã cập nhật')
       setEditingRecord(null)
-    } else {
-      await createRecord(data)
+    } else if (
+      data.type === 'pump' &&
+      (data.leftMl !== undefined || data.rightMl !== undefined)
+    ) {
+      await createRecord({
+        type: 'pump',
+        leftMl: data.leftMl,
+        rightMl: data.rightMl,
+        note: data.note,
+        recordedAt: data.recordedAt,
+        localDate: data.localDate,
+      })
+      toast.success('Đã lưu')
+    } else if (data.type === 'pump' && data.amount != null) {
+      await createRecord({
+        type: 'pump',
+        amount: data.amount,
+        side: data.side,
+        note: data.note,
+        recordedAt: data.recordedAt,
+        localDate: data.localDate,
+      })
+      toast.success('Đã lưu')
+    } else if (data.type === 'feed' && data.amount != null) {
+      await createRecord({
+        type: 'feed',
+        amount: data.amount,
+        note: data.note,
+        recordedAt: data.recordedAt,
+        localDate: data.localDate,
+      })
       toast.success('Đã lưu')
     }
     await load()
@@ -997,31 +1039,78 @@ export default function SumyPage() {
           {format(new Date(), "EEEE, d MMMM yyyy", { locale: vi })}
         </div>
 
-        <StatsRow summary={todaySummary} />
+        <DetailCard date={selectedDate} records={selectedRecords} />
 
         {/* Quick-add */}
         <button
+          type="button"
           onClick={() => setShowModal(true)}
-          className="w-full flex items-center justify-center gap-2 rounded-[12px] py-3 mb-3 transition-opacity active:opacity-70"
-          style={{ backgroundColor: PINK_BG, border: `1px dashed ${PINK}` }}
+          className="w-full rounded-[14px] mb-3 overflow-hidden transition-opacity active:opacity-85"
+          style={{
+            border: `1px solid ${PINK}`,
+            boxShadow: '0 2px 14px rgba(201,122,138,0.15)',
+          }}
         >
-          <Plus size={14} color={PINK} />
-          <span className="text-[13px] font-medium" style={{ color: PINK }}>
-            Ghi chép mới
-          </span>
+          <div className="flex items-stretch">
+            <div
+              className="flex-1 flex flex-col items-center justify-center py-3 px-2"
+              style={{ backgroundColor: PINK_BG }}
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: PINK }}>
+                Trái
+              </span>
+              <span className="text-[9px] mt-0.5" style={{ color: '#b08090' }}>
+                ml
+              </span>
+            </div>
+            <div
+              className="flex flex-col items-center justify-center px-3 py-2.5 bg-white min-w-[120px]"
+              style={{ borderLeft: `1px solid #f5e0e6`, borderRight: `1px solid #f5e0e6` }}
+            >
+              <Plus size={16} color={PINK} className="mb-0.5" />
+              <span className="text-[12px] font-semibold leading-tight" style={{ color: '#1a1a1a' }}>
+                Ghi chép mới
+              </span>
+              <span className="text-[9px] mt-0.5 text-center" style={{ color: '#999' }}>
+                Trái &amp; phải cùng lúc
+              </span>
+            </div>
+            <div
+              className="flex-1 flex flex-col items-center justify-center py-3 px-2"
+              style={{ backgroundColor: BLUE_BG }}
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: BLUE }}>
+                Phải
+              </span>
+              <span className="text-[9px] mt-0.5" style={{ color: '#7a90b0' }}>
+                ml
+              </span>
+            </div>
+          </div>
         </button>
 
-        <ViewToggle mode={viewMode} onChange={setViewMode} />
+        <div className="text-[11px] mb-2 capitalize" style={{ color: '#999' }}>
+          {selectedDate === today
+            ? 'Nhật ký hôm nay'
+            : `Nhật ký · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
+        </div>
+        <Log
+          records={selectedRecords}
+          selectedDate={selectedDate}
+          today={today}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
 
-        {viewMode === 'week' ? (
-          <WeekStrip
-            weekDates={weekDates}
-            selectedDate={selectedDate}
-            today={today}
-            records={allRecords}
-            onSelect={handleSelectDate}
-          />
-        ) : (
+        <div
+          className="mt-5 rounded-[16px] p-4 mb-2"
+          style={{
+            backgroundColor: '#f5f3ef',
+            border: '0.5px solid #e5e2dc',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+          }}
+        >
+          <Legend />
           <MonthCalendar
             currentMonth={currentMonth}
             selectedDate={selectedDate}
@@ -1030,17 +1119,7 @@ export default function SumyPage() {
             onSelect={handleSelectDate}
             onMonthChange={setCurrentMonth}
           />
-        )}
-
-        <Legend />
-        <DetailCard date={selectedDate} records={selectedRecords} />
-
-        <div className="text-[11px] mb-2" style={{ color: '#999' }}>
-          Nhật ký hôm nay
         </div>
-        <Log records={todayRecords} onEdit={handleEdit} onDelete={handleDelete} />
-
-        <Chart allRecords={allRecords} today={today} />
       </div>
 
       {(showModal || editingRecord) && (
