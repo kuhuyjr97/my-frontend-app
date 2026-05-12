@@ -64,7 +64,7 @@ function GoalCard({ goal, onUpdate, onDelete }: {
   }
 
   return (
-    <div className="bg-white rounded-[14px] flex flex-col" style={{ border: '1px solid #e8e6e1' }}>
+    <div className="bg-white rounded-[14px] flex flex-col" style={{ border: '1px solid var(--v-border)' }}>
       <div className="p-4">
         <div className="flex items-start gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -72,9 +72,9 @@ function GoalCard({ goal, onUpdate, onDelete }: {
             <Icon size={20} style={{ color: goal.color }} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-medium truncate" style={{ color: '#1a1a1a' }}>{goal.title}</div>
+            <div className="text-[14px] font-medium truncate" style={{ color: 'var(--v-text)' }}>{goal.title}</div>
             {goal.targetDate && (
-              <div className="text-[11px] mt-0.5" style={{ color: daysLeft !== null && daysLeft < 30 ? '#b05040' : '#bbb' }}>
+              <div className="text-[11px] mt-0.5" style={{ color: daysLeft !== null && daysLeft < 30 ? '#b05040' : 'var(--v-muted)' }}>
                 {daysLeft !== null && daysLeft >= 0
                   ? `${daysLeft} days left · ${format(parseISO(goal.targetDate), 'd MMM yyyy', { locale: vi })}`
                   : `Ended ${format(parseISO(goal.targetDate), 'd MMM yyyy', { locale: vi })}`
@@ -90,7 +90,7 @@ function GoalCard({ goal, onUpdate, onDelete }: {
         {/* Progress */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px]" style={{ color: '#bbb' }}>
+            <span className="text-[11px]" style={{ color: 'var(--v-muted)' }}>
               {doneCount}/{goal.milestones.length} milestones
             </span>
             <div className="flex items-center gap-1">
@@ -98,9 +98,9 @@ function GoalCard({ goal, onUpdate, onDelete }: {
                 type="number" value={goal.progress} min={0} max={100}
                 onChange={(e) => updateProgress(parseInt(e.target.value) || 0)}
                 className="w-8 text-right text-[12px] font-medium outline-none bg-transparent"
-                style={{ color: '#1a1a1a' }}
+                style={{ color: 'var(--v-text)' }}
               />
-              <span className="text-[12px] font-medium" style={{ color: '#1a1a1a' }}>%</span>
+              <span className="text-[12px] font-medium" style={{ color: 'var(--v-text)' }}>%</span>
             </div>
           </div>
           <div className="h-2 rounded-full" style={{ backgroundColor: '#f0eeea' }}>
@@ -114,7 +114,7 @@ function GoalCard({ goal, onUpdate, onDelete }: {
           <button
             onClick={() => setExpanded((v) => !v)}
             className="flex items-center gap-1 mt-3 text-[11px] transition-colors"
-            style={{ color: '#bbb' }}
+            style={{ color: 'var(--v-muted)' }}
           >
             {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             {expanded ? 'Hide' : 'Show'} milestones
@@ -134,7 +134,7 @@ function GoalCard({ goal, onUpdate, onDelete }: {
                     : <Circle size={14} style={{ color: '#ccc' }} />
                   }
                 </button>
-                <span className="flex-1 text-[12px]" style={{ color: m.done ? '#bbb' : '#1a1a1a', textDecoration: m.done ? 'line-through' : 'none' }}>
+                <span className="flex-1 text-[12px]" style={{ color: m.done ? 'var(--v-muted)' : 'var(--v-text)', textDecoration: m.done ? 'line-through' : 'none' }}>
                   {m.title}
                 </span>
                 <button onClick={() => deleteMilestone(m.id)} className="opacity-0 group-hover:opacity-100">
@@ -149,7 +149,7 @@ function GoalCard({ goal, onUpdate, onDelete }: {
               onKeyDown={(e) => e.key === 'Enter' && addMilestone()}
               placeholder="Add milestone…"
               className="flex-1 h-[26px] px-2 rounded-[6px] text-[11px] outline-none"
-              style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+              style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
             <button onClick={addMilestone}
               className="w-7 h-7 flex items-center justify-center rounded-[6px]"
@@ -186,24 +186,24 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (g: Goal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
-      <div className="bg-white rounded-[14px] w-[400px] shadow-xl" style={{ border: '1px solid #e8e6e1' }}>
+      <div className="bg-white rounded-[14px] w-[400px] shadow-xl" style={{ border: '1px solid var(--v-border)' }}>
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #f0eeea' }}>
-          <span className="text-[14px] font-medium" style={{ color: '#1a1a1a' }}>New Goal</span>
+          <span className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>New Goal</span>
           <button onClick={onClose}><X size={16} color="#999" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
           <div>
-            <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>Goal title</label>
+            <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>Goal title</label>
             <input
               autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Run 5km daily"
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
-              style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+              style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-medium mb-2 block" style={{ color: '#555' }}>Icon</label>
+            <label className="text-[11px] font-medium mb-2 block" style={{ color: 'var(--v-text-2)' }}>Icon</label>
             <div className="flex flex-wrap gap-2">
               {ICON_OPTIONS.map((name) => {
                 const Ic = ICON_MAP[name]
@@ -222,7 +222,7 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (g: Goal
           </div>
 
           <div>
-            <label className="text-[11px] font-medium mb-2 block" style={{ color: '#555' }}>Color</label>
+            <label className="text-[11px] font-medium mb-2 block" style={{ color: 'var(--v-text-2)' }}>Color</label>
             <div className="flex gap-2">
               {COLOR_OPTIONS.map((c) => (
                 <button key={c} type="button" onClick={() => setColor(c)}
@@ -238,10 +238,10 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (g: Goal
           </div>
 
           <div>
-            <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>Target date (optional)</label>
+            <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>Target date (optional)</label>
             <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)}
               className="w-full h-[30px] px-2 rounded-[7px] text-[12px] outline-none"
-              style={{ border: '1px solid #e8e6e1', color: '#555', backgroundColor: '#fff' }} />
+              style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-2)', backgroundColor: 'var(--v-surface)' }} />
           </div>
 
           {/* Preview */}
@@ -250,18 +250,18 @@ function AddGoalModal({ onClose, onAdd }: { onClose: () => void; onAdd: (g: Goal
               <SelectedIcon size={18} style={{ color }} />
             </div>
             <div>
-              <div className="text-[13px] font-medium" style={{ color: '#1a1a1a' }}>{title || 'Goal title'}</div>
-              {targetDate && <div className="text-[11px]" style={{ color: '#bbb' }}>{format(parseISO(targetDate), 'd MMM yyyy', { locale: vi })}</div>}
+              <div className="text-[13px] font-medium" style={{ color: 'var(--v-text)' }}>{title || 'Goal title'}</div>
+              {targetDate && <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>{format(parseISO(targetDate), 'd MMM yyyy', { locale: vi })}</div>}
             </div>
           </div>
 
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}
               className="flex-1 h-[34px] rounded-[7px] text-[13px]"
-              style={{ border: '1px solid #e4e2dd', color: '#555' }}>Cancel</button>
+              style={{ border: '1px solid #e4e2dd', color: 'var(--v-text-2)' }}>Cancel</button>
             <button type="submit"
               className="flex-1 h-[34px] rounded-[7px] text-[13px] font-medium"
-              style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>Create</button>
+              style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}>Create</button>
           </div>
         </form>
       </div>
@@ -293,7 +293,7 @@ export default function GoalsPage() {
       <V2Topbar actions={
         <button onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 h-[30px] px-3 rounded-[7px] text-[12px] font-medium"
-          style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
+          style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}>
           <Plus size={13} />
           New goal
         </button>
@@ -302,19 +302,19 @@ export default function GoalsPage() {
       <div className="p-5 flex flex-col gap-4">
         {/* Summary strip */}
         {goals.length > 0 && (
-          <div className="flex items-center gap-4 bg-white rounded-[14px] px-5 py-3" style={{ border: '1px solid #e8e6e1' }}>
+          <div className="flex items-center gap-4 bg-white rounded-[14px] px-5 py-3" style={{ border: '1px solid var(--v-border)' }}>
             <div>
-              <div className="text-[11px]" style={{ color: '#bbb' }}>Active goals</div>
-              <div className="text-[20px] font-medium" style={{ color: '#1a1a1a' }}>{goals.length}</div>
+              <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>Active goals</div>
+              <div className="text-[20px] font-medium" style={{ color: 'var(--v-text)' }}>{goals.length}</div>
             </div>
             <div className="w-px h-8" style={{ backgroundColor: '#f0eeea' }} />
             <div>
-              <div className="text-[11px]" style={{ color: '#bbb' }}>Avg progress</div>
-              <div className="text-[20px] font-medium" style={{ color: '#1a1a1a' }}>{avgProgress}%</div>
+              <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>Avg progress</div>
+              <div className="text-[20px] font-medium" style={{ color: 'var(--v-text)' }}>{avgProgress}%</div>
             </div>
             <div className="w-px h-8" style={{ backgroundColor: '#f0eeea' }} />
             <div className="flex-1">
-              <div className="text-[11px] mb-1.5" style={{ color: '#bbb' }}>Overall</div>
+              <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-muted)' }}>Overall</div>
               <div className="h-1.5 rounded-full" style={{ backgroundColor: '#f0eeea' }}>
                 <div className="h-full rounded-full transition-all" style={{ width: `${avgProgress}%`, backgroundColor: '#3a5fa0' }} />
               </div>
@@ -331,8 +331,8 @@ export default function GoalsPage() {
           ))}
           {goals.length === 0 && (
             <div className="col-span-2 text-center py-20">
-              <div className="text-[14px] font-medium mb-1" style={{ color: '#555' }}>No goals yet</div>
-              <div className="text-[12px]" style={{ color: '#bbb' }}>Start by adding your first goal</div>
+              <div className="text-[14px] font-medium mb-1" style={{ color: 'var(--v-text-2)' }}>No goals yet</div>
+              <div className="text-[12px]" style={{ color: 'var(--v-muted)' }}>Start by adding your first goal</div>
             </div>
           )}
         </div>

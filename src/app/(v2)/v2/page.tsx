@@ -70,7 +70,7 @@ const PENDING: ModuleCard[] = [
     label: 'Settings',
     desc: 'Chưa xây dựng',
     color: '#888',
-    bg: '#f7f6f3',
+    bg: 'var(--v-hover)',
   },
 ]
 
@@ -83,8 +83,8 @@ function Card({ item, live }: { item: ModuleCard; live: boolean }) {
       href={item.href}
       className="group flex items-start gap-3 rounded-[14px] p-4 transition-all hover:shadow-sm"
       style={{
-        border: '1px solid #e8e6e1',
-        backgroundColor: live ? '#fff' : '#fafaf8',
+        border: '1px solid var(--v-border)',
+        backgroundColor: live ? 'var(--v-surface)' : 'var(--v-surface-2)',
         opacity: live ? 1 : 0.75,
       }}
     >
@@ -96,7 +96,7 @@ function Card({ item, live }: { item: ModuleCard; live: boolean }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-medium" style={{ color: '#1a1a1a' }}>
+          <span className="text-[13px] font-medium" style={{ color: 'var(--v-text)' }}>
             {item.label}
           </span>
           {live && (
@@ -108,14 +108,14 @@ function Card({ item, live }: { item: ModuleCard; live: boolean }) {
             </span>
           )}
         </div>
-        <p className="text-[12px] mt-0.5 leading-snug" style={{ color: '#999' }}>
+        <p className="text-[12px] mt-0.5 leading-snug" style={{ color: 'var(--v-text-3)' }}>
           {item.desc}
         </p>
       </div>
       <ArrowRight
         size={14}
         className="shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ color: '#bbb' }}
+        style={{ color: 'var(--v-muted)' }}
       />
     </Link>
   )
@@ -134,10 +134,10 @@ export default function DashboardPage() {
         {/* Live */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: '#1a1a1a' }}>
+            <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--v-text)' }}>
               Đã nối API
             </span>
-            <div className="flex-1 h-px" style={{ backgroundColor: '#e8e6e1' }} />
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--v-border)' }} />
           </div>
           <div className="flex flex-col gap-2">
             {LIVE.map((item) => (
@@ -149,10 +149,10 @@ export default function DashboardPage() {
         {/* Pending */}
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: '#bbb' }}>
+            <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--v-muted)' }}>
               Chưa nối API
             </span>
-            <div className="flex-1 h-px" style={{ backgroundColor: '#e8e6e1' }} />
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--v-border)' }} />
           </div>
           <div className="flex flex-col gap-2">
             {PENDING.map((item) => (

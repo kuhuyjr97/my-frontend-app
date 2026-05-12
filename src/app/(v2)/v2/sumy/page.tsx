@@ -140,16 +140,16 @@ function MonthCalendar({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <button onClick={prevMonth} className="p-1" style={{ color: '#999' }}>
+        <button onClick={prevMonth} className="p-1" style={{ color: 'var(--v-text-3)' }}>
           <ChevronLeft size={16} />
         </button>
         <span
           className="text-[12px] font-medium capitalize"
-          style={{ color: '#1a1a1a' }}
+          style={{ color: 'var(--v-text)' }}
         >
           {monthLabel}
         </span>
-        <button onClick={nextMonth} className="p-1" style={{ color: '#999' }}>
+        <button onClick={nextMonth} className="p-1" style={{ color: 'var(--v-text-3)' }}>
           <ChevronRight size={16} />
         </button>
       </div>
@@ -159,7 +159,7 @@ function MonthCalendar({
           <div
             key={d}
             className="text-center text-[10px]"
-            style={{ color: '#999' }}
+            style={{ color: 'var(--v-text-3)' }}
           >
             {d}
           </div>
@@ -183,18 +183,18 @@ function MonthCalendar({
               style={{
                 minHeight: 58,
                 padding: '5px 4px 6px',
-                backgroundColor: !inMonth || !hasData ? '#f7f6f3' : '#fff',
+                backgroundColor: !inMonth || !hasData ? 'var(--v-bg)' : 'var(--v-surface)',
                 border: isSelected
-                  ? '1px solid #1a1a1a'
+                  ? '1px solid var(--v-text)'
                   : isToday
                     ? `1px solid ${PINK}`
-                    : '0.5px solid #e8e6e1',
+                    : '0.5px solid var(--v-border)',
                 opacity: !inMonth ? 0.3 : 1,
               }}
             >
               <div
                 className="text-[10px] font-medium text-center mb-0.5"
-                style={{ color: isToday ? PINK : '#1a1a1a' }}
+                style={{ color: isToday ? PINK : 'var(--v-text)' }}
               >
                 {dayNum}
               </div>
@@ -286,15 +286,15 @@ function DayPopup({
     >
       <div
         className="bg-white w-full sm:max-w-sm rounded-t-[20px] sm:rounded-[18px] overflow-hidden shadow-xl"
-        style={{ maxHeight: '80dvh', border: '1px solid #e8e6e1' }}
+        style={{ maxHeight: '80dvh', border: '1px solid var(--v-border)' }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #f0eeea' }}>
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
           <div>
-            <div className="text-[13px] font-medium capitalize" style={{ color: '#1a1a1a' }}>{dateLabel}</div>
+            <div className="text-[13px] font-medium capitalize" style={{ color: 'var(--v-text)' }}>{dateLabel}</div>
             <div className="flex items-center gap-3 mt-0.5">
               <span className="text-[11px]" style={{ color: PINK }}>↑ {sum.pumpTotal} ml</span>
               <span className="text-[11px]" style={{ color: BLUE }}>↓ {sum.feedTotal} ml</span>
@@ -304,14 +304,14 @@ function DayPopup({
             </div>
           </div>
           <button type="button" onClick={onClose} className="p-1 rounded-[6px] hover:bg-[#f0eeea]">
-            <X size={16} color="#999" />
+            <X size={16} style={{ color: 'var(--v-text-3)' }} />
           </button>
         </div>
 
         {/* List */}
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(80dvh - 72px)' }}>
           {sorted.length === 0 ? (
-            <div className="px-4 py-6 text-center text-[12px]" style={{ color: '#bbb' }}>
+            <div className="px-4 py-6 text-center text-[12px]" style={{ color: 'var(--v-muted)' }}>
               {date === today ? 'Chưa có ghi chép hôm nay' : 'Không có ghi chép'}
             </div>
           ) : (
@@ -333,7 +333,7 @@ function DayPopup({
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#faf9f7] transition-colors cursor-pointer"
                   style={{ borderBottom: '0.5px solid #f0eeea' }}
                 >
-                  <span className="text-[11px] w-9 shrink-0" style={{ color: '#999' }}>{time}</span>
+                  <span className="text-[11px] w-9 shrink-0" style={{ color: 'var(--v-text-3)' }}>{time}</span>
                   <div
                     className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
                     style={{ backgroundColor: isPump ? PINK_BG : BLUE_BG }}
@@ -341,8 +341,8 @@ function DayPopup({
                     {isPump ? <Droplets size={13} color={PINK} /> : <Baby size={13} color={BLUE} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[12px]" style={{ color: '#1a1a1a' }}>{label}</div>
-                    {rec.note && <div className="text-[10px] truncate" style={{ color: '#999' }}>{rec.note}</div>}
+                    <div className="text-[12px]" style={{ color: 'var(--v-text)' }}>{label}</div>
+                    {rec.note && <div className="text-[10px] truncate" style={{ color: 'var(--v-text-3)' }}>{rec.note}</div>}
                   </div>
                   <span className="text-[13px] font-medium shrink-0" style={{ color: isPump ? PINK : BLUE }}>
                     {rec.amount}ml
@@ -379,7 +379,7 @@ function Legend() {
             className="rounded-full"
             style={{ width: 8, height: 8, backgroundColor: color }}
           />
-          <span className="text-[10px]" style={{ color: '#999' }}>
+          <span className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
             {label}
           </span>
         </div>
@@ -409,7 +409,7 @@ function DetailCard({
       <div className="flex items-center justify-between mb-3">
         <span
           className="text-[12px] font-medium capitalize"
-          style={{ color: '#1a1a1a' }}
+          style={{ color: 'var(--v-text)' }}
         >
           {dateLabel}
         </span>
@@ -428,7 +428,7 @@ function DetailCard({
         <div>
           <div className="flex items-center gap-1.5 mb-1">
             <Droplets size={14} color={PINK} />
-            <span className="text-[11px]" style={{ color: '#999' }}>
+            <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
               Đã hút
             </span>
           </div>
@@ -438,7 +438,7 @@ function DetailCard({
           >
             {sum.pumpTotal} ml
           </div>
-          <div className="text-[10px]" style={{ color: '#999' }}>
+          <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
             {sum.pumpTimes} lần ·{' '}
             {sum.pumpTimes > 0
               ? Math.round(sum.pumpTotal / sum.pumpTimes)
@@ -449,7 +449,7 @@ function DetailCard({
         <div>
           <div className="flex items-center gap-1.5 mb-1">
             <Baby size={14} color={BLUE} />
-            <span className="text-[11px]" style={{ color: '#999' }}>
+            <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
               Bé uống
             </span>
           </div>
@@ -459,7 +459,7 @@ function DetailCard({
           >
             {sum.feedTotal} ml
           </div>
-          <div className="text-[10px]" style={{ color: '#999' }}>
+          <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
             {sum.feedTimes} lần ·{' '}
             {sum.feedTimes > 0
               ? Math.round(sum.feedTotal / sum.feedTimes)
@@ -495,7 +495,7 @@ function Log({
         className="rounded-[14px] p-4 bg-white mb-3 text-center"
         style={{ border: '0.5px solid #e8e6e1' }}
       >
-        <span className="text-[12px]" style={{ color: '#bbb' }}>
+        <span className="text-[12px]" style={{ color: 'var(--v-muted)' }}>
           {selectedDate === today
             ? 'Chưa có ghi chép hôm nay'
             : 'Chưa có ghi chép cho ngày này'}
@@ -533,7 +533,7 @@ function Log({
               className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
               onClick={() => setSelectedId(isSelected ? null : rec.id)}
             >
-              <span className="text-[11px] w-9 shrink-0" style={{ color: '#999' }}>
+              <span className="text-[11px] w-9 shrink-0" style={{ color: 'var(--v-text-3)' }}>
                 {time}
               </span>
               <div
@@ -547,11 +547,11 @@ function Log({
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-[12px] block" style={{ color: '#1a1a1a' }}>
+                <span className="text-[12px] block" style={{ color: 'var(--v-text)' }}>
                   {label}
                 </span>
                 {rec.note && (
-                  <span className="text-[10px]" style={{ color: '#999' }}>
+                  <span className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
                     {rec.note}
                   </span>
                 )}
@@ -568,12 +568,12 @@ function Log({
             {isSelected && (
               <div
                 className="flex gap-2 px-3 pb-2.5"
-                style={{ backgroundColor: '#faf9f7' }}
+                style={{ backgroundColor: 'var(--v-surface-2)' }}
               >
                 <button
                   onClick={() => { onEdit(rec); setSelectedId(null) }}
                   className="flex-1 py-1.5 rounded-[8px] text-[12px] font-medium"
-                  style={{ backgroundColor: '#fff', color: '#1a1a1a', border: '0.5px solid #e8e6e1' }}
+                  style={{ backgroundColor: 'var(--v-surface)', color: 'var(--v-text)', border: '0.5px solid #e8e6e1' }}
                 >
                   Chỉnh sửa
                 </button>
@@ -829,34 +829,34 @@ function Modal({
         />
         <h2
           className="text-[15px] font-medium mb-1"
-          style={{ color: '#1a1a1a' }}
+          style={{ color: 'var(--v-text)' }}
         >
           {initial ? 'Chỉnh sửa' : 'Ghi chép mới'}
         </h2>
         {!isEdit && type === 'pump' && (
-          <p className="text-[11px] mb-4" style={{ color: '#999' }}>
+          <p className="text-[11px] mb-4" style={{ color: 'var(--v-text-3)' }}>
             Trái và phải lưu chung một dòng nhật ký (một bản ghi JSON).
           </p>
         )}
         {isEdit && type === 'pump' && initial?.entryKind === 'pump_dual' && (
-          <p className="text-[11px] mb-4" style={{ color: '#999' }}>
+          <p className="text-[11px] mb-4" style={{ color: 'var(--v-text-3)' }}>
             Sửa ml trái/phải trong cùng một ghi chép.
           </p>
         )}
         {isEdit && type === 'pump' && initial?.entryKind !== 'pump_dual' && (
-          <p className="text-[11px] mb-4" style={{ color: '#999' }}>
+          <p className="text-[11px] mb-4" style={{ color: 'var(--v-text-3)' }}>
             Một dòng chỉ lưu một mức ml mỗi bên — hai ô cùng số là hút hai bên; trái/phải khác số thì xóa dòng và ghi chép mới.
           </p>
         )}
 
         {/* Type */}
         <div className="mb-4">
-          <div className="text-[11px] mb-1.5" style={{ color: '#999' }}>
+          <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-text-3)' }}>
             Loại
           </div>
           <div
             className="flex rounded-[10px] p-1"
-            style={{ backgroundColor: '#f0eeea' }}
+            style={{ backgroundColor: 'var(--v-hover)' }}
           >
             {(
               [
@@ -878,9 +878,9 @@ function Modal({
                 }}
                 className="flex-1 rounded-[8px] py-2 text-[12px] font-medium transition-colors"
                 style={{
-                  backgroundColor: type === t ? '#fff' : 'transparent',
+                  backgroundColor: type === t ? 'var(--v-surface)' : 'transparent',
                   color:
-                    type === t ? (t === 'pump' ? PINK : BLUE) : '#999',
+                    type === t ? (t === 'pump' ? PINK : BLUE) : 'var(--v-text-3)',
                 }}
               >
                 {label}
@@ -892,7 +892,7 @@ function Modal({
         {/* Pump: Trái + Phải (tạo mới & chỉnh sửa) */}
         {showPumpDualFields ? (
           <div className="mb-4">
-            <div className="text-[11px] mb-2" style={{ color: '#999' }}>
+            <div className="text-[11px] mb-2" style={{ color: 'var(--v-text-3)' }}>
               Số ml đã hút
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -915,9 +915,9 @@ function Modal({
                     onChange={(e) => setLeftMl(e.target.value)}
                     placeholder="—"
                     className="w-full min-w-0 rounded-[10px] px-3 py-2.5 text-[20px] font-semibold outline-none bg-white/90"
-                    style={{ border: '1px solid #f0d8df', color: '#1a1a1a' }}
+                    style={{ border: '1px solid #f0d8df', color: 'var(--v-text)' }}
                   />
-                  <span className="text-[12px] shrink-0" style={{ color: '#999' }}>
+                  <span className="text-[12px] shrink-0" style={{ color: 'var(--v-text-3)' }}>
                     ml
                   </span>
                 </div>
@@ -941,9 +941,9 @@ function Modal({
                     onChange={(e) => setRightMl(e.target.value)}
                     placeholder="—"
                     className="w-full min-w-0 rounded-[10px] px-3 py-2.5 text-[20px] font-semibold outline-none bg-white/90"
-                    style={{ border: '1px solid #d8e4f6', color: '#1a1a1a' }}
+                    style={{ border: '1px solid #d8e4f6', color: 'var(--v-text)' }}
                   />
-                  <span className="text-[12px] shrink-0" style={{ color: '#999' }}>
+                  <span className="text-[12px] shrink-0" style={{ color: 'var(--v-text-3)' }}>
                     ml
                   </span>
                 </div>
@@ -953,7 +953,7 @@ function Modal({
         ) : (
           /* Amount — một lần (bé uống / chỉnh sửa hút) */
           <div className="mb-4">
-            <div className="text-[11px] mb-1.5" style={{ color: '#999' }}>
+            <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-text-3)' }}>
               Số ml
             </div>
             <input
@@ -962,14 +962,14 @@ function Modal({
               onChange={(e) => setAmount(e.target.value)}
               placeholder="VD: 120"
               className="w-full rounded-[10px] px-3 py-2.5 text-[14px] outline-none"
-              style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+              style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
           </div>
         )}
 
         {/* Time */}
         <div className="mb-4">
-          <div className="text-[11px] mb-1.5" style={{ color: '#999' }}>
+          <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-text-3)' }}>
             Thời gian
           </div>
           <input
@@ -977,13 +977,13 @@ function Modal({
             value={recordedAt}
             onChange={(e) => setRecordedAt(e.target.value)}
             className="w-full rounded-[10px] px-3 py-2.5 text-[13px] outline-none"
-            style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+            style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
           />
         </div>
 
         {/* Note */}
         <div className="mb-5">
-          <div className="text-[11px] mb-1.5" style={{ color: '#999' }}>
+          <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-text-3)' }}>
             Ghi chú
           </div>
           <textarea
@@ -992,7 +992,7 @@ function Modal({
             placeholder="Tuỳ chọn..."
             rows={2}
             className="w-full rounded-[10px] px-3 py-2.5 text-[13px] outline-none resize-none"
-            style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+            style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
           />
         </div>
 
@@ -1138,7 +1138,7 @@ export default function SumyPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
-        <span className="text-[13px]" style={{ color: '#999' }}>
+        <span className="text-[13px]" style={{ color: 'var(--v-text-3)' }}>
           Đang tải...
         </span>
       </div>
@@ -1161,7 +1161,7 @@ export default function SumyPage() {
 
       {/* ── Laptop: 2 cột | Mobile: 1 cột ── */}
       <div className="px-4 py-4 sm:px-6 sm:py-5 max-w-[900px] mx-auto">
-        <div className="text-[11px] mb-3 capitalize" style={{ color: '#999' }}>
+        <div className="text-[11px] mb-3 capitalize" style={{ color: 'var(--v-text-3)' }}>
           {format(new Date(), "EEEE, d MMMM yyyy", { locale: vi })}
         </div>
 
@@ -1194,8 +1194,8 @@ export default function SumyPage() {
                   style={{ borderLeft: `1px solid #f5e0e6`, borderRight: `1px solid #f5e0e6` }}
                 >
                   <Plus size={16} color={PINK} className="mb-0.5" />
-                  <span className="text-[12px] font-semibold leading-tight" style={{ color: '#1a1a1a' }}>Ghi chép mới</span>
-                  <span className="text-[9px] mt-0.5 text-center" style={{ color: '#999' }}>Trái &amp; phải cùng lúc</span>
+                  <span className="text-[12px] font-semibold leading-tight" style={{ color: 'var(--v-text)' }}>Ghi chép mới</span>
+                  <span className="text-[9px] mt-0.5 text-center" style={{ color: 'var(--v-text-3)' }}>Trái &amp; phải cùng lúc</span>
                 </div>
                 <div
                   className="flex-1 flex flex-col items-center justify-center py-3 px-2"
@@ -1207,7 +1207,7 @@ export default function SumyPage() {
               </div>
             </button>
 
-            <div className="text-[11px] mb-2 capitalize" style={{ color: '#999' }}>
+            <div className="text-[11px] mb-2 capitalize" style={{ color: 'var(--v-text-3)' }}>
               {selectedDate === today
                 ? 'Nhật ký hôm nay'
                 : `Nhật ký · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
@@ -1226,9 +1226,9 @@ export default function SumyPage() {
             <div
               className="rounded-[16px] p-4"
               style={{
-                backgroundColor: '#f5f3ef',
-                border: '0.5px solid #e5e2dc',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+                backgroundColor: 'var(--v-surface-2)',
+                border: '0.5px solid var(--v-border)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
               }}
             >
               <Legend />

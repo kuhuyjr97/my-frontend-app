@@ -56,13 +56,13 @@ function TimeBlockItem({ block, onDelete }: { block: TimeBlock; onDelete: () => 
   return (
     <div
       className="flex items-center gap-3 px-4 py-3 rounded-[10px] group"
-      style={{ backgroundColor: '#fff', border: '1px solid #e8e6e1' }}
+      style={{ backgroundColor: 'var(--v-surface)', border: '1px solid var(--v-border)' }}
     >
       <div className="text-[11px] font-medium shrink-0 w-24" style={{ color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
         {block.startTime} – {block.endTime}
       </div>
       <div className="flex-1">
-        <div className="text-[13px] font-medium" style={{ color: '#1a1a1a' }}>{block.label}</div>
+        <div className="text-[13px] font-medium" style={{ color: 'var(--v-text)' }}>{block.label}</div>
       </div>
       <span
         className="text-[11px] px-2 py-0.5 rounded-[20px] shrink-0"
@@ -92,14 +92,14 @@ function DailySummary({ blocks }: { blocks: TimeBlock[] }) {
   const pct = Math.min(100, Math.round((total / GOAL_HOURS) * 100))
 
   return (
-    <div className="bg-white rounded-[14px] p-4 flex flex-col gap-4" style={{ border: '1px solid #e8e6e1' }}>
-      <div className="text-[13px] font-medium" style={{ color: '#1a1a1a' }}>Daily Summary</div>
+    <div className="bg-white rounded-[14px] p-4 flex flex-col gap-4" style={{ border: '1px solid var(--v-border)' }}>
+      <div className="text-[13px] font-medium" style={{ color: 'var(--v-text)' }}>Daily Summary</div>
 
       {/* Progress */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-[11px]" style={{ color: '#bbb' }}>Goal: {GOAL_HOURS}h</span>
-          <span className="text-[11px] font-medium" style={{ color: '#1a1a1a' }}>{pct}%</span>
+          <span className="text-[11px] font-medium" style={{ color: 'var(--v-text)' }}>{pct}%</span>
         </div>
         <div className="h-2 rounded-full" style={{ backgroundColor: '#f0eeea' }}>
           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct >= 100 ? '#4a7c3f' : '#3a5fa0' }} />
@@ -117,14 +117,14 @@ function DailySummary({ blocks }: { blocks: TimeBlock[] }) {
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: meta.color }} />
             <span className="text-[12px]" style={{ color: '#555' }}>{label}</span>
           </div>
-          <span className="text-[13px] font-medium" style={{ color: '#1a1a1a' }}>{fmtHours(value)}</span>
+          <span className="text-[13px] font-medium" style={{ color: 'var(--v-text)' }}>{fmtHours(value)}</span>
         </div>
       ))}
 
       <div className="pt-1" style={{ borderTop: '1px solid #f0eeea' }}>
         <div className="flex items-center justify-between">
           <span className="text-[12px] font-medium" style={{ color: '#555' }}>Total productive</span>
-          <span className="text-[14px] font-medium" style={{ color: '#1a1a1a' }}>{fmtHours(total)}</span>
+          <span className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>{fmtHours(total)}</span>
         </div>
       </div>
     </div>
@@ -144,18 +144,18 @@ function QuickAddBar({ date, onAdd }: { date: string; onAdd: (b: TimeBlock) => v
   }
 
   return (
-    <div className="flex items-center gap-2 bg-white rounded-[14px] px-4 py-3" style={{ border: '1px solid #e8e6e1' }}>
+    <div className="flex items-center gap-2 bg-white rounded-[14px] px-4 py-3" style={{ border: '1px solid var(--v-border)' }}>
       <input
         value={label} onChange={(e) => setLabel(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         placeholder="Block label"
         className="flex-1 text-[13px] outline-none bg-transparent"
-        style={{ color: '#1a1a1a' }}
+        style={{ color: 'var(--v-text)' }}
       />
       <select
         value={category} onChange={(e) => setCategory(e.target.value as TimeCategory)}
         className="h-[28px] px-2 rounded-[6px] text-[11px] outline-none shrink-0"
-        style={{ border: '1px solid #e8e6e1', backgroundColor: '#fff', color: '#555' }}
+        style={{ border: '1px solid var(--v-border)', backgroundColor: 'var(--v-surface)', color: '#555' }}
       >
         {(Object.entries(CATEGORY_META) as [TimeCategory, typeof CATEGORY_META[TimeCategory]][]).map(([k, v]) => (
           <option key={k} value={k}>{v.label}</option>
@@ -163,11 +163,11 @@ function QuickAddBar({ date, onAdd }: { date: string; onAdd: (b: TimeBlock) => v
       </select>
       <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)}
         className="h-[28px] px-2 rounded-[6px] text-[11px] outline-none"
-        style={{ border: '1px solid #e8e6e1', color: '#555' }} />
+        style={{ border: '1px solid var(--v-border)', color: '#555' }} />
       <span className="text-[11px]" style={{ color: '#bbb' }}>–</span>
       <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)}
         className="h-[28px] px-2 rounded-[6px] text-[11px] outline-none"
-        style={{ border: '1px solid #e8e6e1', color: '#555' }} />
+        style={{ border: '1px solid var(--v-border)', color: '#555' }} />
       <button onClick={handleAdd}
         className="h-[28px] px-3 rounded-[6px] flex items-center gap-1 text-[12px] font-medium shrink-0"
         style={{ backgroundColor: '#1a1a1a', color: '#fff' }}>
@@ -224,7 +224,7 @@ export default function TimePage() {
             <ChevronLeft size={14} color="#555" />
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-[15px] font-medium" style={{ color: '#1a1a1a' }}>
+            <span className="text-[15px] font-medium" style={{ color: 'var(--v-text)' }}>
               {format(parseISO(currentDate), 'EEEE, d MMMM yyyy', { locale: vi })}
             </span>
             {isToday && (
@@ -239,7 +239,7 @@ export default function TimePage() {
           {!isToday && (
             <button onClick={() => setCurrentDate(todayStr())}
               className="h-[26px] px-2.5 rounded-[6px] text-[11px]"
-              style={{ border: '1px solid #e8e6e1', color: '#555' }}>
+              style={{ border: '1px solid var(--v-border)', color: '#555' }}>
               Go to today
             </button>
           )}
@@ -250,7 +250,7 @@ export default function TimePage() {
           {/* Time block list */}
           <div className="flex-1 flex flex-col gap-2">
             {dayBlocks.length === 0 ? (
-              <div className="bg-white rounded-[14px] p-10 text-center" style={{ border: '1px solid #e8e6e1' }}>
+              <div className="bg-white rounded-[14px] p-10 text-center" style={{ border: '1px solid var(--v-border)' }}>
                 <div className="text-[14px] font-medium mb-1" style={{ color: '#555' }}>No time blocks</div>
                 <div className="text-[12px]" style={{ color: '#bbb' }}>Add blocks below to track your day</div>
               </div>

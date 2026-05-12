@@ -50,7 +50,7 @@ function colorForCategoryBucket(key: string): string {
   return `hsl(${hue} 40% 44%)`
 }
 
-const HEATMAP_COLORS = ['#f0eeea', '#e8d4c0', '#d8b090', '#c07050', '#a04030']
+const HEATMAP_COLORS = ['var(--v-hover)', '#e8d4c0', '#d8b090', '#c07050', '#a04030']
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -90,13 +90,13 @@ function StatCard({ label, amount, sub, trend, accent }: {
   label: string; amount: number; sub: string; trend?: number; accent: string
 }) {
   return (
-    <div className="bg-white rounded-[14px] p-4 flex-1" style={{ border: '1px solid #e8e6e1' }}>
-      <div className="text-[11px] mb-1" style={{ color: '#999' }}>{label}</div>
-      <div className="text-[22px] font-medium" style={{ color: accent }}>{fmt(amount)}</div>
-      <div className="flex items-center gap-1 mt-0.5">
-        <span className="text-[11px]" style={{ color: '#999' }}>{sub}</span>
+    <div className="bg-white rounded-[12px] sm:rounded-[14px] p-2.5 sm:p-4 flex-1 min-w-0" style={{ border: '1px solid var(--v-border)' }}>
+      <div className="text-[10px] sm:text-[11px] mb-0.5 sm:mb-1 truncate" style={{ color: 'var(--v-text-3)' }}>{label}</div>
+      <div className="text-[15px] sm:text-[22px] font-medium leading-tight truncate" style={{ color: accent }}>{fmt(amount)}</div>
+      <div className="flex items-center gap-1 mt-0.5 min-w-0">
+        <span className="text-[10px] sm:text-[11px] truncate" style={{ color: 'var(--v-text-3)' }}>{sub}</span>
         {trend !== undefined && (
-          <span className="text-[11px]" style={{ color: trend >= 0 ? '#4a7c3f' : '#b05040' }}>
+          <span className="text-[10px] sm:text-[11px] shrink-0" style={{ color: trend >= 0 ? '#4a7c3f' : '#b05040' }}>
             {trend >= 0 ? '+' : ''}{trend.toFixed(0)}%
           </span>
         )}
@@ -132,11 +132,11 @@ function SpendingHeatmap({ transactions, year, month, onDayOpen }: {
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month
 
   return (
-    <div className="bg-white rounded-[14px] p-4" style={{ border: '1px solid #e8e6e1' }}>
-      <div className="text-[13px] font-medium mb-3" style={{ color: '#1a1a1a' }}>Spending Heatmap</div>
+    <div className="bg-white rounded-[14px] p-4" style={{ border: '1px solid var(--v-border)' }}>
+      <div className="text-[13px] font-medium mb-3" style={{ color: 'var(--v-text)' }}>Spending Heatmap</div>
       <div className="grid grid-cols-7 gap-1 mb-1">
         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-          <div key={d} className="text-center text-[10px]" style={{ color: '#bbb' }}>{d}</div>
+          <div key={d} className="text-center text-[10px]" style={{ color: 'var(--v-muted)' }}>{d}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1.5">
@@ -145,7 +145,7 @@ function SpendingHeatmap({ transactions, year, month, onDayOpen }: {
           const spend = spendByDay[day] || 0
           const level = getHeatLevel(spend, maxSpend)
           const isToday2 = isCurrentMonth && today.getDate() === day
-          const amtColor = level >= 3 ? '#fff' : '#444'
+          const amtColor = level >= 3 ? '#fff' : 'var(--v-text)'
           const subColor = level >= 3 ? 'rgba(255,255,255,0.88)' : '#666'
           return (
             <button
@@ -173,11 +173,11 @@ function SpendingHeatmap({ transactions, year, month, onDayOpen }: {
         })}
       </div>
       <div className="flex items-center gap-1.5 mt-3">
-        <span className="text-[10px]" style={{ color: '#bbb' }}>Low</span>
+        <span className="text-[10px]" style={{ color: 'var(--v-muted)' }}>Low</span>
         {HEATMAP_COLORS.map((c, i) => (
           <div key={i} className="w-4 h-2.5 rounded-sm" style={{ backgroundColor: c }} />
         ))}
-        <span className="text-[10px]" style={{ color: '#bbb' }}>High</span>
+        <span className="text-[10px]" style={{ color: 'var(--v-muted)' }}>High</span>
       </div>
     </div>
   )
@@ -239,12 +239,12 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
   }, [transactions.length, sorted.length, flow])
 
   return (
-    <div className="bg-white rounded-[14px] p-4 flex flex-col min-h-0" style={{ border: '1px solid #e8e6e1' }}>
+    <div className="bg-white rounded-[14px] p-4 flex flex-col min-h-0" style={{ border: '1px solid var(--v-border)' }}>
       <div className="flex items-center justify-between gap-2 mb-3 shrink-0 flex-wrap">
-        <div className="text-[13px] font-medium min-w-0" style={{ color: '#1a1a1a' }}>
+        <div className="text-[13px] font-medium min-w-0" style={{ color: 'var(--v-text)' }}>
           {flow === 'expense' ? 'Expense by Category' : 'Income by Category'}
         </div>
-        <div className="flex rounded-[7px] overflow-hidden shrink-0" style={{ border: '1px solid #e8e6e1' }}>
+        <div className="flex rounded-[7px] overflow-hidden shrink-0" style={{ border: '1px solid var(--v-border)' }}>
           {(['expense', 'income'] as const).map((f) => (
             <button
               key={f}
@@ -252,8 +252,8 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
               onClick={() => setFlow(f)}
               className="px-2.5 h-[26px] text-[11px] font-medium transition-colors"
               style={{
-                backgroundColor: flow === f ? '#1a1a1a' : '#fff',
-                color: flow === f ? '#fff' : '#555',
+                backgroundColor: flow === f ? 'var(--v-btn-bg)' : 'var(--v-surface)',
+                color: flow === f ? 'var(--v-btn-text)' : 'var(--v-text-2)',
               }}
             >
               {f === 'expense' ? 'Expense' : 'Income'}
@@ -276,25 +276,25 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
               className="flex items-center gap-2 w-full text-left rounded-[8px] -mx-1 px-1 py-0.5 hover:bg-[#f7f6f3] transition-colors cursor-pointer shrink-0"
             >
               <div className="w-1 h-4 rounded-full shrink-0" style={{ backgroundColor: barColor }} />
-              <span className="text-[12px] min-w-0 flex-1 max-w-[38%] truncate" style={{ color: '#555' }} title={label}>{label}</span>
-              <div className="flex-1 h-1.5 rounded-full min-w-0" style={{ backgroundColor: '#f0eeea' }}>
+              <span className="text-[12px] min-w-0 flex-1 max-w-[38%] truncate" style={{ color: 'var(--v-text-2)' }} title={label}>{label}</span>
+              <div className="flex-1 h-1.5 rounded-full min-w-0" style={{ backgroundColor: 'var(--v-hover)' }}>
                 <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: barColor }} />
               </div>
-              <span className="text-[12px] font-medium w-[72px] text-right shrink-0 tabular-nums" style={{ color: '#1a1a1a' }}>{fmt(amount)}</span>
-              <span className="text-[11px] w-9 text-right shrink-0 tabular-nums" style={{ color: '#bbb' }}>{pct}%</span>
+              <span className="text-[12px] font-medium w-[72px] text-right shrink-0 tabular-nums" style={{ color: 'var(--v-text)' }}>{fmt(amount)}</span>
+              <span className="text-[11px] w-9 text-right shrink-0 tabular-nums" style={{ color: 'var(--v-muted)' }}>{pct}%</span>
             </button>
           )
         })}
         {sorted.length === 0 && (
-          <div className="text-[12px] text-center py-4" style={{ color: '#bbb' }}>
+          <div className="text-[12px] text-center py-4" style={{ color: 'var(--v-muted)' }}>
             {flow === 'expense' ? 'No expenses this period' : 'No income this period'}
           </div>
         )}
       </div>
 
       {usePagination && totalPages > 1 && (
-        <div className="flex items-center justify-between mt-3 pt-3 shrink-0" style={{ borderTop: '1px solid #f0eeea' }}>
-          <span className="text-[11px]" style={{ color: '#bbb' }}>
+        <div className="flex items-center justify-between mt-3 pt-3 shrink-0" style={{ borderTop: '1px solid var(--v-border-2)' }}>
+          <span className="text-[11px]" style={{ color: 'var(--v-muted)' }}>
             {page * CAT_PAGE_SIZE + 1}–{Math.min((page + 1) * CAT_PAGE_SIZE, sorted.length)} / {sorted.length}
           </span>
           <div className="flex items-center gap-1">
@@ -304,7 +304,7 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
               disabled={page === 0}
               className="w-6 h-6 flex items-center justify-center rounded-[6px] disabled:opacity-30 hover:bg-[#f0eeea]"
             >
-              <ChevronLeft size={12} color="#555" />
+              <ChevronLeft size={12} style={{ color: 'var(--v-text-2)' }} />
             </button>
             {Array.from({ length: totalPages }, (_, i) => (
               <button
@@ -312,7 +312,7 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
                 type="button"
                 onClick={() => setPage(i)}
                 className="w-6 h-6 flex items-center justify-center rounded-[6px] text-[11px] font-medium transition-colors"
-                style={{ backgroundColor: page === i ? '#1a1a1a' : 'transparent', color: page === i ? '#fff' : '#555' }}
+                style={{ backgroundColor: page === i ? 'var(--v-btn-bg)' : 'transparent', color: page === i ? 'var(--v-btn-text)' : 'var(--v-text-2)' }}
               >
                 {i + 1}
               </button>
@@ -323,7 +323,7 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
               disabled={page === totalPages - 1}
               className="w-6 h-6 flex items-center justify-center rounded-[6px] disabled:opacity-30 hover:bg-[#f0eeea]"
             >
-              <ChevronRight size={12} color="#555" />
+              <ChevronRight size={12} style={{ color: 'var(--v-text-2)' }} />
             </button>
           </div>
         </div>
@@ -365,28 +365,28 @@ function TransactionsPopup({
     >
       <div
         className="bg-white rounded-[14px] w-full max-w-md max-h-[min(85dvh,560px)] shadow-xl flex flex-col overflow-hidden"
-        style={{ border: '1px solid #e8e6e1' }}
+        style={{ border: '1px solid var(--v-border)' }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="finance-detail-title"
       >
-        <div className="flex items-start justify-between gap-3 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #f0eeea' }}>
+        <div className="flex items-start justify-between gap-3 px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
           <div className="min-w-0">
-            <div id="finance-detail-title" className="text-[14px] font-medium" style={{ color: '#1a1a1a' }}>
+            <div id="finance-detail-title" className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>
               {title}
             </div>
             {subtitle && (
-              <div className="text-[11px] mt-0.5" style={{ color: '#999' }}>{subtitle}</div>
+              <div className="text-[11px] mt-0.5" style={{ color: 'var(--v-text-3)' }}>{subtitle}</div>
             )}
           </div>
           <button type="button" onClick={onClose} className="shrink-0 p-1 rounded-[6px] hover:bg-[#f0eeea]" aria-label="Close">
-            <X size={18} color="#999" />
+            <X size={18} style={{ color: 'var(--v-text-3)' }} />
           </button>
         </div>
         <div className="overflow-y-auto p-2 flex-1 min-h-0">
           {transactions.length === 0 ? (
-            <div className="text-center py-10 text-[13px]" style={{ color: '#bbb' }}>No transactions</div>
+            <div className="text-center py-10 text-[13px]" style={{ color: 'var(--v-muted)' }}>No transactions</div>
           ) : (
             <div className="flex flex-col gap-1">
               {transactions.map((t) => {
@@ -407,8 +407,8 @@ function TransactionsPopup({
                       <Icon size={14} style={{ color: meta.color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-medium truncate" style={{ color: '#1a1a1a' }}>{t.name}</div>
-                      <div className="text-[11px]" style={{ color: '#bbb' }}>{subLine}</div>
+                      <div className="text-[13px] font-medium truncate" style={{ color: 'var(--v-text)' }}>{t.name}</div>
+                      <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>{subLine}</div>
                     </div>
                     <span className="text-[13px] font-medium shrink-0" style={{ color: t.amount >= 0 ? '#4a7c3f' : '#b05040' }}>
                       {fmtSigned(t.amount)}
@@ -478,15 +478,15 @@ function TransactionLog({
             key={dateStr}
             className="rounded-[14px] overflow-hidden transition-all"
             style={{
-              border: '1px solid #e8e6e1',
-              backgroundColor: '#fff',
+              border: '1px solid var(--v-border)',
+              backgroundColor: 'var(--v-surface)',
             }}
           >
             <div
               className="flex items-center justify-between px-4 py-2.5"
-              style={{ borderBottom: '1px solid #f0eeea' }}
+              style={{ borderBottom: '1px solid var(--v-border-2)' }}
             >
-              <span className="text-[12px] font-medium" style={{ color: '#555' }}>
+              <span className="text-[12px] font-medium" style={{ color: 'var(--v-text-2)' }}>
                 {format(d, 'EEEE, d MMM', { locale: enUS })}
               </span>
               <span className="text-[12px] font-medium" style={{ color: net >= 0 ? '#4a7c3f' : '#b05040' }}>
@@ -503,8 +503,8 @@ function TransactionLog({
                     <Icon size={14} style={{ color: meta.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-medium truncate" style={{ color: '#1a1a1a' }}>{t.name}</div>
-                    <div className="text-[11px]" style={{ color: '#bbb' }}>{meta.label}</div>
+                    <div className="text-[13px] font-medium truncate" style={{ color: 'var(--v-text)' }}>{t.name}</div>
+                    <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>{meta.label}</div>
                   </div>
                   <span className="text-[13px] font-medium shrink-0" style={{ color: t.amount >= 0 ? '#4a7c3f' : '#b05040' }}>
                     {fmtSigned(t.amount)}
@@ -535,14 +535,14 @@ function TransactionLog({
       })}
 
       {sortedDays.length === 0 && (
-        <div className="text-center py-12 text-[13px]" style={{ color: '#bbb' }}>No transactions</div>
+        <div className="text-center py-12 text-[13px]" style={{ color: 'var(--v-muted)' }}>No transactions</div>
       )}
       </div>
 
       {/* Pagination pinned at bottom — doesn't move between pages */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: '1px solid #f0eeea' }}>
-          <span className="text-[11px]" style={{ color: '#bbb' }}>
+        <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: '1px solid var(--v-border-2)' }}>
+          <span className="text-[11px]" style={{ color: 'var(--v-muted)' }}>
             {page * LOG_PAGE_SIZE + 1}–{Math.min((page + 1) * LOG_PAGE_SIZE, sortedDays.length)} of {sortedDays.length} days
           </span>
           <div className="flex items-center gap-1">
@@ -551,7 +551,7 @@ function TransactionLog({
               disabled={page === 0}
               className="w-7 h-7 flex items-center justify-center rounded-[7px] disabled:opacity-30 hover:bg-[#f0eeea]"
             >
-              <ChevronLeft size={13} color="#555" />
+              <ChevronLeft size={13} style={{ color: 'var(--v-text-2)' }} />
             </button>
             {Array.from({ length: totalPages }, (_, i) => (
               <button
@@ -559,8 +559,8 @@ function TransactionLog({
                 onClick={() => setPage(i)}
                 className="w-7 h-7 flex items-center justify-center rounded-[7px] text-[11px] font-medium transition-colors"
                 style={{
-                  backgroundColor: page === i ? '#1a1a1a' : 'transparent',
-                  color: page === i ? '#fff' : '#555',
+                  backgroundColor: page === i ? 'var(--v-btn-bg)' : 'transparent',
+                  color: page === i ? 'var(--v-btn-text)' : 'var(--v-text-2)',
                 }}
               >
                 {i + 1}
@@ -571,7 +571,7 @@ function TransactionLog({
               disabled={page === totalPages - 1}
               className="w-7 h-7 flex items-center justify-center rounded-[7px] disabled:opacity-30 hover:bg-[#f0eeea]"
             >
-              <ChevronRight size={13} color="#555" />
+              <ChevronRight size={13} style={{ color: 'var(--v-text-2)' }} />
             </button>
           </div>
         </div>
@@ -618,16 +618,16 @@ function MonthPicker({ year, month, onChange }: {
         }}
         className="w-7 h-7 flex items-center justify-center rounded-[7px] hover:bg-[#f0eeea]"
       >
-        <ChevronLeft size={14} color="#555" />
+        <ChevronLeft size={14} style={{ color: 'var(--v-text-2)' }} />
       </button>
 
       <button
         onClick={() => setOpen((v) => !v)}
         className="h-[30px] px-3 rounded-[7px] text-[13px] font-medium flex items-center gap-1.5 transition-colors hover:bg-[#f0eeea]"
-        style={{ color: '#1a1a1a', border: open ? '1px solid #e8e6e1' : '1px solid transparent', minWidth: 130 }}
+        style={{ color: 'var(--v-text)', border: open ? '1px solid #e8e6e1' : '1px solid transparent', minWidth: 130 }}
       >
         {format(new Date(year, month), 'MMMM yyyy', { locale: enUS })}
-        <ChevronDown size={12} color="#bbb" />
+        <ChevronDown size={12} style={{ color: 'var(--v-muted)' }} />
       </button>
 
       <button
@@ -639,13 +639,13 @@ function MonthPicker({ year, month, onChange }: {
         }}
         className="w-7 h-7 flex items-center justify-center rounded-[7px] hover:bg-[#f0eeea]"
       >
-        <ChevronRight size={14} color="#555" />
+        <ChevronRight size={14} style={{ color: 'var(--v-text-2)' }} />
       </button>
 
       {open && (
         <div
           className="absolute top-full mt-1 z-50 bg-white rounded-[14px] p-3 shadow-lg left-1/2 -translate-x-1/2 w-[min(100vw-2rem,220px)] sm:left-auto sm:right-0 sm:translate-x-0 sm:w-[220px]"
-          style={{ border: '1px solid #e8e6e1' }}
+          style={{ border: '1px solid var(--v-border)' }}
         >
           {/* Year nav */}
           <div className="flex items-center justify-between mb-3">
@@ -653,14 +653,14 @@ function MonthPicker({ year, month, onChange }: {
               onClick={() => setPickerYear((y) => y - 1)}
               className="w-7 h-7 flex items-center justify-center rounded-[7px] hover:bg-[#f0eeea]"
             >
-              <ChevronLeft size={13} color="#555" />
+              <ChevronLeft size={13} style={{ color: 'var(--v-text-2)' }} />
             </button>
-            <span className="text-[13px] font-medium" style={{ color: '#1a1a1a' }}>{pickerYear}</span>
+            <span className="text-[13px] font-medium" style={{ color: 'var(--v-text)' }}>{pickerYear}</span>
             <button
               onClick={() => setPickerYear((y) => y + 1)}
               className="w-7 h-7 flex items-center justify-center rounded-[7px] hover:bg-[#f0eeea]"
             >
-              <ChevronRight size={13} color="#555" />
+              <ChevronRight size={13} style={{ color: 'var(--v-text-2)' }} />
             </button>
           </div>
 
@@ -675,8 +675,8 @@ function MonthPicker({ year, month, onChange }: {
                   onClick={() => select(i)}
                   className="h-[34px] rounded-[7px] text-[11px] font-medium transition-colors"
                   style={{
-                    backgroundColor: isSelected ? '#1a1a1a' : isCurrentMonth ? '#f0eeea' : 'transparent',
-                    color: isSelected ? '#fff' : isCurrentMonth ? '#a07030' : '#555',
+                    backgroundColor: isSelected ? 'var(--v-btn-bg)' : isCurrentMonth ? 'var(--v-hover)' : 'transparent',
+                    color: isSelected ? 'var(--v-btn-text)' : isCurrentMonth ? '#a07030' : 'var(--v-text-2)',
                   }}
                 >
                   {label}
@@ -775,26 +775,26 @@ function AddSavingModal({
     >
       <div
         className="bg-white rounded-[14px] w-full max-w-[440px] max-h-[min(90dvh,680px)] overflow-y-auto shadow-xl"
-        style={{ border: '1px solid #e8e6e1' }}
+        style={{ border: '1px solid var(--v-border)' }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
         <div
           className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid #f0eeea' }}
+          style={{ borderBottom: '1px solid var(--v-border-2)' }}
         >
-          <span className="text-[14px] font-medium" style={{ color: '#1a1a1a' }}>
+          <span className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>
             Add transaction
           </span>
           <button type="button" onClick={onClose} className="p-1 rounded-[6px] hover:bg-[#f0eeea]" aria-label="Close">
-            <X size={16} color="#999" />
+            <X size={16} style={{ color: 'var(--v-text-3)' }} />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-3">
           <div className="flex gap-2 flex-wrap">
             <div className="flex-1 min-w-[140px]">
-              <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+              <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
                 Type
               </label>
               <select
@@ -803,14 +803,14 @@ function AddSavingModal({
                   setForm((f) => ({ ...f, type: e.target.value, subtype: '' }))
                 }
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
-                style={{ border: '1px solid #e8e6e1', color: '#1a1a1a', backgroundColor: '#fff' }}
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
               >
                 <option value={String(Types.INCOME)}>Income</option>
                 <option value={String(Types.EXPENSE)}>Expense</option>
               </select>
             </div>
             <div className="flex-[2] min-w-[180px]">
-              <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+              <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
                 Subcategory
               </label>
               <select
@@ -818,7 +818,7 @@ function AddSavingModal({
                 onChange={(e) => setForm((f) => ({ ...f, subtype: e.target.value }))}
                 disabled={loadingTypes || subtypeOptions.length === 0}
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none disabled:opacity-50"
-                style={{ border: '1px solid #e8e6e1', color: '#1a1a1a', backgroundColor: '#fff' }}
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
               >
                 <option value="">
                   {loadingTypes ? 'Loading…' : subtypeOptions.length === 0 ? 'No subcategories' : 'Select…'}
@@ -833,7 +833,7 @@ function AddSavingModal({
           </div>
           <div className="flex gap-2 flex-wrap">
             <div className="flex-1 min-w-[120px]">
-              <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+              <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
                 Amount
               </label>
               <input
@@ -844,11 +844,11 @@ function AddSavingModal({
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
                 placeholder="0"
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
-                style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
               />
             </div>
             <div className="flex-1 min-w-[140px]">
-              <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+              <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
                 Date
               </label>
               <input
@@ -856,12 +856,12 @@ function AddSavingModal({
                 value={form.date}
                 onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
-                style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
               />
             </div>
           </div>
           <div>
-            <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+            <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
               Description
             </label>
             <input
@@ -870,7 +870,7 @@ function AddSavingModal({
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
               placeholder="What was this for?"
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
-              style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+              style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
           </div>
           <div className="flex gap-2 pt-2">
@@ -878,7 +878,7 @@ function AddSavingModal({
               type="button"
               onClick={onClose}
               className="flex-1 h-[36px] rounded-[7px] text-[13px] font-medium"
-              style={{ border: '1px solid #e4e2dd', color: '#555' }}
+              style={{ border: '1px solid #e4e2dd', color: 'var(--v-text-2)' }}
             >
               Cancel
             </button>
@@ -886,7 +886,7 @@ function AddSavingModal({
               type="submit"
               disabled={submitting || loadingTypes}
               className="flex-1 h-[36px] rounded-[7px] text-[13px] font-medium disabled:opacity-50"
-              style={{ backgroundColor: '#1a1a1a', color: '#fff' }}
+              style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
             >
               {submitting ? 'Saving…' : 'Add'}
             </button>
@@ -1027,20 +1027,20 @@ function EditSavingModal({
     >
       <div
         className="bg-white rounded-[14px] w-full max-w-[440px] max-h-[min(90dvh,720px)] overflow-y-auto shadow-xl"
-        style={{ border: '1px solid #e8e6e1' }}
+        style={{ border: '1px solid var(--v-border)' }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
         <div
           className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid #f0eeea' }}
+          style={{ borderBottom: '1px solid var(--v-border-2)' }}
         >
-          <span className="text-[14px] font-medium" style={{ color: '#1a1a1a' }}>
+          <span className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>
             Edit transaction
           </span>
           <button type="button" onClick={onClose} className="p-1 rounded-[6px] hover:bg-[#f0eeea]" aria-label="Close">
-            <X size={16} color="#999" />
+            <X size={16} style={{ color: 'var(--v-text-3)' }} />
           </button>
         </div>
         {numericId == null && (
@@ -1051,7 +1051,7 @@ function EditSavingModal({
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-3">
           <div className="flex gap-2 flex-wrap">
             <div className="flex-1 min-w-[140px]">
-              <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+              <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
                 Type
               </label>
               <select
@@ -1061,14 +1061,14 @@ function EditSavingModal({
                 }
                 disabled={busy}
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none disabled:opacity-50"
-                style={{ border: '1px solid #e8e6e1', color: '#1a1a1a', backgroundColor: '#fff' }}
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
               >
                 <option value={String(Types.INCOME)}>Income</option>
                 <option value={String(Types.EXPENSE)}>Expense</option>
               </select>
             </div>
             <div className="flex-[2] min-w-[180px]">
-              <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+              <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
                 Subcategory
               </label>
               <select
@@ -1076,7 +1076,7 @@ function EditSavingModal({
                 onChange={(e) => setForm((f) => ({ ...f, subtype: e.target.value }))}
                 disabled={busy || loadingTypes || subtypeOptions.length === 0}
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none disabled:opacity-50"
-                style={{ border: '1px solid #e8e6e1', color: '#1a1a1a', backgroundColor: '#fff' }}
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
               >
                 <option value="">
                   {loadingTypes ? 'Loading…' : subtypeOptions.length === 0 ? 'No subcategories' : 'Select…'}
@@ -1091,7 +1091,7 @@ function EditSavingModal({
           </div>
           <div className="flex gap-2 flex-wrap">
             <div className="flex-1 min-w-[120px]">
-              <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+              <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
                 Amount
               </label>
               <input
@@ -1103,11 +1103,11 @@ function EditSavingModal({
                 disabled={busy}
                 placeholder="0"
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none disabled:opacity-50"
-                style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
               />
             </div>
             <div className="flex-1 min-w-[140px]">
-              <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+              <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
                 Date
               </label>
               <input
@@ -1116,12 +1116,12 @@ function EditSavingModal({
                 onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
                 disabled={busy}
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none disabled:opacity-50"
-                style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
               />
             </div>
           </div>
           <div>
-            <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>
+            <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
               Description
             </label>
             <input
@@ -1131,7 +1131,7 @@ function EditSavingModal({
               disabled={busy}
               placeholder="What was this for?"
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none disabled:opacity-50"
-              style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+              style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
           </div>
           <div className="flex gap-2 pt-2 flex-wrap items-center">
@@ -1140,7 +1140,7 @@ function EditSavingModal({
               onClick={handleDelete}
               disabled={busy || numericId == null}
               className="h-[36px] px-3 rounded-[7px] text-[13px] font-medium disabled:opacity-50"
-              style={{ border: '1px solid #e8b4a8', color: '#b05040', backgroundColor: '#fff' }}
+              style={{ border: '1px solid #e8b4a8', color: '#b05040', backgroundColor: 'var(--v-surface)' }}
             >
               {deleting ? 'Deleting…' : 'Delete'}
             </button>
@@ -1150,7 +1150,7 @@ function EditSavingModal({
                 onClick={onClose}
                 disabled={busy}
                 className="h-[36px] px-4 rounded-[7px] text-[13px] font-medium disabled:opacity-50"
-                style={{ border: '1px solid #e4e2dd', color: '#555' }}
+                style={{ border: '1px solid #e4e2dd', color: 'var(--v-text-2)' }}
               >
                 Cancel
               </button>
@@ -1158,7 +1158,7 @@ function EditSavingModal({
                 type="submit"
                 disabled={submitting || loadingTypes || numericId == null}
                 className="h-[36px] px-4 rounded-[7px] text-[13px] font-medium disabled:opacity-50 min-w-[88px]"
-                style={{ backgroundColor: '#1a1a1a', color: '#fff' }}
+                style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
               >
                 {submitting ? 'Saving…' : 'Save'}
               </button>
@@ -1328,29 +1328,16 @@ export default function FinancePage() {
 
   return (
     <>
-      <V2Topbar
-        actions={
-          <button
-            type="button"
-            onClick={() => setShowAdd(true)}
-            disabled={loadError === 'auth'}
-            className="flex items-center gap-1.5 h-[30px] px-3 rounded-[7px] text-[12px] font-medium disabled:opacity-40"
-            style={{ backgroundColor: '#1a1a1a', color: '#fff' }}
-          >
-            <Plus size={13} />
-            Add
-          </button>
-        }
-      />
+      <V2Topbar />
 
       <div className="p-4 sm:p-5 flex flex-col gap-4 max-w-[1600px] mx-auto w-full pb-[max(1rem,env(safe-area-inset-bottom))]">
         {loadError === 'auth' && (
           <div
             className="rounded-[12px] px-4 py-3 text-[13px]"
-            style={{ border: '1px solid #e8e6e1', backgroundColor: '#fff', color: '#555' }}
+            style={{ border: '1px solid var(--v-border)', backgroundColor: 'var(--v-surface)', color: 'var(--v-text-2)' }}
           >
             Sign in to load transactions from the server.{' '}
-            <Link href="/v2/login" className="font-medium underline" style={{ color: '#1a1a1a' }}>
+            <Link href="/v2/login" className="font-medium underline" style={{ color: 'var(--v-text)' }}>
               Login
             </Link>
           </div>
@@ -1358,21 +1345,21 @@ export default function FinancePage() {
         {loadError === 'network' && (
           <div
             className="rounded-[12px] px-4 py-3 text-[13px] flex items-center justify-between gap-3 flex-wrap"
-            style={{ border: '1px solid #e8e6e1', backgroundColor: '#fff', color: '#555' }}
+            style={{ border: '1px solid var(--v-border)', backgroundColor: 'var(--v-surface)', color: 'var(--v-text-2)' }}
           >
             <span>Could not load data. Check the backend and NEXT_PUBLIC_BACKEND_URL.</span>
             <button
               type="button"
               onClick={() => void reload()}
               className="h-[30px] px-3 rounded-[7px] text-[12px] font-medium"
-              style={{ backgroundColor: '#1a1a1a', color: '#fff' }}
+              style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
             >
               Retry
             </button>
           </div>
         )}
         {loading && (
-          <div className="text-[13px]" style={{ color: '#999' }}>
+          <div className="text-[13px]" style={{ color: 'var(--v-text-3)' }}>
             Loading…
           </div>
         )}
@@ -1380,21 +1367,12 @@ export default function FinancePage() {
         {/* Filter bar */}
         <div className="flex flex-col gap-3 min-[480px]:flex-row min-[480px]:items-center min-[480px]:flex-wrap">
           <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-[7px] overflow-hidden" style={{ border: '1px solid #e8e6e1' }}>
+          <div className="flex rounded-[7px] overflow-hidden" style={{ border: '1px solid var(--v-border)' }}>
             {(['thismonth', 'alltime'] as const).map((s) => (
               <button key={s} onClick={() => setScope(s)}
                 className="px-3 h-[30px] text-[12px] font-medium transition-colors"
-                style={{ backgroundColor: scope === s ? '#1a1a1a' : '#fff', color: scope === s ? '#fff' : '#555' }}>
+                style={{ backgroundColor: scope === s ? 'var(--v-btn-bg)' : 'var(--v-surface)', color: scope === s ? 'var(--v-btn-text)' : 'var(--v-text-2)' }}>
                 {s === 'thismonth' ? 'This month' : 'All time'}
-              </button>
-            ))}
-          </div>
-          <div className="flex rounded-[7px] overflow-hidden" style={{ border: '1px solid #e8e6e1' }}>
-            {(['all', 'income', 'expense'] as const).map((t) => (
-              <button key={t} onClick={() => setTypeFilter(t)}
-                className="px-3 h-[30px] text-[12px] font-medium capitalize transition-colors"
-                style={{ backgroundColor: typeFilter === t ? '#1a1a1a' : '#fff', color: typeFilter === t ? '#fff' : '#555' }}>
-                {t}
               </button>
             ))}
           </div>
@@ -1411,7 +1389,7 @@ export default function FinancePage() {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-1 min-[480px]:grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <StatCard label="Income" amount={income} sub="this period" accent="#4a7c3f" />
           <StatCard label="Expenses" amount={expense} sub="this period" accent="#b05040" />
           <StatCard label="Balance" amount={balance} sub={`${savedPct}% saved`} accent={balance >= 0 ? '#4a7c3f' : '#b05040'} />
@@ -1436,30 +1414,41 @@ export default function FinancePage() {
         </div>
 
         {/* Transaction log */}
-        <div className="bg-white rounded-[14px] p-4" style={{ border: '1px solid #e8e6e1' }}>
+        <div className="bg-white rounded-[14px] p-4" style={{ border: '1px solid var(--v-border)' }}>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center mb-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0 rounded-[7px] px-3 h-[30px]" style={{ border: '1px solid #e8e6e1' }}>
-              <Search size={13} color="#bbb" />
+            <div className="flex items-center gap-2 flex-1 min-w-0 rounded-[7px] px-3 h-[30px]" style={{ border: '1px solid var(--v-border)' }}>
+              <Search size={13} style={{ color: 'var(--v-muted)' }} />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search transactions…"
                 className="flex-1 text-[12px] outline-none bg-transparent"
-                style={{ color: '#1a1a1a' }}
+                style={{ color: 'var(--v-text)' }}
               />
-              {search && <button onClick={() => setSearch('')}><X size={12} color="#bbb" /></button>}
+              {search && <button onClick={() => setSearch('')}><X size={12} style={{ color: 'var(--v-muted)' }} /></button>}
             </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value as TransactionCategory | 'all')}
-              className="h-[30px] w-full sm:w-auto shrink-0 px-2 rounded-[7px] text-[12px] outline-none"
-              style={{ border: '1px solid #e8e6e1', color: '#555', backgroundColor: '#fff' }}
-            >
-              <option value="all">All categories</option>
-              {(Object.entries(CATEGORY_META) as [TransactionCategory, typeof CATEGORY_META[TransactionCategory]][]).map(([k, v]) => (
-                <option key={k} value={k}>{v.label}</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="flex rounded-[7px] overflow-hidden" style={{ border: '1px solid var(--v-border)' }}>
+                {(['all', 'income', 'expense'] as const).map((t) => (
+                  <button key={t} onClick={() => setTypeFilter(t)}
+                    className="px-2.5 h-[30px] text-[12px] font-medium capitalize transition-colors"
+                    style={{ backgroundColor: typeFilter === t ? 'var(--v-btn-bg)' : 'var(--v-surface)', color: typeFilter === t ? 'var(--v-btn-text)' : 'var(--v-text-2)' }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value as TransactionCategory | 'all')}
+                className="h-[30px] w-full sm:w-auto shrink-0 px-2 rounded-[7px] text-[12px] outline-none"
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-2)', backgroundColor: 'var(--v-surface)' }}
+              >
+                <option value="all">All categories</option>
+                {(Object.entries(CATEGORY_META) as [TransactionCategory, typeof CATEGORY_META[TransactionCategory]][]).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <TransactionLog
             transactions={logFiltered}
@@ -1467,6 +1456,18 @@ export default function FinancePage() {
           />
         </div>
       </div>
+
+      {/* Floating Add button */}
+      <button
+        type="button"
+        onClick={() => setShowAdd(true)}
+        disabled={loadError === 'auth'}
+        className="fixed bottom-[calc(56px+16px)] sm:bottom-6 right-4 sm:right-6 w-12 h-12 rounded-full shadow-lg flex items-center justify-center z-30 disabled:opacity-40 transition-transform hover:scale-105 active:scale-95"
+        style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
+        aria-label="Thêm giao dịch"
+      >
+        <Plus size={20} />
+      </button>
 
       {detailPopup && (
         <TransactionsPopup

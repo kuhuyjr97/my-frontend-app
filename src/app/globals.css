@@ -78,38 +78,53 @@
   --foreground: oklch(0.145 0 0);
   
  /* background */
---my-bg-color: #9370e6; 
---my-bg-page-color: #896eff; 
---my-bg-status-bar: #a68ed3; 
---my-card-bg-color: #2e1065; 
---my-container-bg-color: #5e5176; 
---my-select-bg-color: #101828; 
---my-button-bg-color: #96887c; 
+--my-bg-color: #9370e6;
+--my-bg-page-color: #896eff;
+--my-bg-status-bar: #a68ed3;
+--my-card-bg-color: #2e1065;
+--my-container-bg-color: #5e5176;
+--my-select-bg-color: #101828;
+--my-button-bg-color: #96887c;
 
 
 /* border */
 
 /* hover */
---my-hover-color: #5954b7; 
+--my-hover-color: #5954b7;
 
 /* text */
---my-text-title-color: #1e1b4b; 
---my-text-title-white-color: #ede9fe; 
---my-text-content-color: #4c1d95; 
---my-text-content-white-color: #ede9fe; 
---my-text-content-grey-color: #ede9fe; 
---my-card-text-color: #ede9fe; 
+--my-text-title-color: #1e1b4b;
+--my-text-title-white-color: #ede9fe;
+--my-text-content-color: #4c1d95;
+--my-text-content-white-color: #ede9fe;
+--my-text-content-grey-color: #ede9fe;
+--my-card-text-color: #ede9fe;
 
 
 
 /* card */
---my-card-border-color: #7c3aed; 
---my-card-shadow-color: #5b21b6; 
---my-card-hover-color: #6d28d9; 
---my-card-active-color: #5b21b6; 
---my-card-focus-color: #8b5cf6; 
---my-card-disabled-color: #c4b5fd; 
+--my-card-border-color: #7c3aed;
+--my-card-shadow-color: #5b21b6;
+--my-card-hover-color: #6d28d9;
+--my-card-active-color: #5b21b6;
+--my-card-focus-color: #8b5cf6;
+--my-card-disabled-color: #c4b5fd;
 
+  /* ── v2 theme tokens ─────────────────────────── */
+  --v-bg:        #f7f6f3;
+  --v-surface:   #ffffff;
+  --v-surface-2: #fafaf8;
+  --v-hover:     #f0eeea;
+  --v-border:    #e8e6e1;
+  --v-border-2:  #f0eeea;
+  --v-text:      #1a1a1a;
+  --v-text-2:    #555555;
+  --v-text-3:    #999999;
+  --v-muted:     #bbbbbb;
+  --v-faint:     #cccccc;
+  --v-btn-bg:    #1a1a1a;
+  --v-btn-text:  #ffffff;
+  --v-input-bg:  #ffffff;
 }
 
 .dark {
@@ -144,6 +159,22 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* ── v2 theme tokens ─────────────────────────── */
+  --v-bg:        #1e1d1b;
+  --v-surface:   #272523;
+  --v-surface-2: #2c2a28;
+  --v-hover:     #343230;
+  --v-border:    #3e3c38;
+  --v-border-2:  #2e2c2a;
+  --v-text:      #f0efec;
+  --v-text-2:    #b0aea6;
+  --v-text-3:    #807c74;
+  --v-muted:     #625e56;
+  --v-faint:     #504c46;
+  --v-btn-bg:    #e8e6e2;
+  --v-btn-text:  #1a1a1a;
+  --v-input-bg:  #2c2a28;
 }
 
 @layer base {
@@ -152,6 +183,20 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* ── v2 dark mode overrides for Tailwind bg classes ── */
+  .dark .bg-white {
+    background-color: var(--v-surface) !important;
+  }
+  .dark .bg-white\/90 {
+    background-color: rgba(39, 37, 35, 0.92) !important;
+  }
+  .dark .hover\:bg-\[\#f7f6f3\]:hover,
+  .dark .hover\:bg-\[\#f0eeea\]:hover,
+  .dark .hover\:bg-\[\#fbfaf8\]:hover,
+  .dark .hover\:bg-\[\#fbfaf7\]:hover {
+    background-color: var(--v-hover) !important;
   }
 }
 

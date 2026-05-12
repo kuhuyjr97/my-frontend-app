@@ -71,25 +71,25 @@ function AddModal({
     >
       <div
         className="bg-white rounded-[14px] w-full max-w-sm shadow-xl"
-        style={{ border: '1px solid #e8e6e1' }}
+        style={{ border: '1px solid var(--v-border)' }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #f0eeea' }}>
-          <span className="text-[14px] font-medium" style={{ color: '#1a1a1a' }}>Thêm loại mới</span>
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
+          <span className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>Thêm loại mới</span>
           <button type="button" onClick={onClose} className="p-1 rounded-[6px] hover:bg-[#f0eeea]" aria-label="Close">
             <X size={16} color="#999" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-3">
           <div>
-            <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>Nhóm</label>
+            <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>Nhóm</label>
             <select
               value={typeVal}
               onChange={(e) => setTypeVal(e.target.value)}
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
-              style={{ border: '1px solid #e8e6e1', color: '#1a1a1a', backgroundColor: '#fff' }}
+              style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
             >
               {CATEGORIES.map((c) => (
                 <option key={c.type} value={String(c.type)}>{c.label}</option>
@@ -97,7 +97,7 @@ function AddModal({
             </select>
           </div>
           <div>
-            <label className="text-[11px] font-medium mb-1 block" style={{ color: '#555' }}>Tên loại</label>
+            <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>Tên loại</label>
             <input
               autoFocus
               type="text"
@@ -105,7 +105,7 @@ function AddModal({
               onChange={(e) => setContent(e.target.value)}
               placeholder="VD: Ăn uống, Lương, Công việc…"
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
-              style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+              style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
           </div>
           <div className="flex gap-2 pt-1">
@@ -113,7 +113,7 @@ function AddModal({
               type="button"
               onClick={onClose}
               className="flex-1 h-[36px] rounded-[7px] text-[13px] font-medium"
-              style={{ border: '1px solid #e4e2dd', color: '#555' }}
+              style={{ border: '1px solid #e4e2dd', color: 'var(--v-text-2)' }}
             >
               Hủy
             </button>
@@ -121,7 +121,7 @@ function AddModal({
               type="submit"
               disabled={saving}
               className="flex-1 h-[36px] rounded-[7px] text-[13px] font-medium disabled:opacity-50"
-              style={{ backgroundColor: '#1a1a1a', color: '#fff' }}
+              style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
             >
               {saving ? 'Đang lưu…' : 'Thêm'}
             </button>
@@ -167,7 +167,7 @@ function InlineEdit({
         value={typeVal}
         onChange={(e) => setTypeVal(e.target.value)}
         className="rounded-[6px] px-2 py-1 text-[12px] outline-none shrink-0"
-        style={{ border: '1px solid #e8e6e1', color: '#1a1a1a', backgroundColor: '#fff' }}
+        style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
       >
         {CATEGORIES.map((c) => (
           <option key={c.type} value={String(c.type)}>{c.label}</option>
@@ -183,14 +183,14 @@ function InlineEdit({
           if (e.key === 'Escape') onCancel()
         }}
         className="flex-1 min-w-[120px] rounded-[6px] px-2 py-1 text-[13px] outline-none"
-        style={{ border: '1px solid #e8e6e1', color: '#1a1a1a' }}
+        style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
       />
       <button
         type="button"
         onClick={handleSave}
         disabled={saving}
         className="w-7 h-7 flex items-center justify-center rounded-[6px] disabled:opacity-50"
-        style={{ backgroundColor: '#1a1a1a' }}
+        style={{ backgroundColor: 'var(--v-btn-bg)' }}
         aria-label="Save"
       >
         <Check size={13} color="#fff" />
@@ -238,7 +238,7 @@ function TypeRow({
 
   if (editing) {
     return (
-      <div className="px-4 py-2" style={{ borderBottom: '1px solid #f7f6f3' }}>
+      <div className="px-4 py-2" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
         <InlineEdit
           row={row}
           onSaved={() => { setEditing(false); onEdited() }}
@@ -251,14 +251,14 @@ function TypeRow({
   return (
     <div
       className="flex items-center gap-3 px-4 py-2.5 group"
-      style={{ borderBottom: '1px solid #f7f6f3' }}
+      style={{ borderBottom: '1px solid var(--v-border-2)' }}
     >
       <div
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ backgroundColor: meta.color }}
       />
-      <span className="flex-1 text-[13px]" style={{ color: '#1a1a1a' }}>
-        {row.content?.trim() || <span style={{ color: '#bbb' }}>—</span>}
+      <span className="flex-1 text-[13px]" style={{ color: 'var(--v-text)' }}>
+        {row.content?.trim() || <span style={{ color: 'var(--v-muted)' }}>—</span>}
       </span>
       <span className="text-[11px] tabular-nums shrink-0" style={{ color: '#ccc' }}>
         #{row.subType}
@@ -304,21 +304,21 @@ function CategoryCard({
   onDeleted: () => void
 }) {
   return (
-    <div className="bg-white rounded-[14px] overflow-hidden" style={{ border: '1px solid #e8e6e1' }}>
+    <div className="bg-white rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--v-border)' }}>
       <div
         className="flex items-center justify-between px-4 py-3"
         style={{ borderBottom: rows.length > 0 ? '1px solid #f0eeea' : 'none' }}
       >
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-[13px] font-medium" style={{ color: '#1a1a1a' }}>{label}</span>
+          <span className="text-[13px] font-medium" style={{ color: 'var(--v-text)' }}>{label}</span>
         </div>
-        <span className="text-[11px] tabular-nums" style={{ color: '#bbb' }}>
+        <span className="text-[11px] tabular-nums" style={{ color: 'var(--v-muted)' }}>
           {rows.length} loại
         </span>
       </div>
       {rows.length === 0 ? (
-        <div className="px-4 py-3 text-[12px]" style={{ color: '#bbb' }}>
+        <div className="px-4 py-3 text-[12px]" style={{ color: 'var(--v-muted)' }}>
           Chưa có loại nào — bấm + để thêm
         </div>
       ) : (
@@ -385,7 +385,7 @@ export default function TypesPage() {
             type="button"
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 h-[30px] px-3 rounded-[7px] text-[12px] font-medium"
-            style={{ backgroundColor: '#1a1a1a', color: '#fff' }}
+            style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
           >
             <Plus size={13} />
             Thêm loại
@@ -402,8 +402,8 @@ export default function TypesPage() {
             onClick={() => setFilter(FILTER_ALL)}
             className="h-[28px] px-3 rounded-[6px] text-[12px] font-medium transition-colors"
             style={{
-              backgroundColor: filter === FILTER_ALL ? '#1a1a1a' : '#f0eeea',
-              color: filter === FILTER_ALL ? '#fff' : '#555',
+              backgroundColor: filter === FILTER_ALL ? 'var(--v-btn-bg)' : 'var(--v-hover)',
+              color: filter === FILTER_ALL ? 'var(--v-btn-text)' : 'var(--v-text-2)',
             }}
           >
             Tất cả
@@ -415,8 +415,8 @@ export default function TypesPage() {
               onClick={() => setFilter(c.type)}
               className="h-[28px] px-3 rounded-[6px] text-[12px] font-medium transition-colors"
               style={{
-                backgroundColor: filter === c.type ? c.color : '#f0eeea',
-                color: filter === c.type ? '#fff' : '#555',
+                backgroundColor: filter === c.type ? c.color : 'var(--v-hover)',
+                color: filter === c.type ? 'var(--v-btn-text)' : 'var(--v-text-2)',
               }}
             >
               {c.label}
@@ -425,7 +425,7 @@ export default function TypesPage() {
         </div>
 
         {loading ? (
-          <div className="text-[13px]" style={{ color: '#999' }}>Đang tải…</div>
+          <div className="text-[13px]" style={{ color: 'var(--v-text-3)' }}>Đang tải…</div>
         ) : (
           <div className="flex flex-col gap-3">
             {visibleGroups.map((g) => (
