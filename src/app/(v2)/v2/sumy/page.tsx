@@ -1318,6 +1318,11 @@ export default function SumyPage() {
           {format(new Date(), "EEEE, d MMMM yyyy", { locale: vi })}
         </div>
 
+        {/* 7-day chart */}
+        <div className="mb-5">
+          <WeekChart allRecords={allRecords} today={today} />
+        </div>
+
         <div className="flex flex-col sm:flex-row sm:gap-5 sm:items-start">
 
           {/* Cột trái — detail + quick-add + log */}
@@ -1374,11 +1379,6 @@ export default function SumyPage() {
             </div>
           </div>
 
-        </div>
-
-        {/* 7-day chart */}
-        <div className="mt-5">
-          <WeekChart allRecords={allRecords} today={today} />
         </div>
       </div>
 

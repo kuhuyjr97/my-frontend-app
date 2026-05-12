@@ -29,8 +29,6 @@ function catMeta(type: number | null) {
   return CATEGORIES.find((c) => c.type === type) ?? { type: 0, label: 'Other', color: '#888' }
 }
 
-const FINANCE_TYPES = new Set([4, 5]) // Income, Expense
-
 const PRESET_COLORS = [
   '#3a5fa0', '#7040a0', '#b05040', '#3a7a3a', '#c89040',
   '#888888', '#c87a20', '#5a9a8a', '#a04070', '#4a7ab0',
@@ -99,8 +97,6 @@ function AddModal({
   const [color, setColor] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const isFinance = FINANCE_TYPES.has(Number(typeVal))
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
@@ -111,7 +107,7 @@ function AddModal({
     e.preventDefault()
     if (!content.trim()) { toast.error('Nhập tên loại'); return }
     setSaving(true)
-    const meta: TypeMeta | null = isFinance && (icon || color) ? { icon, color } : null
+    const meta: TypeMeta | null = (icon || color) ? { icon, color } : null
     try {
       await createType({ type: Number(typeVal), content: content.trim(), meta })
       toast.success('Đã thêm')
@@ -132,24 +128,24 @@ function AddModal({
       role="presentation"
     >
       <div
-        className="bg-white rounded-[14px] w-full max-w-sm shadow-xl"
+        className="bg-white rounded-[14px] w-full max-w-sm shadow-xl flex flex-col max-h-[90dvh]"
         style={{ border: '1px solid var(--v-border)' }}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
+        <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
           <span className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>Thêm loại mới</span>
           <button type="button" onClick={onClose} className="p-1 rounded-[6px] hover:bg-[#f0eeea]" aria-label="Close">
             <X size={16} color="#999" />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-3 overflow-y-auto">
           <div>
             <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>Nhóm</label>
             <select
               value={typeVal}
-              onChange={(e) => { setTypeVal(e.target.value); setIcon(null); setColor(null) }}
+              onChange={(e) => setTypeVal(e.target.value)}
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
               style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
             >
@@ -170,12 +166,8 @@ function AddModal({
               style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
           </div>
-          {isFinance && (
-            <>
-              <IconPicker value={icon} onChange={setIcon} />
-              <ColorPicker value={color} onChange={setColor} />
-            </>
-          )}
+          <IconPicker value={icon} onChange={setIcon} />
+          <ColorPicker value={color} onChange={setColor} />
           <div className="flex gap-2 pt-1">
             <button
               type="button"
@@ -217,12 +209,10 @@ function InlineEdit({
   const [color, setColor] = useState<string | null>(row.meta?.color ?? null)
   const [saving, setSaving] = useState(false)
 
-  const isFinance = FINANCE_TYPES.has(Number(typeVal))
-
   const handleSave = async () => {
     if (!content.trim()) { toast.error('Tên không được để trống'); return }
     setSaving(true)
-    const meta: TypeMeta | null = isFinance ? { icon, color } : null
+    const meta: TypeMeta | null = (icon || color) ? { icon, color } : null
     try {
       await updateType(row.id, { content: content.trim(), type: Number(typeVal), meta })
       toast.success('Đã lưu')
@@ -239,7 +229,7 @@ function InlineEdit({
       <div className="flex items-center gap-2 flex-wrap">
         <select
           value={typeVal}
-          onChange={(e) => { setTypeVal(e.target.value); setIcon(null); setColor(null) }}
+          onChange={(e) => setTypeVal(e.target.value)}
           className="rounded-[6px] px-2 py-1 text-[12px] outline-none shrink-0"
           style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
         >
@@ -278,12 +268,10 @@ function InlineEdit({
           <X size={13} color="#999" />
         </button>
       </div>
-      {isFinance && (
-        <div className="flex flex-col gap-2 pl-1">
-          <IconPicker value={icon} onChange={setIcon} />
-          <ColorPicker value={color} onChange={setColor} />
-        </div>
-      )}
+      <div className="flex flex-col gap-2 pl-1">
+        <IconPicker value={icon} onChange={setIcon} />
+        <ColorPicker value={color} onChange={setColor} />
+      </div>
     </div>
   )
 }
@@ -329,7 +317,7 @@ function TypeRow({
     )
   }
 
-  const rowIcon = getIcon(row.meta?.icon)
+  const RowIcon = getIcon(row.meta?.icon)
   const rowColor = row.meta?.color ?? meta.color
 
   return (
@@ -341,7 +329,7 @@ function TypeRow({
         className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0"
         style={{ backgroundColor: rowColor + '20' }}
       >
-        {(() => { const I = rowIcon; return <I size={12} style={{ color: rowColor }} /> })()}
+        <RowIcon size={12} style={{ color: rowColor }} />
       </div>
       <span className="flex-1 text-[13px]" style={{ color: 'var(--v-text)' }}>
         {row.content?.trim() || <span style={{ color: 'var(--v-muted)' }}>—</span>}

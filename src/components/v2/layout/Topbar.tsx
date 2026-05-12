@@ -101,7 +101,7 @@ export function V2Topbar({ actions }: TopbarProps) {
                   <div className="text-[10px] mt-0.5" style={{ color: 'var(--v-muted)' }}>Đang đăng nhập</div>
                 </div>
                 <Link
-                  href="/v2/settings"
+                  href="/v2/types"
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-2.5 px-3 py-2 text-[12px] transition-colors"
                   style={{ color: 'var(--v-text-2)' }}
@@ -109,7 +109,7 @@ export function V2Topbar({ actions }: TopbarProps) {
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <Settings size={13} />
-                  Settings
+                  Quản lý loại
                 </Link>
                 {/* Dark mode toggle */}
                 {mounted && (
