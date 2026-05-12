@@ -1,14 +1,14 @@
 'use client'
-import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { format, parseISO } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { Plus, Search, X, Trash2, Tag, Pencil, ChevronLeft, Maximize2, Minimize2 } from 'lucide-react'
+import { Plus, Search, X, Trash2, Tag, Pencil, Maximize2, Minimize2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { V2Topbar } from '@/components/v2/layout/Topbar'
 import { fetchNotes, createNote, updateNote, deleteNote, type NoteRow } from '@/lib/v2/notes-api'
 import { fetchTypes, type TypeEnumRow } from '@/lib/v2/types-api'
 
-// ─── simple markdown renderer (no external deps) ──────────────────────────────
+// ─── markdown renderer ────────────────────────────────────────────────────────
 
 function renderInline(text: string): ReactNode {
   const tokens = text.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`|\[[^\]\n]+\]\([^)\n]+\))/)
@@ -54,7 +54,6 @@ function SimpleMarkdown({ content }: { content: string }) {
 
   while (i < lines.length) {
     const line = lines[i]
-
     if (line.trimStart().startsWith('```')) {
       if (!inCode) { flushList(); inCode = true; codeBuf = [] }
       else {
@@ -68,56 +67,254 @@ function SimpleMarkdown({ content }: { content: string }) {
       i++; continue
     }
     if (inCode) { codeBuf.push(line); i++; continue }
-
     const h3 = line.match(/^### (.+)/); if (h3) { flushList(); blocks.push(<h3 key={blocks.length} className="text-[15px] font-semibold mt-4 mb-0.5">{renderInline(h3[1])}</h3>); i++; continue }
     const h2 = line.match(/^## (.+)/);  if (h2) { flushList(); blocks.push(<h2 key={blocks.length} className="text-[17px] font-semibold mt-5 mb-1">{renderInline(h2[1])}</h2>); i++; continue }
     const h1 = line.match(/^# (.+)/);   if (h1) { flushList(); blocks.push(<h1 key={blocks.length} className="text-[20px] font-bold mt-5 mb-1">{renderInline(h1[1])}</h1>); i++; continue }
     if (line.match(/^[-*_]{3,}$/)) { flushList(); blocks.push(<hr key={blocks.length} className="my-3" style={{ borderColor: 'var(--v-border)' }} />); i++; continue }
-
     const ul = line.match(/^[-*+] (.+)/); if (ul) { listBuf.push({ ordered: false, text: ul[1] }); i++; continue }
     const ol = line.match(/^\d+\. (.+)/); if (ol) { listBuf.push({ ordered: true, text: ol[1] }); i++; continue }
-
     flushList()
     if (line.trim() === '') { blocks.push(<div key={blocks.length} className="h-2" />) }
     else { blocks.push(<p key={blocks.length} className="leading-relaxed">{renderInline(line)}</p>) }
     i++
   }
-
   flushList()
   return <div className="text-[13px]" style={{ color: 'var(--v-text)' }}>{blocks}</div>
 }
 
-// ─── page ─────────────────────────────────────────────────────────────────────
+// ─── Note Modal ───────────────────────────────────────────────────────────────
+
+function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClose }: {
+  note: NoteRow
+  types: TypeEnumRow[]
+  initialMode?: 'view' | 'edit'
+  onSave: (patch: { title: string; content: string; typeEnumId: number | null }) => Promise<void>
+  onDelete: () => void
+  onClose: () => void
+}) {
+  const [mode, setMode]       = useState<'view' | 'edit'>(initialMode)
+  const [title, setTitle]     = useState(note.title)
+  const [content, setContent] = useState(note.content)
+  const [typeId, setTypeId]   = useState(note.typeEnumId)
+  const [saving, setSaving]   = useState(false)
+  const [expanded, setExpanded] = useState(false)
+
+  // Cmd/Ctrl+S
+  useEffect(() => {
+    if (mode !== 'edit') return
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); void doSave() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, title, content, typeId])
+
+  const dirty = title !== note.title || content !== note.content || typeId !== note.typeEnumId
+
+  const doSave = async () => {
+    setSaving(true)
+    try {
+      await onSave({ title, content, typeEnumId: typeId })
+      setMode('view')
+    } catch { /* error toasted by parent */ }
+    finally { setSaving(false) }
+  }
+
+  const handleCancel = () => {
+    setTitle(note.title)
+    setContent(note.content)
+    setTypeId(note.typeEnumId)
+    setMode('view')
+  }
+
+  const iconBtn = (onClick: () => void, ttl: string, children: ReactNode) => (
+    <button
+      onClick={onClick}
+      title={ttl}
+      className="w-[28px] h-[28px] flex items-center justify-center rounded-[6px] transition-colors"
+      style={{ color: 'var(--v-muted)', backgroundColor: 'transparent' }}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+    >{children}</button>
+  )
+
+  const modalStyle = {
+    border: '1px solid var(--v-border)',
+    backgroundColor: 'var(--v-surface)',
+    width: expanded ? '82vw' : 'min(720px, 95vw)',
+    height: expanded ? '90vh' : undefined,
+    maxHeight: expanded ? '90vh' : '88vh',
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+      onClick={onClose}
+    >
+      <div
+        className="flex flex-col shadow-2xl rounded-[16px] transition-all duration-200"
+        style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
+
+        {/* ── VIEW MODE ─────────────────────────────────────────── */}
+        {mode === 'view' && (
+          <>
+            <div className="flex items-start gap-3 px-6 pt-5 pb-4 shrink-0" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
+              <div className="flex-1 min-w-0">
+                <div className="text-[20px] font-semibold leading-snug mb-2" style={{ color: 'var(--v-text)' }}>
+                  {note.title || <span style={{ color: 'var(--v-muted)' }}>Untitled</span>}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px]" style={{ color: 'var(--v-faint)' }}>
+                    {format(parseISO(note.updatedAt), 'd MMM yyyy, HH:mm', { locale: vi })}
+                  </span>
+                  {note.typeEnum?.content && (
+                    <span className="text-[11px] px-2 py-0.5 rounded-[5px]" style={{ backgroundColor: '#4a7c3f18', color: '#4a7c3f' }}>
+                      {note.typeEnum.content}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => setMode('edit')}
+                  className="h-[28px] px-3 rounded-[7px] text-[12px] font-medium flex items-center gap-1.5 transition-colors"
+                  style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-2)', backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <Pencil size={11} />Sửa
+                </button>
+                {iconBtn(() => setExpanded((v) => !v), expanded ? 'Thu nhỏ' : 'Phóng to', expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />)}
+                {iconBtn(onClose, 'Đóng', <X size={16} />)}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-8 py-6">
+              {note.content
+                ? <SimpleMarkdown content={note.content} />
+                : <span className="text-[13px]" style={{ color: 'var(--v-faint)' }}>Chưa có nội dung</span>
+              }
+            </div>
+          </>
+        )}
+
+        {/* ── EDIT MODE ─────────────────────────────────────────── */}
+        {mode === 'edit' && (
+          <>
+            <div className="flex items-start gap-3 px-6 pt-5 pb-4 shrink-0" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
+              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                <textarea
+                  autoFocus
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  rows={1}
+                  placeholder="Tiêu đề"
+                  className="w-full text-[18px] font-semibold resize-none outline-none bg-transparent leading-snug"
+                  style={{ color: 'var(--v-text)' }}
+                />
+                {types.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Tag size={11} style={{ color: 'var(--v-muted)' }} />
+                    {types.map((t) => {
+                      const active = typeId === t.id
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setTypeId(active ? null : t.id)}
+                          className="text-[10px] px-2 py-0.5 rounded transition-colors"
+                          style={{
+                            backgroundColor: active ? '#4a7c3f18' : 'transparent',
+                            color: active ? '#4a7c3f' : 'var(--v-faint)',
+                            border: active ? '1px solid #4a7c3f30' : '1px solid transparent',
+                          }}
+                        >
+                          {t.content ?? `#${t.subType}`}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 pt-1">
+                <button
+                  onClick={handleCancel}
+                  className="h-[28px] px-3 rounded-[7px] text-[12px] transition-colors"
+                  style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-2)', backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >Hủy</button>
+                {dirty && (
+                  <button
+                    onClick={() => void doSave()}
+                    disabled={saving}
+                    className="h-[28px] px-3 rounded-[7px] text-[12px] font-medium disabled:opacity-50"
+                    style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
+                  >{saving ? 'Đang lưu…' : 'Lưu'}</button>
+                )}
+                {iconBtn(() => setExpanded((v) => !v), expanded ? 'Thu nhỏ' : 'Phóng to', expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />)}
+                {iconBtn(onClose, 'Đóng', <X size={16} />)}
+              </div>
+            </div>
+
+            {/* Split: editor left, preview right */}
+            <div className="flex-1 flex overflow-hidden min-h-0">
+              <div className="flex-1 flex flex-col p-5 min-h-0" style={{ borderRight: '1px solid var(--v-border-2)' }}>
+                <div className="text-[10px] font-medium mb-2 shrink-0" style={{ color: 'var(--v-muted)' }}>NỘI DUNG</div>
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Bắt đầu viết (hỗ trợ markdown)…"
+                  className="flex-1 text-[13px] resize-none outline-none leading-relaxed font-mono rounded-[8px] px-4 py-3"
+                  style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-input-bg)' }}
+                />
+              </div>
+              <div className="flex-1 flex flex-col p-5 overflow-hidden min-h-0" style={{ backgroundColor: 'var(--v-bg)' }}>
+                <div className="text-[10px] font-medium mb-2 shrink-0" style={{ color: 'var(--v-muted)' }}>PREVIEW</div>
+                <div className="flex-1 overflow-y-auto">
+                  <SimpleMarkdown content={content} />
+                </div>
+              </div>
+            </div>
+
+            {/* Delete button at bottom */}
+            <div className="px-6 py-3 shrink-0 flex justify-start" style={{ borderTop: '1px solid var(--v-border-2)' }}>
+              <button
+                onClick={onDelete}
+                className="flex items-center gap-1.5 h-[28px] px-3 rounded-[7px] text-[12px] transition-colors"
+                style={{ border: '1px solid var(--v-border)', color: '#b05040' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#b0504010')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <Trash2 size={12} />Xóa ghi chú
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function NotesPage() {
   const [notes, setNotes]           = useState<NoteRow[]>([])
   const [noteTypes, setNoteTypes]   = useState<TypeEnumRow[]>([])
   const [loading, setLoading]       = useState(true)
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [openInEdit, setOpenInEdit] = useState(false)
   const [search, setSearch]         = useState('')
   const [typeFilter, setTypeFilter] = useState<number | null>(null)
-  const [saving, setSaving]         = useState(false)
-  const [editing, setEditing]       = useState(false)
-  const [draftTitle, setDraftTitle]     = useState('')
-  const [draftContent, setDraftContent] = useState('')
-  const [draftTypeId, setDraftTypeId]   = useState<number | null>(null)
-  const [dirty, setDirty]               = useState(false)
-  const [previewMode, setPreviewMode]   = useState(false)
-  const [mobileShowDetail, setMobileShowDetail] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const contentPanelRef = useRef<HTMLDivElement>(null)
 
-  // ── load ──────────────────────────────────────────────────────────────────
-
-  const load = useCallback(async (keepSelected?: number) => {
+  const load = useCallback(async () => {
     try {
       const data = await fetchNotes()
       setNotes(data)
-      const firstId = keepSelected ?? (data.length > 0 ? data[0].id : null)
-      if (firstId !== null) {
-        const note = data.find((n) => n.id === firstId) ?? data[0]
-        if (note) selectNote(note)
-      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
       if (msg === 'UNAUTHORIZED') toast.error('Phiên đăng nhập hết hạn')
@@ -135,27 +332,6 @@ export default function NotesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement)
-    document.addEventListener('fullscreenchange', handler)
-    return () => document.removeEventListener('fullscreenchange', handler)
-  }, [])
-
-  // ── select ────────────────────────────────────────────────────────────────
-
-  const selectNote = (note: NoteRow) => {
-    setSelectedId(note.id)
-    setDraftTitle(note.title)
-    setDraftContent(note.content)
-    setDraftTypeId(note.typeEnumId)
-    setDirty(false)
-    setEditing(false)
-    setPreviewMode(false)
-    setMobileShowDetail(true)
-  }
-
-  // ── derived ───────────────────────────────────────────────────────────────
-
   const selectedNote = notes.find((n) => n.id === selectedId) ?? null
 
   const filtered = notes
@@ -168,75 +344,49 @@ export default function NotesPage() {
     })
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 
-  // ── create ────────────────────────────────────────────────────────────────
-
   const handleCreate = async () => {
     try {
       const note = await createNote({ title: 'Untitled', content: '' })
       setNotes((prev) => [note, ...prev])
-      selectNote(note)
-      setEditing(true)
+      setSelectedId(note.id)
+      setOpenInEdit(true)
     } catch {
       toast.error('Không tạo được ghi chú')
     }
   }
 
-  // ── save ──────────────────────────────────────────────────────────────────
-
-  const handleSave = useCallback(async () => {
-    if (!selectedNote) return
-    setSaving(true)
+  const handleSave = useCallback(async (id: number, patch: { title: string; content: string; typeEnumId: number | null }) => {
     try {
-      const updated = await updateNote(selectedNote.id, {
-        title: draftTitle,
-        content: draftContent,
-        typeEnumId: draftTypeId,
-      })
-      setNotes((prev) => prev.map((n) => n.id === updated.id ? updated : n))
-      setDirty(false)
-      setEditing(false)
-      setPreviewMode(false)
+      const updated = await updateNote(id, patch)
+      setNotes((prev) => prev.map((n) => n.id === id ? updated : n))
       toast.success('Đã lưu')
     } catch {
       toast.error('Không lưu được')
-    } finally {
-      setSaving(false)
+      throw new Error('save failed')
     }
-  }, [selectedNote, draftTitle, draftContent, draftTypeId])
-
-  // Ctrl/Cmd + S
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); void handleSave() }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [handleSave])
-
-  const handleTypeToggle = (typeId: number) => {
-    const next = draftTypeId === typeId ? null : typeId
-    setDraftTypeId(next)
-    setDirty(true)
-  }
-
-  // ── delete (from list hover) ───────────────────────────────────────────────
+  }, [])
 
   const handleDelete = async (id: number) => {
     if (!window.confirm('Xóa ghi chú này?')) return
     try {
       await deleteNote(id)
-      const remaining = notes.filter((n) => n.id !== id)
-      setNotes(remaining)
-      if (selectedId === id) {
-        if (remaining.length > 0) selectNote(remaining[0])
-        else { setSelectedId(null); setDirty(false); setMobileShowDetail(false) }
-      }
+      setNotes((prev) => prev.filter((n) => n.id !== id))
+      setSelectedId(null)
+      setOpenInEdit(false)
     } catch {
       toast.error('Không xóa được')
     }
   }
 
-  // ── render ────────────────────────────────────────────────────────────────
+  const openNote = (note: NoteRow) => {
+    setSelectedId(note.id)
+    setOpenInEdit(false)
+  }
+
+  const closeModal = () => {
+    setSelectedId(null)
+    setOpenInEdit(false)
+  }
 
   return (
     <>
@@ -244,7 +394,7 @@ export default function NotesPage() {
         actions={
           <button
             onClick={handleCreate}
-            className="flex items-center gap-1.5 h-[30px] px-3 rounded-[7px] text-[12px] font-medium"
+            className="hidden sm:flex items-center gap-1.5 h-[30px] px-3 rounded-[7px] text-[12px] font-medium"
             style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
           >
             <Plus size={13} />
@@ -253,283 +403,174 @@ export default function NotesPage() {
         }
       />
 
-      <div className="flex" style={{ height: 'calc(100vh - 56px)' }}>
+      <div className="flex flex-col" style={{ height: 'calc(100vh - 56px)', backgroundColor: 'var(--v-bg)' }}>
 
-        {/* ── Left panel: list ─────────────────────────────────────── */}
-        <div
-          className={`${mobileShowDetail ? 'hidden sm:flex' : 'flex'} w-full sm:w-[260px] shrink-0 flex-col`}
-          style={{ borderRight: '1px solid var(--v-border)', backgroundColor: 'var(--v-surface)' }}
-        >
-
-          {/* Search */}
-          <div className="p-3" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
-            <div className="flex items-center gap-2 h-[30px] px-3 rounded-[7px]" style={{ border: '1px solid var(--v-border)' }}>
-              <Search size={12} style={{ color: 'var(--v-muted)' }} />
+        {/* Search + filter */}
+        <div className="px-4 sm:px-6 pt-4 pb-3 shrink-0 flex flex-col sm:flex-row sm:items-center gap-2">
+          {/* Row 1 (always): search + desktop filters inline */}
+          <div className="flex items-center gap-1.5">
+            <div
+              className="flex items-center gap-1.5 h-[28px] px-3 rounded-[20px] flex-1 sm:flex-none"
+              style={{ border: '1px solid var(--v-border)', backgroundColor: 'var(--v-surface)' }}
+            >
+              <Search size={11} style={{ color: 'var(--v-muted)' }} />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Tìm kiếm…"
-                className="flex-1 text-[12px] outline-none bg-transparent"
+                className="flex-1 sm:w-[140px] min-w-0 text-[11px] outline-none bg-transparent"
                 style={{ color: 'var(--v-text)' }}
               />
               {search && (
                 <button type="button" onClick={() => setSearch('')}>
-                  <X size={11} style={{ color: 'var(--v-muted)' }} />
+                  <X size={10} style={{ color: 'var(--v-muted)' }} />
                 </button>
               )}
             </div>
+
+            {/* Divider + filters — desktop only inline */}
+            {noteTypes.length > 0 && (
+              <div className="hidden sm:flex items-center gap-1.5">
+                <div className="w-px h-4" style={{ backgroundColor: 'var(--v-border)' }} />
+                <button
+                  type="button"
+                  onClick={() => setTypeFilter(null)}
+                  className="h-[28px] px-3 rounded-[20px] text-[11px] font-medium transition-colors"
+                  style={{
+                    border: '1px solid var(--v-border)',
+                    backgroundColor: typeFilter === null ? 'var(--v-btn-bg)' : 'var(--v-surface)',
+                    color: typeFilter === null ? 'var(--v-btn-text)' : 'var(--v-text-2)',
+                  }}
+                >Tất cả</button>
+                {noteTypes.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTypeFilter((prev) => prev === t.id ? null : t.id)}
+                    className="h-[28px] px-3 rounded-[20px] text-[11px] font-medium transition-colors"
+                    style={{
+                      border: `1px solid ${typeFilter === t.id ? '#4a7c3f' : 'var(--v-border)'}`,
+                      backgroundColor: typeFilter === t.id ? '#4a7c3f18' : 'var(--v-surface)',
+                      color: typeFilter === t.id ? '#4a7c3f' : 'var(--v-text-2)',
+                    }}
+                  >{t.content ?? `#${t.subType}`}</button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Type filter */}
+          {/* Row 2 (mobile only): type filters */}
           {noteTypes.length > 0 && (
-            <div className="px-3 py-2 flex flex-wrap gap-1" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
+            <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto pb-0.5">
               <button
                 type="button"
                 onClick={() => setTypeFilter(null)}
-                className="text-[10px] px-2 py-0.5 rounded-[20px] transition-colors"
+                className="h-[26px] px-3 rounded-[20px] text-[11px] font-medium shrink-0 transition-colors"
                 style={{
                   border: '1px solid var(--v-border)',
                   backgroundColor: typeFilter === null ? 'var(--v-btn-bg)' : 'var(--v-surface)',
                   color: typeFilter === null ? 'var(--v-btn-text)' : 'var(--v-text-2)',
                 }}
-              >
-                Tất cả
-              </button>
+              >Tất cả</button>
               {noteTypes.map((t) => (
                 <button
                   key={t.id}
                   type="button"
                   onClick={() => setTypeFilter((prev) => prev === t.id ? null : t.id)}
-                  className="text-[10px] px-2 py-0.5 rounded-[20px] transition-colors"
+                  className="h-[26px] px-3 rounded-[20px] text-[11px] font-medium shrink-0 transition-colors"
                   style={{
                     border: `1px solid ${typeFilter === t.id ? '#4a7c3f' : 'var(--v-border)'}`,
                     backgroundColor: typeFilter === t.id ? '#4a7c3f18' : 'var(--v-surface)',
                     color: typeFilter === t.id ? '#4a7c3f' : 'var(--v-text-2)',
                   }}
-                >
-                  {t.content ?? `#${t.subType}`}
-                </button>
+                >{t.content ?? `#${t.subType}`}</button>
               ))}
             </div>
           )}
-
-          {/* Note list */}
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="p-4 text-[12px]" style={{ color: 'var(--v-muted)' }}>Đang tải…</div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-12 text-[12px]" style={{ color: 'var(--v-muted)' }}>Không có ghi chú nào</div>
-            ) : (
-              filtered.map((note) => (
-                <div
-                  key={note.id}
-                  className="group relative w-full text-left px-4 py-3 transition-colors cursor-pointer"
-                  style={{
-                    borderBottom: '1px solid var(--v-border-2)',
-                    backgroundColor: selectedId === note.id ? 'var(--v-hover)' : 'transparent',
-                    borderLeft: selectedId === note.id ? '3px solid #4a7c3f' : '3px solid transparent',
-                  }}
-                  onClick={() => selectNote(note)}
-                >
-                  <div className="text-[13px] font-medium mb-0.5 truncate pr-6" style={{ color: 'var(--v-text)' }}>
-                    {note.title || 'Untitled'}
-                  </div>
-                  <div className="text-[11px] mb-1.5 truncate" style={{ color: 'var(--v-muted)' }}>
-                    {note.content.replace(/[#*`\-[\]]/g, '').slice(0, 60) || 'Chưa có nội dung'}
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px]" style={{ color: 'var(--v-faint)' }}>
-                      {format(parseISO(note.updatedAt), 'd MMM', { locale: vi })}
-                    </span>
-                    {note.typeEnum?.content && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#4a7c3f18', color: '#4a7c3f' }}>
-                        {note.typeEnum.content}
-                      </span>
-                    )}
-                  </div>
-                  {/* Delete on hover */}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); void handleDelete(note.id) }}
-                    className="absolute top-3 right-3 w-5 h-5 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#fbeaea]"
-                    aria-label="Xóa"
-                  >
-                    <Trash2 size={11} color="#b05040" />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
         </div>
 
-        {/* ── Right panel: editor ──────────────────────────────────── */}
-        {selectedNote ? (
-          <div
-            ref={contentPanelRef}
-            className={`${mobileShowDetail ? 'flex' : 'hidden sm:flex'} flex-1 flex-col overflow-hidden transition-colors`}
-            style={{ backgroundColor: editing ? 'var(--v-surface)' : 'var(--v-bg)' }}
-          >
-
-            {/* Toolbar */}
-            <div className="flex items-center gap-2 px-4 sm:px-6 h-[48px] shrink-0 transition-colors" style={{ borderBottom: '1px solid var(--v-border-2)', backgroundColor: editing ? 'var(--v-bg)' : 'var(--v-surface)' }}>
-
-              {/* Back button — mobile only */}
-              <button
-                type="button"
-                onClick={() => setMobileShowDetail(false)}
-                className="sm:hidden shrink-0 flex items-center justify-center w-7 h-7 rounded-[7px] -ml-1"
-                style={{ backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <ChevronLeft size={18} style={{ color: 'var(--v-text-2)' }} />
-              </button>
-
-              {/* Type selector */}
-              <div className="flex items-center gap-1 flex-1 flex-wrap min-w-0 overflow-hidden">
-                <Tag size={12} style={{ color: 'var(--v-muted)' }} />
-                {noteTypes.length === 0 ? (
-                  <span className="text-[10px]" style={{ color: 'var(--v-faint)' }}>Chưa có loại — thêm trong Settings</span>
-                ) : (
-                  noteTypes.map((t) => {
-                    const active = draftTypeId === t.id
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => handleTypeToggle(t.id)}
-                        className="text-[10px] px-1.5 py-0.5 rounded transition-colors"
-                        style={{
-                          backgroundColor: active ? '#4a7c3f18' : 'transparent',
-                          color: active ? '#4a7c3f' : 'var(--v-faint)',
-                          border: active ? '1px solid #4a7c3f30' : '1px solid transparent',
-                        }}
-                      >
-                        {t.content ?? `#${t.subType}`}
-                      </button>
-                    )
-                  })
-                )}
-              </div>
-
-              {/* Edit / Save buttons */}
-              {editing ? (
-                <div className="shrink-0 flex items-center gap-1.5">
-                  {/* Write / Preview toggle */}
-                  <div className="flex rounded-[6px] overflow-hidden" style={{ border: '1px solid var(--v-border)' }}>
+        {/* Note list */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="p-8 text-center text-[12px]" style={{ color: 'var(--v-muted)' }}>Đang tải…</div>
+          ) : filtered.length === 0 ? (
+            <div className="p-8 text-center text-[12px]" style={{ color: 'var(--v-muted)' }}>
+              {notes.length === 0 ? 'Chưa có ghi chú nào' : 'Không tìm thấy kết quả'}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4 sm:p-6">
+              {filtered.map((note) => {
+                const preview = note.content.replace(/[#*`\-[\]]/g, '').split('\n').find((l) => l.trim())?.trim()
+                return (
+                  <div
+                    key={note.id}
+                    onClick={() => openNote(note)}
+                    className="group relative rounded-[12px] p-4 cursor-pointer transition-all"
+                    style={{
+                      border: selectedId === note.id ? '1.5px solid #4a7c3f' : '1px solid var(--v-border)',
+                      backgroundColor: 'var(--v-surface)',
+                    }}
+                    onMouseEnter={(e) => { if (selectedId !== note.id) e.currentTarget.style.borderColor = 'var(--v-border-2)' }}
+                    onMouseLeave={(e) => { if (selectedId !== note.id) e.currentTarget.style.borderColor = 'var(--v-border)' }}
+                  >
+                    <div className="text-[13px] font-semibold mb-1.5 truncate pr-5" style={{ color: 'var(--v-text)' }}>
+                      {note.title || 'Untitled'}
+                    </div>
+                    {preview && (
+                      <div className="text-[11px] mb-3 line-clamp-3 leading-relaxed" style={{ color: 'var(--v-text-3)' }}>
+                        {preview}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px]" style={{ color: 'var(--v-faint)' }}>
+                        {format(parseISO(note.updatedAt), 'd MMM', { locale: vi })}
+                      </span>
+                      {note.typeEnum?.content && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: '#4a7c3f18', color: '#4a7c3f' }}>
+                          {note.typeEnum.content}
+                        </span>
+                      )}
+                    </div>
+                    {/* Delete on hover */}
                     <button
                       type="button"
-                      onClick={() => setPreviewMode(false)}
-                      className="h-[26px] px-2.5 text-[11px] font-medium transition-colors"
-                      style={{ backgroundColor: !previewMode ? 'var(--v-btn-bg)' : 'transparent', color: !previewMode ? 'var(--v-btn-text)' : 'var(--v-text-3)' }}
+                      onClick={(e) => { e.stopPropagation(); void handleDelete(note.id) }}
+                      className="absolute top-3 right-3 w-5 h-5 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ backgroundColor: 'var(--v-hover)' }}
+                      aria-label="Xóa"
                     >
-                      Write
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewMode(true)}
-                      className="h-[26px] px-2.5 text-[11px] font-medium transition-colors"
-                      style={{ backgroundColor: previewMode ? 'var(--v-btn-bg)' : 'transparent', color: previewMode ? 'var(--v-btn-text)' : 'var(--v-text-3)' }}
-                    >
-                      Preview
+                      <Trash2 size={11} color="#b05040" />
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => { setEditing(false); setPreviewMode(false); setDraftTitle(selectedNote.title); setDraftContent(selectedNote.content); setDraftTypeId(selectedNote.typeEnumId); setDirty(false) }}
-                    className="h-[26px] px-3 rounded-[6px] text-[11px] font-medium transition-colors"
-                    style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-3)' }}
-                  >
-                    Discard
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleSave()}
-                    disabled={saving || !dirty}
-                    className="h-[26px] px-3 rounded-[6px] text-[11px] font-medium transition-colors disabled:opacity-40"
-                    style={{ backgroundColor: dirty ? 'var(--v-btn-bg)' : 'var(--v-hover)', color: dirty ? 'var(--v-btn-text)' : 'var(--v-text-3)' }}
-                  >
-                    {saving ? 'Đang lưu…' : 'Lưu'}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(true)}
-                    className="shrink-0 flex items-center gap-1 h-[26px] px-3 rounded-[6px] text-[11px] font-medium transition-colors"
-                    style={{ color: 'var(--v-text-2)', backgroundColor: 'transparent' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <Pencil size={11} />
-                    Sửa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isFullscreen) document.exitFullscreen()
-                      else contentPanelRef.current?.requestFullscreen()
-                    }}
-                    className="shrink-0 flex items-center justify-center h-[26px] w-[26px] rounded-[6px] transition-colors"
-                    style={{ color: 'var(--v-text-2)', backgroundColor: 'transparent' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    title={isFullscreen ? 'Thu nhỏ' : 'Phóng to'}
-                  >
-                    {isFullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
-                  </button>
-                </>
-              )}
+                )
+              })}
             </div>
+          )}
+        </div>
 
-            {/* Title */}
-            <div className="px-5 sm:px-8 pt-5 sm:pt-6 pb-2 shrink-0 transition-colors" style={{ backgroundColor: editing ? 'var(--v-surface)' : 'var(--v-bg)' }}>
-              {editing ? (
-                <input
-                  autoFocus
-                  value={draftTitle}
-                  onChange={(e) => { setDraftTitle(e.target.value); setDirty(true) }}
-                  placeholder="Untitled"
-                  className="w-full text-[22px] font-medium outline-none bg-transparent"
-                  style={{ color: 'var(--v-text)' }}
-                />
-              ) : (
-                <div className="text-[22px] font-medium" style={{ color: 'var(--v-text)' }}>
-                  {draftTitle || <span style={{ color: 'var(--v-muted)' }}>Untitled</span>}
-                </div>
-              )}
-              <div className="text-[11px] mt-1" style={{ color: 'var(--v-faint)' }}>
-                {format(parseISO(selectedNote.updatedAt), 'd MMM yyyy, HH:mm', { locale: vi })}
-                {dirty && <span className="ml-2" style={{ color: '#a07030' }}>· Chưa lưu</span>}
-              </div>
-            </div>
-            <div className="h-px mx-5 sm:mx-8" style={{ backgroundColor: 'var(--v-border-2)' }} />
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-4 sm:py-5">
-              {editing && !previewMode ? (
-                <textarea
-                  value={draftContent}
-                  onChange={(e) => { setDraftContent(e.target.value); setDirty(true) }}
-                  placeholder="Bắt đầu viết…"
-                  className="w-full h-full min-h-[300px] text-[13px] leading-relaxed resize-none outline-none rounded-[10px] p-4 font-mono"
-                  style={{ color: 'var(--v-text)', backgroundColor: 'var(--v-bg)', border: '1px solid var(--v-border)' }}
-                />
-              ) : (
-                <SimpleMarkdown content={draftContent} />
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="hidden sm:flex flex-1 items-center justify-center">
-            <div className="text-center">
-              <div className="text-[14px] font-medium mb-1" style={{ color: 'var(--v-text-2)' }}>Chọn ghi chú</div>
-              <div className="text-[12px]" style={{ color: 'var(--v-muted)' }}>Chọn từ danh sách hoặc tạo ghi chú mới</div>
-            </div>
-          </div>
-        )}
+        {/* FAB (mobile) */}
+        <button
+          onClick={handleCreate}
+          className="sm:hidden fixed right-5 bottom-[76px] z-40 flex items-center gap-2 h-[44px] px-5 rounded-full text-[13px] font-medium shadow-lg"
+          style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
+        >
+          <Plus size={16} />
+          Ghi chú mới
+        </button>
       </div>
+
+      {/* Note modal */}
+      {selectedNote && (
+        <NoteModal
+          key={selectedNote.id}
+          note={selectedNote}
+          types={noteTypes}
+          initialMode={openInEdit ? 'edit' : 'view'}
+          onSave={(patch) => handleSave(selectedNote.id, patch)}
+          onDelete={() => void handleDelete(selectedNote.id)}
+          onClose={closeModal}
+        />
+      )}
     </>
   )
 }

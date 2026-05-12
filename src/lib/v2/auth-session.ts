@@ -83,8 +83,17 @@ function isRefreshUrl(input: RequestInfo | URL): boolean {
   return s.includes('/auth/refresh')
 }
 
+function redirectToLogin(): never {
+  clearSessionTokens()
+  if (typeof window !== 'undefined') {
+    window.location.replace('/v2/login')
+  }
+  throw new Error('UNAUTHORIZED')
+}
+
 /**
- * fetch kèm Bearer access; nếu 401 thì thử refresh một lần rồi gọi lại (trừ khi đang gọi /auth/refresh).
+ * fetch kèm Bearer access; nếu 401 thì thử refresh một lần rồi gọi lại.
+ * Nếu vẫn 401 sau refresh (hoặc không có refresh token) → redirect về login.
  */
 export async function authFetch(
   input: RequestInfo | URL,
@@ -98,11 +107,16 @@ export async function authFetch(
 
   if (res.status !== 401 || isRefreshUrl(input)) return res
 
+  // 401: thử refresh
   const ok = await tryRefreshAccessToken()
-  if (!ok) return res
+  if (!ok) redirectToLogin()
 
   const h2 = new Headers(init?.headers)
   const next = getAccessToken()
   if (next) h2.set('Authorization', `Bearer ${next}`)
-  return fetch(input, { ...init, headers: h2 })
+  const res2 = await fetch(input, { ...init, headers: h2 })
+
+  if (res2.status === 401) redirectToLogin()
+
+  return res2
 }

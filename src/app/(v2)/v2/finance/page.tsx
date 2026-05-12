@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, X, Search, Plus,
   UtensilsCrossed, Landmark, LineChart, Home, Bike, ShoppingBag, MoreHorizontal,
 } from 'lucide-react'
+import { getIcon } from '@/lib/v2/icon-registry'
 import { toast } from 'sonner'
 import { Types } from '@/app/enums/types'
 import { V2Topbar } from '@/components/v2/layout/Topbar'
@@ -34,6 +35,32 @@ const CATEGORY_META: Record<TransactionCategory, { label: string; color: string;
   transport: { label: 'Transport',  color: '#aaaaaa', Icon: Bike },
   shopping:  { label: 'Shopping',   color: '#b05040', Icon: ShoppingBag },
   other:     { label: 'Other',      color: '#888888', Icon: MoreHorizontal },
+}
+
+type TypeApiMeta = { label: string; color: string; iconName: string | null }
+type TypeMetaMap = Map<string, TypeApiMeta>
+
+function buildTypeMetaMap(rows: FinanceTypeEnumRow[]): TypeMetaMap {
+  const m = new Map<string, TypeApiMeta>()
+  for (const r of rows) {
+    m.set(`${r.type}-${r.subType}`, {
+      label: r.content?.trim() || String(r.subType),
+      color: r.meta?.color ?? '#888888',
+      iconName: r.meta?.icon ?? null,
+    })
+  }
+  return m
+}
+
+function resolveTransactionMeta(t: Transaction, metaMap: TypeMetaMap) {
+  const key = t.sourceType != null && t.subType != null ? `${t.sourceType}-${t.subType}` : null
+  const api = key ? metaMap.get(key) : null
+  const fallback = CATEGORY_META[t.category]
+  return {
+    color: api?.color ?? fallback.color,
+    label: api?.label ?? fallback.label,
+    Icon: getIcon(api?.iconName) ?? fallback.Icon,
+  }
 }
 
 type CategoryFlow = 'expense' | 'income'
@@ -338,12 +365,14 @@ function TransactionsPopup({
   title,
   subtitle,
   transactions,
+  typeMetaMap,
   onClose,
   onSelectTransaction,
 }: {
   title: string
   subtitle?: string
   transactions: Transaction[]
+  typeMetaMap: TypeMetaMap
   onClose: () => void
   /** When set, rows open the edit flow (e.g. from category breakdown). */
   onSelectTransaction?: (t: Transaction) => void
@@ -390,14 +419,10 @@ function TransactionsPopup({
           ) : (
             <div className="flex flex-col gap-1">
               {transactions.map((t) => {
-                const meta = CATEGORY_META[t.category]
+                const meta = resolveTransactionMeta(t, typeMetaMap)
                 const Icon = meta.Icon
-                const subLine =
-                  t.amount < 0 && t.expenseBucketLabel
-                    ? `${t.expenseBucketLabel} · ${meta.label} · ${t.date}`
-                    : t.amount > 0 && t.incomeBucketLabel
-                      ? `${t.incomeBucketLabel} · ${meta.label} · ${t.date}`
-                      : `${meta.label} · ${t.date}`
+                const bucketLabel = t.amount < 0 ? t.expenseBucketLabel : t.incomeBucketLabel
+                const subLine = bucketLabel ? `${bucketLabel} · ${t.date}` : `${meta.label} · ${t.date}`
                 const inner = (
                   <>
                     <div
@@ -448,9 +473,11 @@ function TransactionsPopup({
 
 function TransactionLog({
   transactions,
+  typeMetaMap,
   onSelectTransaction,
 }: {
   transactions: Transaction[]
+  typeMetaMap: TypeMetaMap
   onSelectTransaction?: (t: Transaction) => void
 }) {
   const [page, setPage] = useState(0)
@@ -494,8 +521,9 @@ function TransactionLog({
               </span>
             </div>
             {dayTxns.map((t) => {
-              const meta = CATEGORY_META[t.category]
+              const meta = resolveTransactionMeta(t, typeMetaMap)
               const Icon = meta.Icon
+              const bucketLabel = t.amount < 0 ? t.expenseBucketLabel : t.incomeBucketLabel
               const inner = (
                 <>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -504,7 +532,9 @@ function TransactionLog({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-medium truncate" style={{ color: 'var(--v-text)' }}>{t.name}</div>
-                    <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>{meta.label}</div>
+                    <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>
+                      {bucketLabel ?? meta.label}
+                    </div>
                   </div>
                   <span className="text-[13px] font-medium shrink-0" style={{ color: t.amount >= 0 ? '#4a7c3f' : '#b05040' }}>
                     {fmtSigned(t.amount)}
@@ -1192,6 +1222,8 @@ export default function FinancePage() {
   const [typeEnums, setTypeEnums] = useState<FinanceTypeEnumRow[]>([])
   const [typeEnumsLoading, setTypeEnumsLoading] = useState(true)
 
+  const typeMetaMap = useMemo(() => buildTypeMetaMap(typeEnums), [typeEnums])
+
   /** GET `/types` once on load (subcategories for add/edit forms). */
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -1452,6 +1484,7 @@ export default function FinancePage() {
           </div>
           <TransactionLog
             transactions={logFiltered}
+            typeMetaMap={typeMetaMap}
             onSelectTransaction={(t) => setEditTransaction(t)}
           />
         </div>
@@ -1474,6 +1507,7 @@ export default function FinancePage() {
           title={detailPopupTitle}
           subtitle={detailPopupSubtitle}
           transactions={detailTransactions}
+          typeMetaMap={typeMetaMap}
           onClose={() => setDetailPopup(null)}
           onSelectTransaction={(t) => {
             setEditTransaction(t)

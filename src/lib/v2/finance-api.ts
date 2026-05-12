@@ -63,7 +63,7 @@ type LegacySavingRow = {
   typeEnum?: { subType: number; content?: string | null } | null
 }
 
-type TypeEnumRow = { type: number; subType: number; content?: string | null }
+type TypeEnumRow = { type: number; subType: number; content?: string | null; meta?: { icon?: string | null; color?: string | null } | null }
 
 function rowsToLabelMap(rows: TypeEnumRow[]): Map<string, string> {
   const m = new Map<string, string>()
@@ -271,6 +271,7 @@ export type FinanceTypeEnumRow = {
   type: number
   subType: number
   content?: string | null
+  meta?: { icon?: string | null; color?: string | null } | null
 }
 
 export async function fetchTypeEnums(token: string): Promise<FinanceTypeEnumRow[]> {

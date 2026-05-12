@@ -1,11 +1,14 @@
 import { backendUrl } from '@/app/baseUrl'
 import { authFetch } from '@/lib/v2/auth-session'
 
+export type TypeMeta = { icon?: string | null; color?: string | null }
+
 export type TypeEnumRow = {
   id: number
   type: number | null
   subType: number
   content: string | null
+  meta?: TypeMeta | null
 }
 
 export async function fetchTypes(): Promise<TypeEnumRow[]> {
@@ -19,6 +22,7 @@ export async function fetchTypes(): Promise<TypeEnumRow[]> {
 export async function createType(body: {
   type?: number
   content?: string
+  meta?: TypeMeta | null
 }): Promise<TypeEnumRow> {
   const res = await authFetch(`${backendUrl()}/types`, {
     method: 'POST',
@@ -32,7 +36,7 @@ export async function createType(body: {
 
 export async function updateType(
   id: number,
-  body: { content?: string; type?: number },
+  body: { content?: string; type?: number; meta?: TypeMeta | null },
 ): Promise<TypeEnumRow> {
   const res = await authFetch(`${backendUrl()}/types/${id}`, {
     method: 'PATCH',

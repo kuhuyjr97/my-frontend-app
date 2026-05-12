@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus, Pencil, Trash2, X, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Check, MoreHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { V2Topbar } from '@/components/v2/layout/Topbar'
 import {
@@ -9,7 +9,9 @@ import {
   updateType,
   deleteType,
   type TypeEnumRow,
+  type TypeMeta,
 } from '@/lib/v2/types-api'
+import { ICON_LIST, getIcon } from '@/lib/v2/icon-registry'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -27,6 +29,61 @@ function catMeta(type: number | null) {
   return CATEGORIES.find((c) => c.type === type) ?? { type: 0, label: 'Other', color: '#888' }
 }
 
+const FINANCE_TYPES = new Set([4, 5]) // Income, Expense
+
+const PRESET_COLORS = [
+  '#3a5fa0', '#7040a0', '#b05040', '#3a7a3a', '#c89040',
+  '#888888', '#c87a20', '#5a9a8a', '#a04070', '#4a7ab0',
+]
+
+function IconPicker({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  return (
+    <div>
+      <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--v-text-2)' }}>Icon</div>
+      <div className="flex flex-wrap gap-1.5 p-2 rounded-[8px] max-h-[140px] overflow-y-auto" style={{ border: '1px solid var(--v-border)', backgroundColor: 'var(--v-hover)' }}>
+        {ICON_LIST.map(({ name, label, Icon }) => (
+          <button
+            key={name}
+            type="button"
+            title={label}
+            onClick={() => onChange(value === name ? null : name)}
+            className="w-7 h-7 flex items-center justify-center rounded-[6px] transition-colors"
+            style={{
+              backgroundColor: value === name ? 'var(--v-btn-bg)' : 'transparent',
+              border: value === name ? 'none' : '1px solid transparent',
+            }}
+          >
+            <Icon size={14} style={{ color: value === name ? 'var(--v-btn-text)' : 'var(--v-text-2)' }} />
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ColorPicker({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  return (
+    <div>
+      <div className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--v-text-2)' }}>Màu</div>
+      <div className="flex gap-1.5 flex-wrap">
+        {PRESET_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => onChange(value === c ? null : c)}
+            className="w-6 h-6 rounded-full transition-transform"
+            style={{
+              backgroundColor: c,
+              outline: value === c ? `2px solid ${c}` : 'none',
+              outlineOffset: '2px',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── AddModal ─────────────────────────────────────────────────────────────────
 
 function AddModal({
@@ -38,7 +95,11 @@ function AddModal({
 }) {
   const [typeVal, setTypeVal] = useState<string>(String(CATEGORIES[0].type))
   const [content, setContent] = useState('')
+  const [icon, setIcon] = useState<string | null>(null)
+  const [color, setColor] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const isFinance = FINANCE_TYPES.has(Number(typeVal))
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -50,8 +111,9 @@ function AddModal({
     e.preventDefault()
     if (!content.trim()) { toast.error('Nhập tên loại'); return }
     setSaving(true)
+    const meta: TypeMeta | null = isFinance && (icon || color) ? { icon, color } : null
     try {
-      await createType({ type: Number(typeVal), content: content.trim() })
+      await createType({ type: Number(typeVal), content: content.trim(), meta })
       toast.success('Đã thêm')
       onCreated()
       onClose()
@@ -87,7 +149,7 @@ function AddModal({
             <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>Nhóm</label>
             <select
               value={typeVal}
-              onChange={(e) => setTypeVal(e.target.value)}
+              onChange={(e) => { setTypeVal(e.target.value); setIcon(null); setColor(null) }}
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
               style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
             >
@@ -108,6 +170,12 @@ function AddModal({
               style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
           </div>
+          {isFinance && (
+            <>
+              <IconPicker value={icon} onChange={setIcon} />
+              <ColorPicker value={color} onChange={setColor} />
+            </>
+          )}
           <div className="flex gap-2 pt-1">
             <button
               type="button"
@@ -145,13 +213,18 @@ function InlineEdit({
 }) {
   const [content, setContent] = useState(row.content ?? '')
   const [typeVal, setTypeVal] = useState<string>(String(row.type ?? CATEGORIES[0].type))
+  const [icon, setIcon] = useState<string | null>(row.meta?.icon ?? null)
+  const [color, setColor] = useState<string | null>(row.meta?.color ?? null)
   const [saving, setSaving] = useState(false)
+
+  const isFinance = FINANCE_TYPES.has(Number(typeVal))
 
   const handleSave = async () => {
     if (!content.trim()) { toast.error('Tên không được để trống'); return }
     setSaving(true)
+    const meta: TypeMeta | null = isFinance ? { icon, color } : null
     try {
-      await updateType(row.id, { content: content.trim(), type: Number(typeVal) })
+      await updateType(row.id, { content: content.trim(), type: Number(typeVal), meta })
       toast.success('Đã lưu')
       onSaved()
     } catch {
@@ -162,47 +235,55 @@ function InlineEdit({
   }
 
   return (
-    <div className="flex items-center gap-2 py-1 flex-wrap">
-      <select
-        value={typeVal}
-        onChange={(e) => setTypeVal(e.target.value)}
-        className="rounded-[6px] px-2 py-1 text-[12px] outline-none shrink-0"
-        style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
-      >
-        {CATEGORIES.map((c) => (
-          <option key={c.type} value={String(c.type)}>{c.label}</option>
-        ))}
-      </select>
-      <input
-        autoFocus
-        type="text"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') handleSave()
-          if (e.key === 'Escape') onCancel()
-        }}
-        className="flex-1 min-w-[120px] rounded-[6px] px-2 py-1 text-[13px] outline-none"
-        style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
-      />
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving}
-        className="w-7 h-7 flex items-center justify-center rounded-[6px] disabled:opacity-50"
-        style={{ backgroundColor: 'var(--v-btn-bg)' }}
-        aria-label="Save"
-      >
-        <Check size={13} color="#fff" />
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="w-7 h-7 flex items-center justify-center rounded-[6px] hover:bg-[#f0eeea]"
-        aria-label="Cancel"
-      >
-        <X size={13} color="#999" />
-      </button>
+    <div className="flex flex-col gap-2 py-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <select
+          value={typeVal}
+          onChange={(e) => { setTypeVal(e.target.value); setIcon(null); setColor(null) }}
+          className="rounded-[6px] px-2 py-1 text-[12px] outline-none shrink-0"
+          style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c.type} value={String(c.type)}>{c.label}</option>
+          ))}
+        </select>
+        <input
+          autoFocus
+          type="text"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void handleSave()
+            if (e.key === 'Escape') onCancel()
+          }}
+          className="flex-1 min-w-[120px] rounded-[6px] px-2 py-1 text-[13px] outline-none"
+          style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
+        />
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={saving}
+          className="w-7 h-7 flex items-center justify-center rounded-[6px] disabled:opacity-50"
+          style={{ backgroundColor: 'var(--v-btn-bg)' }}
+          aria-label="Save"
+        >
+          <Check size={13} color="#fff" />
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="w-7 h-7 flex items-center justify-center rounded-[6px] hover:bg-[#f0eeea]"
+          aria-label="Cancel"
+        >
+          <X size={13} color="#999" />
+        </button>
+      </div>
+      {isFinance && (
+        <div className="flex flex-col gap-2 pl-1">
+          <IconPicker value={icon} onChange={setIcon} />
+          <ColorPicker value={color} onChange={setColor} />
+        </div>
+      )}
     </div>
   )
 }
@@ -248,15 +329,20 @@ function TypeRow({
     )
   }
 
+  const rowIcon = getIcon(row.meta?.icon)
+  const rowColor = row.meta?.color ?? meta.color
+
   return (
     <div
       className="flex items-center gap-3 px-4 py-2.5 group"
       style={{ borderBottom: '1px solid var(--v-border-2)' }}
     >
       <div
-        className="w-1.5 h-1.5 rounded-full shrink-0"
-        style={{ backgroundColor: meta.color }}
-      />
+        className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0"
+        style={{ backgroundColor: rowColor + '20' }}
+      >
+        {(() => { const I = rowIcon; return <I size={12} style={{ color: rowColor }} /> })()}
+      </div>
       <span className="flex-1 text-[13px]" style={{ color: 'var(--v-text)' }}>
         {row.content?.trim() || <span style={{ color: 'var(--v-muted)' }}>—</span>}
       </span>

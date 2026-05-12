@@ -1,9 +1,9 @@
 import { backendUrl } from '@/app/baseUrl'
 import { authFetch } from '@/lib/v2/auth-session'
 
-export type RecordType = 'pump' | 'feed'
+export type RecordType = 'pump' | 'feed' | 'eat'
 export type PumpSide = 'left' | 'right' | 'both'
-export type EntryKind = 'pump_dual' | 'pump_single' | 'feed'
+export type EntryKind = 'pump_dual' | 'pump_single' | 'feed' | 'eat'
 
 export interface MilkRecord {
   id: string

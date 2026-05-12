@@ -8,7 +8,7 @@ import {
   getDaysInMonth,
 } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { Plus, Droplets, Baby, ChevronLeft, ChevronRight, X, Trash2 } from 'lucide-react'
+import { Plus, Droplets, Baby, Utensils, ChevronLeft, ChevronRight, X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { V2Topbar } from '@/components/v2/layout/Topbar'
 import {
@@ -27,8 +27,10 @@ import { getSessionUsername } from '@/lib/v2/auth-session'
 const PINK = '#c97a8a'
 const BLUE = '#4a72b0'
 const GREEN = '#4a8a4a'
+const ORANGE = '#c87a20'
 const PINK_BG = '#fbeaf0'
 const BLUE_BG = '#e8f0fb'
+const ORANGE_BG = '#fef4e2'
 
 const DAY_NAMES = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
 
@@ -37,6 +39,8 @@ interface DailySummary {
   pumpTimes: number
   feedTotal: number
   feedTimes: number
+  eatTotal: number
+  eatTimes: number
   balance: number
 }
 
@@ -49,11 +53,14 @@ function todayStr(): string {
 function computeSummary(records: MilkRecord[]): DailySummary {
   const pump = records.filter((r) => r.type === 'pump')
   const feed = records.filter((r) => r.type === 'feed')
+  const eat  = records.filter((r) => r.type === 'eat')
   return {
     pumpTotal: Math.round(pump.reduce((s, r) => s + r.amount, 0)),
     pumpTimes: pump.length,
     feedTotal: Math.round(feed.reduce((s, r) => s + r.amount, 0)),
     feedTimes: feed.length,
+    eatTotal:  Math.round(eat.reduce((s, r) => s + r.amount, 0)),
+    eatTimes:  eat.length,
     balance: Math.round(
       pump.reduce((s, r) => s + r.amount, 0) -
         feed.reduce((s, r) => s + r.amount, 0),
@@ -226,6 +233,12 @@ function MonthCalendar({
                       {sum.feedTotal}
                     </span>
                   </div>
+                  {sum.eatTotal > 0 && (
+                    <div className="flex items-center gap-[2px]">
+                      <span className="shrink-0 rounded-full" style={{ width: 6, height: 6, backgroundColor: ORANGE }} />
+                      <span className="text-[9px]" style={{ color: '#666' }}>{sum.eatTotal}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-[2px]">
                     <span
                       className="shrink-0 rounded-full"
@@ -317,12 +330,14 @@ function DayPopup({
           ) : (
             sorted.map((rec) => {
               const isPump = rec.type === 'pump'
+              const isEat  = rec.type === 'eat'
               const time = format(parseISO(rec.recordedAt), 'HH:mm')
-              const label = !isPump
-                ? 'Bé uống'
-                : rec.entryKind === 'pump_dual'
+              const label = isPump
+                ? rec.entryKind === 'pump_dual'
                   ? `Hút · Trái ${rec.leftMl ?? '—'} · Phải ${rec.rightMl ?? '—'}`
                   : `Hút sữa${rec.side ? ` · ${rec.side === 'left' ? 'Trái' : rec.side === 'right' ? 'Phải' : 'Hai bên'}` : ''}`
+                : isEat ? 'Ăn cháo' : 'Bé uống'
+              const recColor = isPump ? PINK : isEat ? ORANGE : BLUE
               return (
                 <div
                   key={rec.id}
@@ -336,15 +351,15 @@ function DayPopup({
                   <span className="text-[11px] w-9 shrink-0" style={{ color: 'var(--v-text-3)' }}>{time}</span>
                   <div
                     className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: isPump ? PINK_BG : BLUE_BG }}
+                    style={{ backgroundColor: isPump ? PINK_BG : isEat ? ORANGE_BG : BLUE_BG }}
                   >
-                    {isPump ? <Droplets size={13} color={PINK} /> : <Baby size={13} color={BLUE} />}
+                    {isPump ? <Droplets size={13} color={recColor} /> : isEat ? <Utensils size={13} color={recColor} /> : <Baby size={13} color={recColor} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[12px]" style={{ color: 'var(--v-text)' }}>{label}</div>
                     {rec.note && <div className="text-[10px] truncate" style={{ color: 'var(--v-text-3)' }}>{rec.note}</div>}
                   </div>
-                  <span className="text-[13px] font-medium shrink-0" style={{ color: isPump ? PINK : BLUE }}>
+                  <span className="text-[13px] font-medium shrink-0" style={{ color: recColor }}>
                     {rec.amount}ml
                   </span>
                   <button
@@ -372,6 +387,7 @@ function Legend() {
       {[
         { color: '#e8aab8', label: 'Hút' },
         { color: '#a8bce8', label: 'Uống' },
+        { color: '#f5c98a', label: 'Ăn' },
         { color: '#d0cdc8', label: 'Dư' },
       ].map(({ color, label }) => (
         <div key={label} className="flex items-center gap-1">
@@ -424,7 +440,7 @@ function DetailCard({
           {sum.balance} ml {pos ? 'dư' : 'thiếu'}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <div className="flex items-center gap-1.5 mb-1">
             <Droplets size={14} color={PINK} />
@@ -432,18 +448,12 @@ function DetailCard({
               Đã hút
             </span>
           </div>
-          <div
-            className="text-[15px] font-medium"
-            style={{ color: PINK }}
-          >
+          <div className="text-[15px] font-medium" style={{ color: PINK }}>
             {sum.pumpTotal} ml
           </div>
           <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
             {sum.pumpTimes} lần ·{' '}
-            {sum.pumpTimes > 0
-              ? Math.round(sum.pumpTotal / sum.pumpTimes)
-              : 0}{' '}
-            ml/lần
+            {sum.pumpTimes > 0 ? Math.round(sum.pumpTotal / sum.pumpTimes) : 0} ml/lần
           </div>
         </div>
         <div>
@@ -453,18 +463,27 @@ function DetailCard({
               Bé uống
             </span>
           </div>
-          <div
-            className="text-[15px] font-medium"
-            style={{ color: BLUE }}
-          >
+          <div className="text-[15px] font-medium" style={{ color: BLUE }}>
             {sum.feedTotal} ml
           </div>
           <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
             {sum.feedTimes} lần ·{' '}
-            {sum.feedTimes > 0
-              ? Math.round(sum.feedTotal / sum.feedTimes)
-              : 0}{' '}
-            ml/lần
+            {sum.feedTimes > 0 ? Math.round(sum.feedTotal / sum.feedTimes) : 0} ml/lần
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <Utensils size={14} color={ORANGE} />
+            <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
+              Ăn cháo
+            </span>
+          </div>
+          <div className="text-[15px] font-medium" style={{ color: ORANGE }}>
+            {sum.eatTotal} ml
+          </div>
+          <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
+            {sum.eatTimes} lần ·{' '}
+            {sum.eatTimes > 0 ? Math.round(sum.eatTotal / sum.eatTimes) : 0} ml/lần
           </div>
         </div>
       </div>
@@ -515,12 +534,14 @@ function Log({
     >
       {sorted.map((rec, i) => {
         const isPump = rec.type === 'pump'
+        const isEat  = rec.type === 'eat'
         const time = format(parseISO(rec.recordedAt), 'HH:mm')
-        const label = !isPump
-          ? 'Bé uống'
-          : rec.entryKind === 'pump_dual'
+        const label = isPump
+          ? rec.entryKind === 'pump_dual'
             ? `Hút sữa · Trái ${rec.leftMl ?? '—'} · Phải ${rec.rightMl ?? '—'}`
             : `Hút sữa${rec.side ? ` · ${rec.side === 'left' ? 'Trái' : rec.side === 'right' ? 'Phải' : 'Hai bên'}` : ''}`
+          : isEat ? 'Ăn cháo' : 'Bé uống'
+        const recColor = isPump ? PINK : isEat ? ORANGE : BLUE
         const isSelected = selectedId === rec.id
 
         return (
@@ -538,13 +559,9 @@ function Log({
               </span>
               <div
                 className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
-                style={{ backgroundColor: isPump ? PINK_BG : BLUE_BG }}
+                style={{ backgroundColor: isPump ? PINK_BG : isEat ? ORANGE_BG : BLUE_BG }}
               >
-                {isPump ? (
-                  <Droplets size={13} color={PINK} />
-                ) : (
-                  <Baby size={13} color={BLUE} />
-                )}
+                {isPump ? <Droplets size={13} color={recColor} /> : isEat ? <Utensils size={13} color={recColor} /> : <Baby size={13} color={recColor} />}
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[12px] block" style={{ color: 'var(--v-text)' }}>
@@ -558,7 +575,7 @@ function Log({
               </div>
               <span
                 className="text-[13px] font-medium shrink-0"
-                style={{ color: isPump ? PINK : BLUE }}
+                style={{ color: recColor }}
               >
                 {rec.amount}ml
               </span>
@@ -589,6 +606,141 @@ function Log({
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ─── WeekChart ────────────────────────────────────────────────────────────────
+
+function WeekChart({ allRecords, today }: { allRecords: MilkRecord[]; today: string }) {
+  const [hovered, setHovered] = useState<string | null>(null)
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(d.getDate() - (6 - i))
+    return format(d, 'yyyy-MM-dd')
+  })
+
+  const data = days.map((date) => {
+    const sum = computeSummary(filterByDate(allRecords, date))
+    return { date, ...sum }
+  })
+
+  const maxVal = Math.max(...data.flatMap((d) => [d.pumpTotal, d.feedTotal, d.eatTotal]), 50)
+  const BAR_H = 100
+
+  const dow = (date: string) => {
+    const d = parseISO(date)
+    return ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][getDay(d)]
+  }
+
+  const hoveredData = hovered ? data.find((d) => d.date === hovered) : null
+
+  return (
+    <div
+      className="rounded-[16px] p-4"
+      style={{ backgroundColor: 'var(--v-surface)', border: '0.5px solid var(--v-border)' }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[12px] font-medium" style={{ color: 'var(--v-text)' }}>7 ngày gần nhất</span>
+        <div className="flex items-center gap-3">
+          {[
+            { color: PINK,   label: 'Hút' },
+            { color: BLUE,   label: 'Uống' },
+            { color: ORANGE, label: 'Ăn' },
+          ].map(({ color, label }) => (
+            <div key={label} className="flex items-center gap-1">
+              <span className="rounded-full" style={{ width: 7, height: 7, backgroundColor: color }} />
+              <span className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bars + labels */}
+      <div className="relative" style={{ height: BAR_H + 22 }}>
+        {/* Horizontal gridlines */}
+        {[0.25, 0.5, 0.75, 1].map((pct) => (
+          <div
+            key={pct}
+            className="absolute left-0 right-8 flex items-center"
+            style={{ bottom: 22 + pct * BAR_H, pointerEvents: 'none' }}
+          >
+            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--v-border-2)' }} />
+            <span className="text-[9px] w-7 text-right shrink-0" style={{ color: 'var(--v-faint)' }}>
+              {Math.round(maxVal * pct)}
+            </span>
+          </div>
+        ))}
+
+        {/* Columns */}
+        <div className="absolute inset-x-0 bottom-0 flex gap-1 pr-8" style={{ height: BAR_H + 22 }}>
+          {data.map(({ date, pumpTotal, feedTotal, eatTotal }) => {
+            const isToday = date === today
+            const isHov   = hovered === date
+            const bar = (val: number, color: string) => {
+              const h = val > 0 ? Math.max(3, Math.round((val / maxVal) * BAR_H)) : 0
+              return (
+                <div
+                  className="flex-1 rounded-t-[3px] transition-all duration-150"
+                  style={{ height: h, backgroundColor: color, opacity: isHov ? 1 : 0.75 }}
+                />
+              )
+            }
+            return (
+              <div
+                key={date}
+                className="flex-1 flex flex-col cursor-pointer"
+                onMouseEnter={() => setHovered(date)}
+                onMouseLeave={() => setHovered(null)}
+              >
+                {/* 3 grouped bars */}
+                <div className="flex-1 flex items-end gap-px">
+                  {bar(pumpTotal, PINK)}
+                  {bar(feedTotal, BLUE)}
+                  {bar(eatTotal, ORANGE)}
+                </div>
+                {/* Day label */}
+                <div
+                  className="h-[22px] flex flex-col items-center justify-end pb-0.5 gap-0"
+                >
+                  <span className="text-[9px] leading-none font-medium" style={{ color: isToday ? PINK : 'var(--v-text-3)' }}>
+                    {dow(date)}
+                  </span>
+                  <span className="text-[8px] leading-none" style={{ color: 'var(--v-faint)' }}>
+                    {format(parseISO(date), 'd/M')}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Hover detail row */}
+      <div
+        className="mt-2 pt-2 flex items-center justify-between transition-opacity"
+        style={{ borderTop: '1px solid var(--v-border-2)', opacity: hoveredData ? 1 : 0, minHeight: 22 }}
+      >
+        {hoveredData && (
+          <>
+            <span className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
+              {format(parseISO(hoveredData.date), 'EEEE, d/M', { locale: vi })}
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] font-medium" style={{ color: PINK }}>Hút {hoveredData.pumpTotal} ml</span>
+              <span className="text-[11px] font-medium" style={{ color: BLUE }}>Uống {hoveredData.feedTotal} ml</span>
+              {hoveredData.eatTotal > 0 && (
+                <span className="text-[11px] font-medium" style={{ color: ORANGE }}>Ăn {hoveredData.eatTotal} ml</span>
+              )}
+              <span className="text-[11px]" style={{ color: hoveredData.balance >= 0 ? GREEN : PINK }}>
+                {hoveredData.balance >= 0 ? '+' : ''}{hoveredData.balance} ml
+              </span>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -785,7 +937,7 @@ function Modal({
       return
     }
 
-    // —— Bé uống (tạo / sửa) ————————————————————————————————————————
+    // —— Bé uống / Ăn cháo (tạo / sửa) ——————————————————————————————
     const ml = Number(amount)
     if (!amount || isNaN(ml) || ml <= 0) {
       toast.error('Nhập số ml hợp lệ')
@@ -794,7 +946,7 @@ function Modal({
     setSaving(true)
     try {
       await onSave({
-        type: 'feed',
+        type,
         amount: Math.round(ml),
         note: noteTrim,
         recordedAt: recordedAtIso,
@@ -811,6 +963,7 @@ function Modal({
   /** Hai cột Trái/Phải khi loại Hút (tạo mới + chỉnh sửa) */
   const showPumpDualFields = type === 'pump'
   const isSaveDualLabel = type === 'pump' && (!isEdit || initial?.entryKind === 'pump_dual')
+  const amountLabel = type === 'eat' ? 'Số ml ăn' : 'Số ml'
 
   return (
     <>
@@ -862,6 +1015,7 @@ function Modal({
               [
                 ['pump', 'Hút sữa'],
                 ['feed', 'Bé uống'],
+                ['eat', 'Ăn cháo'],
               ] as [RecordType, string][]
             ).map(([t, label]) => (
               <button
@@ -869,7 +1023,7 @@ function Modal({
                 type="button"
                 onClick={() => {
                   setType(t)
-                  if (t === 'feed') {
+                  if (t === 'feed' || t === 'eat') {
                     setLeftMl('')
                     setRightMl('')
                   } else {
@@ -879,8 +1033,7 @@ function Modal({
                 className="flex-1 rounded-[8px] py-2 text-[12px] font-medium transition-colors"
                 style={{
                   backgroundColor: type === t ? 'var(--v-surface)' : 'transparent',
-                  color:
-                    type === t ? (t === 'pump' ? PINK : BLUE) : 'var(--v-text-3)',
+                  color: type === t ? (t === 'pump' ? PINK : t === 'eat' ? ORANGE : BLUE) : 'var(--v-text-3)',
                 }}
               >
                 {label}
@@ -951,10 +1104,10 @@ function Modal({
             </div>
           </div>
         ) : (
-          /* Amount — một lần (bé uống / chỉnh sửa hút) */
+          /* Amount — một lần (bé uống / ăn cháo / chỉnh sửa hút) */
           <div className="mb-4">
             <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-text-3)' }}>
-              Số ml
+              {amountLabel}
             </div>
             <input
               type="number"
@@ -1026,6 +1179,7 @@ export default function SumyPage() {
   const [editingRecord, setEditingRecord] = useState<MilkRecord | null>(null)
   const [dayPopup, setDayPopup] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showLog, setShowLog] = useState(true)
 
   useEffect(() => {
     if (getSessionUsername() !== 'sumy') {
@@ -1106,6 +1260,15 @@ export default function SumyPage() {
         localDate: data.localDate,
       })
       toast.success('Đã lưu')
+    } else if (data.type === 'eat' && data.amount != null) {
+      await createRecord({
+        type: 'eat',
+        amount: data.amount,
+        note: data.note,
+        recordedAt: data.recordedAt,
+        localDate: data.localDate,
+      })
+      toast.success('Đã lưu')
     } else if (data.type === 'feed' && data.amount != null) {
       await createRecord({
         type: 'feed',
@@ -1147,17 +1310,7 @@ export default function SumyPage() {
 
   return (
     <>
-      <V2Topbar
-        actions={
-          <button
-            onClick={() => setShowModal(true)}
-            className="w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: PINK }}
-          >
-            <Plus size={16} color="#fff" />
-          </button>
-        }
-      />
+      <V2Topbar />
 
       {/* ── Laptop: 2 cột | Mobile: 1 cột ── */}
       <div className="px-4 py-4 sm:px-6 sm:py-5 max-w-[900px] mx-auto">
@@ -1171,54 +1324,32 @@ export default function SumyPage() {
           <div className="sm:flex-1 sm:min-w-0">
             <DetailCard date={selectedDate} records={selectedRecords} />
 
-            {/* Quick-add */}
-            <button
-              type="button"
-              onClick={() => setShowModal(true)}
-              className="w-full rounded-[14px] mb-3 overflow-hidden transition-opacity active:opacity-85"
-              style={{
-                border: `1px solid ${PINK}`,
-                boxShadow: '0 2px 14px rgba(201,122,138,0.15)',
-              }}
-            >
-              <div className="flex items-stretch">
-                <div
-                  className="flex-1 flex flex-col items-center justify-center py-3 px-2"
-                  style={{ backgroundColor: PINK_BG }}
-                >
-                  <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: PINK }}>Trái</span>
-                  <span className="text-[9px] mt-0.5" style={{ color: '#b08090' }}>ml</span>
-                </div>
-                <div
-                  className="flex flex-col items-center justify-center px-3 py-2.5 bg-white min-w-[120px]"
-                  style={{ borderLeft: `1px solid #f5e0e6`, borderRight: `1px solid #f5e0e6` }}
-                >
-                  <Plus size={16} color={PINK} className="mb-0.5" />
-                  <span className="text-[12px] font-semibold leading-tight" style={{ color: 'var(--v-text)' }}>Ghi chép mới</span>
-                  <span className="text-[9px] mt-0.5 text-center" style={{ color: 'var(--v-text-3)' }}>Trái &amp; phải cùng lúc</span>
-                </div>
-                <div
-                  className="flex-1 flex flex-col items-center justify-center py-3 px-2"
-                  style={{ backgroundColor: BLUE_BG }}
-                >
-                  <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: BLUE }}>Phải</span>
-                  <span className="text-[9px] mt-0.5" style={{ color: '#7a90b0' }}>ml</span>
-                </div>
-              </div>
-            </button>
-
-            <div className="text-[11px] mb-2 capitalize" style={{ color: 'var(--v-text-3)' }}>
-              {selectedDate === today
-                ? 'Nhật ký hôm nay'
-                : `Nhật ký · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] capitalize" style={{ color: 'var(--v-text-3)' }}>
+                {selectedDate === today
+                  ? 'Nhật ký hôm nay'
+                  : `Nhật ký · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowLog((v) => !v)}
+                className="text-[10px] px-2 h-[20px] rounded-[5px] transition-colors"
+                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-3)', backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                {showLog ? 'Ẩn' : 'Hiện'}
+              </button>
             </div>
-            <Log
-              records={selectedRecords}
-              selectedDate={selectedDate}
-              today={today}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
+            {showLog && (
+              <Log
+                records={selectedRecords}
+                selectedDate={selectedDate}
+                today={today}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            )}
           </div>
 
           {/* Cột phải — calendar */}
@@ -1244,7 +1375,22 @@ export default function SumyPage() {
           </div>
 
         </div>
+
+        {/* 7-day chart */}
+        <div className="mt-5">
+          <WeekChart allRecords={allRecords} today={today} />
+        </div>
       </div>
+
+      {/* FAB */}
+      <button
+        onClick={() => setShowModal(true)}
+        className="fixed right-6 z-40 bottom-[76px] sm:bottom-6 flex items-center gap-2 h-[44px] px-5 rounded-full text-[13px] font-medium shadow-lg"
+        style={{ backgroundColor: PINK, color: '#fff' }}
+      >
+        <Plus size={16} />
+        Ghi chép mới
+      </button>
 
       {dayPopup && (
         <DayPopup

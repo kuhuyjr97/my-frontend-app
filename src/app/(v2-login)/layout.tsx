@@ -4,7 +4,7 @@ export default function V2LoginShellLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f7f6f3' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--v-bg)' }}>
       {children}
     </div>
   )

@@ -131,97 +131,94 @@ export default function V2LoginPage() {
     }
   }
 
+  const inputCls = 'w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-1'
+  const inputStyle = {
+    border: '1px solid var(--v-border)',
+    backgroundColor: 'var(--v-input-bg)',
+    color: 'var(--v-text)',
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
       <div
-        className="w-full max-w-md rounded-2xl border border-[#e8e6e1] bg-white p-8 shadow-sm"
-        style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}
+        className="w-full max-w-md rounded-2xl p-8"
+        style={{
+          backgroundColor: 'var(--v-surface)',
+          border: '1px solid var(--v-border)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+        }}
       >
+        {/* Logo + title */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-[#1a1a1a]">
-            <span className="text-[11px] font-medium tracking-tight text-white">OS</span>
+          <div
+            className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg"
+            style={{ backgroundColor: 'var(--v-btn-bg)' }}
+          >
+            <span className="text-[11px] font-medium tracking-tight" style={{ color: 'var(--v-btn-text)' }}>OS</span>
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-[#1a1a1a]">
+          <h1 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--v-text)' }}>
             {mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
           </h1>
-          <p className="mt-1 text-sm text-[#8a8780]">Phiên bản V2</p>
+          <p className="mt-1 text-sm" style={{ color: 'var(--v-muted)' }}>Phiên bản V2</p>
         </div>
 
-        <div className="mb-6 flex rounded-xl bg-[#f0eeea] p-1">
-          <button
-            type="button"
-            onClick={() => {
-              setMode('login')
-              setError('')
-            }}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-              mode === 'login'
-                ? 'bg-white text-[#1a1a1a] shadow-sm'
-                : 'text-[#8a8780] hover:text-[#1a1a1a]'
-            }`}
-          >
-            Đăng nhập
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode('register')
-              setError('')
-            }}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-              mode === 'register'
-                ? 'bg-white text-[#1a1a1a] shadow-sm'
-                : 'text-[#8a8780] hover:text-[#1a1a1a]'
-            }`}
-          >
-            Đăng ký
-          </button>
+        {/* Tab switcher */}
+        <div className="mb-6 flex rounded-xl p-1" style={{ backgroundColor: 'var(--v-hover)' }}>
+          {(['login', 'register'] as Mode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => { setMode(m); setError('') }}
+              className="flex-1 rounded-lg py-2 text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: mode === m ? 'var(--v-surface)' : 'transparent',
+                color: mode === m ? 'var(--v-text)' : 'var(--v-muted)',
+                boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+              }}
+            >
+              {m === 'login' ? 'Đăng nhập' : 'Đăng ký'}
+            </button>
+          ))}
         </div>
 
-        {error ? (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        {/* Error */}
+        {error && (
+          <div
+            className="mb-4 rounded-lg px-3 py-2 text-sm"
+            style={{ border: '1px solid #f5c6cb', backgroundColor: '#fdf0f0', color: '#b05040' }}
+          >
             {error}
           </div>
-        ) : null}
+        )}
 
         {mode === 'login' ? (
           <form className="space-y-4" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="v2-username" className="mb-1 block text-xs font-medium text-[#555]">
+              <label htmlFor="v2-username" className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--v-text-2)' }}>
                 Tên đăng nhập
               </label>
               <input
-                id="v2-username"
-                name="username"
-                type="text"
-                required
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded-lg border border-[#e8e6e1] bg-white px-3 py-2 text-sm text-[#1a1a1a] outline-none ring-[#1a1a1a] placeholder:text-[#b0ada8] focus:border-[#1a1a1a] focus:ring-1"
+                id="v2-username" name="username" type="text" required autoComplete="username"
+                value={username} onChange={(e) => setUsername(e.target.value)}
                 placeholder="Username"
+                className={inputCls} style={inputStyle}
               />
             </div>
             <div>
-              <label htmlFor="v2-password" className="mb-1 block text-xs font-medium text-[#555]">
+              <label htmlFor="v2-password" className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--v-text-2)' }}>
                 Mật khẩu
               </label>
               <input
-                id="v2-password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-[#e8e6e1] bg-white px-3 py-2 text-sm text-[#1a1a1a] outline-none focus:border-[#1a1a1a] focus:ring-1"
+                id="v2-password" name="password" type="password" required autoComplete="current-password"
+                value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                className={inputCls} style={inputStyle}
               />
             </div>
             <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 w-full rounded-lg bg-[#1a1a1a] py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              type="submit" disabled={loading}
+              className="mt-2 w-full rounded-lg py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
             >
               {loading ? 'Đang xử lý…' : 'Đăng nhập'}
             </button>
@@ -229,69 +226,49 @@ export default function V2LoginPage() {
         ) : (
           <form className="space-y-4" onSubmit={handleRegister}>
             <div>
-              <label htmlFor="v2-reg-username" className="mb-1 block text-xs font-medium text-[#555]">
+              <label htmlFor="v2-reg-username" className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--v-text-2)' }}>
                 Tên đăng nhập
               </label>
               <input
-                id="v2-reg-username"
-                name="username"
-                type="text"
-                required
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded-lg border border-[#e8e6e1] px-3 py-2 text-sm outline-none focus:border-[#1a1a1a] focus:ring-1"
+                id="v2-reg-username" name="username" type="text" required autoComplete="username"
+                value={username} onChange={(e) => setUsername(e.target.value)}
+                className={inputCls} style={inputStyle}
               />
             </div>
             <div>
-              <label htmlFor="v2-email" className="mb-1 block text-xs font-medium text-[#555]">
+              <label htmlFor="v2-email" className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--v-text-2)' }}>
                 Email
               </label>
               <input
-                id="v2-email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-[#e8e6e1] px-3 py-2 text-sm outline-none focus:border-[#1a1a1a] focus:ring-1"
+                id="v2-email" name="email" type="email" required autoComplete="email"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                className={inputCls} style={inputStyle}
               />
             </div>
             <div>
-              <label htmlFor="v2-reg-password" className="mb-1 block text-xs font-medium text-[#555]">
+              <label htmlFor="v2-reg-password" className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--v-text-2)' }}>
                 Mật khẩu
               </label>
               <input
-                id="v2-reg-password"
-                name="password"
-                type="password"
-                required
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-[#e8e6e1] px-3 py-2 text-sm outline-none focus:border-[#1a1a1a] focus:ring-1"
+                id="v2-reg-password" name="password" type="password" required autoComplete="new-password"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                className={inputCls} style={inputStyle}
               />
             </div>
             <div>
-              <label htmlFor="v2-confirm" className="mb-1 block text-xs font-medium text-[#555]">
+              <label htmlFor="v2-confirm" className="mb-1.5 block text-xs font-medium" style={{ color: 'var(--v-text-2)' }}>
                 Nhập lại mật khẩu
               </label>
               <input
-                id="v2-confirm"
-                name="confirmPassword"
-                type="password"
-                required
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border border-[#e8e6e1] px-3 py-2 text-sm outline-none focus:border-[#1a1a1a] focus:ring-1"
+                id="v2-confirm" name="confirmPassword" type="password" required autoComplete="new-password"
+                value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                className={inputCls} style={inputStyle}
               />
             </div>
             <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 w-full rounded-lg bg-[#1a1a1a] py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              type="submit" disabled={loading}
+              className="mt-2 w-full rounded-lg py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
             >
               {loading ? 'Đang xử lý…' : 'Đăng ký'}
             </button>
