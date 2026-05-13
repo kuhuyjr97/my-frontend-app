@@ -21,6 +21,7 @@ import {
   type PumpSide,
 } from '@/lib/v2/sumy-api'
 import { getSessionUsername } from '@/lib/v2/auth-session'
+import { useLang } from '@/lib/v2/i18n/context'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -280,6 +281,7 @@ function DayPopup({
   onEdit: (r: MilkRecord) => void
   onDelete: (id: string) => void
 }) {
+  const { t } = useLang()
   const dateLabel = format(parseISO(date), "EEEE, d/M/yyyy", { locale: vi })
   const sum = computeSummary(records)
   const sorted = [...records].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt))
@@ -325,7 +327,7 @@ function DayPopup({
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(80dvh - 72px)' }}>
           {sorted.length === 0 ? (
             <div className="px-4 py-6 text-center text-[12px]" style={{ color: 'var(--v-muted)' }}>
-              {date === today ? 'Chưa có ghi chép hôm nay' : 'Không có ghi chép'}
+              <DayPopupEmpty date={date} today={today} />
             </div>
           ) : (
             sorted.map((rec) => {
@@ -334,9 +336,9 @@ function DayPopup({
               const time = format(parseISO(rec.recordedAt), 'HH:mm')
               const label = isPump
                 ? rec.entryKind === 'pump_dual'
-                  ? `Hút · Trái ${rec.leftMl ?? '—'} · Phải ${rec.rightMl ?? '—'}`
-                  : `Hút sữa${rec.side ? ` · ${rec.side === 'left' ? 'Trái' : rec.side === 'right' ? 'Phải' : 'Hai bên'}` : ''}`
-                : isEat ? 'Ăn cháo' : 'Bé uống'
+                  ? `${t('sumy.pump')} · ${t('sumy.leftSide')} ${rec.leftMl ?? '—'} · ${t('sumy.rightSide')} ${rec.rightMl ?? '—'}`
+                  : `${t('sumy.pumpOption')}${rec.side ? ` · ${rec.side === 'left' ? t('sumy.leftSide') : rec.side === 'right' ? t('sumy.rightSide') : t('sumy.bothSides')}` : ''}`
+                : isEat ? t('sumy.eatOption') : t('sumy.feedOption')
               const recColor = isPump ? PINK : isEat ? ORANGE : BLUE
               return (
                 <div
@@ -379,16 +381,22 @@ function DayPopup({
   )
 }
 
+function DayPopupEmpty({ date, today }: { date: string; today: string }) {
+  const { t } = useLang()
+  return <>{date === today ? t('sumy.noRecordsToday') : t('sumy.noRecordsDate')}</>
+}
+
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
 function Legend() {
+  const { t } = useLang()
   return (
     <div className="flex items-center gap-4 mb-3">
       {[
-        { color: '#e8aab8', label: 'Hút' },
-        { color: '#a8bce8', label: 'Uống' },
-        { color: '#f5c98a', label: 'Ăn' },
-        { color: '#d0cdc8', label: 'Dư' },
+        { color: '#e8aab8', label: t('sumy.pump') },
+        { color: '#a8bce8', label: t('sumy.feed') },
+        { color: '#f5c98a', label: t('sumy.eat') },
+        { color: '#d0cdc8', label: t('sumy.surplus') },
       ].map(({ color, label }) => (
         <div key={label} className="flex items-center gap-1">
           <span
@@ -413,6 +421,7 @@ function DetailCard({
   date: string
   records: MilkRecord[]
 }) {
+  const { t } = useLang()
   const sum = computeSummary(records)
   const dateLabel = format(parseISO(date), "EEEE, d/M/yyyy", { locale: vi })
   const pos = sum.balance >= 0
@@ -437,7 +446,7 @@ function DetailCard({
           }}
         >
           {pos ? '+' : ''}
-          {sum.balance} ml {pos ? 'dư' : 'thiếu'}
+          {sum.balance} ml {pos ? t('sumy.surplus') : t('sumy.shortage')}
         </span>
       </div>
       <div className="grid grid-cols-3 gap-3">
@@ -445,7 +454,7 @@ function DetailCard({
           <div className="flex items-center gap-1.5 mb-1">
             <Droplets size={14} color={PINK} />
             <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
-              Đã hút
+              {t('sumy.pumpedLabel')}
             </span>
           </div>
           <div className="text-[15px] font-medium" style={{ color: PINK }}>
@@ -460,7 +469,7 @@ function DetailCard({
           <div className="flex items-center gap-1.5 mb-1">
             <Baby size={14} color={BLUE} />
             <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
-              Bé uống
+              {t('sumy.babyFedLabel')}
             </span>
           </div>
           <div className="text-[15px] font-medium" style={{ color: BLUE }}>
@@ -475,7 +484,7 @@ function DetailCard({
           <div className="flex items-center gap-1.5 mb-1">
             <Utensils size={14} color={ORANGE} />
             <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
-              Ăn cháo
+              {t('sumy.eatLabel')}
             </span>
           </div>
           <div className="text-[15px] font-medium" style={{ color: ORANGE }}>
@@ -508,6 +517,8 @@ function Log({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  const { t } = useLang()
+
   if (records.length === 0) {
     return (
       <div
@@ -515,9 +526,7 @@ function Log({
         style={{ border: '0.5px solid #e8e6e1' }}
       >
         <span className="text-[12px]" style={{ color: 'var(--v-muted)' }}>
-          {selectedDate === today
-            ? 'Chưa có ghi chép hôm nay'
-            : 'Chưa có ghi chép cho ngày này'}
+          {selectedDate === today ? t('sumy.noRecordsToday') : t('sumy.noRecordsDate')}
         </span>
       </div>
     )
@@ -538,9 +547,9 @@ function Log({
         const time = format(parseISO(rec.recordedAt), 'HH:mm')
         const label = isPump
           ? rec.entryKind === 'pump_dual'
-            ? `Hút sữa · Trái ${rec.leftMl ?? '—'} · Phải ${rec.rightMl ?? '—'}`
-            : `Hút sữa${rec.side ? ` · ${rec.side === 'left' ? 'Trái' : rec.side === 'right' ? 'Phải' : 'Hai bên'}` : ''}`
-          : isEat ? 'Ăn cháo' : 'Bé uống'
+            ? `${t('sumy.pumpOption')} · ${t('sumy.leftSide')} ${rec.leftMl ?? '—'} · ${t('sumy.rightSide')} ${rec.rightMl ?? '—'}`
+            : `${t('sumy.pumpOption')}${rec.side ? ` · ${rec.side === 'left' ? t('sumy.leftSide') : rec.side === 'right' ? t('sumy.rightSide') : t('sumy.bothSides')}` : ''}`
+          : isEat ? t('sumy.eatOption') : t('sumy.feedOption')
         const recColor = isPump ? PINK : isEat ? ORANGE : BLUE
         const isSelected = selectedId === rec.id
 
@@ -592,14 +601,14 @@ function Log({
                   className="flex-1 py-1.5 rounded-[8px] text-[12px] font-medium"
                   style={{ backgroundColor: 'var(--v-surface)', color: 'var(--v-text)', border: '0.5px solid #e8e6e1' }}
                 >
-                  Chỉnh sửa
+                  {t('sumy.editRecord')}
                 </button>
                 <button
                   onClick={() => { onDelete(rec.id); setSelectedId(null) }}
                   className="flex-1 py-1.5 rounded-[8px] text-[12px] font-medium"
                   style={{ backgroundColor: PINK_BG, color: PINK }}
                 >
-                  Xóa
+                  {t('common.delete')}
                 </button>
               </div>
             )}
@@ -614,6 +623,7 @@ function Log({
 
 function WeekChart({ allRecords, today }: { allRecords: MilkRecord[]; today: string }) {
   const [hovered, setHovered] = useState<string | null>(null)
+  const { t } = useLang()
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today)
@@ -643,12 +653,12 @@ function WeekChart({ allRecords, today }: { allRecords: MilkRecord[]; today: str
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[12px] font-medium" style={{ color: 'var(--v-text)' }}>7 ngày gần nhất</span>
+        <span className="text-[12px] font-medium" style={{ color: 'var(--v-text)' }}>{t('sumy.last7Days')}</span>
         <div className="flex items-center gap-3">
           {[
-            { color: PINK,   label: 'Hút' },
-            { color: BLUE,   label: 'Uống' },
-            { color: ORANGE, label: 'Ăn' },
+            { color: PINK,   label: t('sumy.pump') },
+            { color: BLUE,   label: t('sumy.feed') },
+            { color: ORANGE, label: t('sumy.eat') },
           ].map(({ color, label }) => (
             <div key={label} className="flex items-center gap-1">
               <span className="rounded-full" style={{ width: 7, height: 7, backgroundColor: color }} />
@@ -659,62 +669,68 @@ function WeekChart({ allRecords, today }: { allRecords: MilkRecord[]; today: str
       </div>
 
       {/* Bars + labels */}
-      <div className="relative" style={{ height: BAR_H + 22 }}>
-        {/* Horizontal gridlines */}
-        {[0.25, 0.5, 0.75, 1].map((pct) => (
-          <div
-            key={pct}
-            className="absolute left-0 right-8 flex items-center"
-            style={{ bottom: 22 + pct * BAR_H, pointerEvents: 'none' }}
-          >
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--v-border-2)' }} />
-            <span className="text-[9px] w-7 text-right shrink-0" style={{ color: 'var(--v-faint)' }}>
-              {Math.round(maxVal * pct)}
-            </span>
-          </div>
-        ))}
-
-        {/* Columns */}
-        <div className="absolute inset-x-0 bottom-0 flex gap-1 pr-8" style={{ height: BAR_H + 22 }}>
-          {data.map(({ date, pumpTotal, feedTotal, eatTotal }) => {
-            const isToday = date === today
-            const isHov   = hovered === date
-            const bar = (val: number, color: string) => {
-              const h = val > 0 ? Math.max(3, Math.round((val / maxVal) * BAR_H)) : 0
+      <div className="flex gap-1" style={{ height: BAR_H + 22 }}>
+        {/* Main chart area — full width */}
+        <div className="relative flex-1 min-w-0">
+          {/* Horizontal gridlines */}
+          {[0.25, 0.5, 0.75, 1].map((pct) => (
+            <div
+              key={pct}
+              className="absolute left-0 right-0 h-px pointer-events-none"
+              style={{ bottom: 22 + pct * BAR_H, backgroundColor: 'var(--v-border-2)' }}
+            />
+          ))}
+          {/* Columns */}
+          <div className="absolute inset-0 flex gap-1">
+            {data.map(({ date, pumpTotal, feedTotal, eatTotal }) => {
+              const isToday = date === today
+              const isHov   = hovered === date
+              const bar = (val: number, color: string) => {
+                const h = val > 0 ? Math.max(3, Math.round((val / maxVal) * BAR_H)) : 0
+                return (
+                  <div
+                    className="flex-1 rounded-t-[3px] transition-all duration-150"
+                    style={{ height: h, backgroundColor: color, opacity: isHov ? 1 : 0.75 }}
+                  />
+                )
+              }
               return (
                 <div
-                  className="flex-1 rounded-t-[3px] transition-all duration-150"
-                  style={{ height: h, backgroundColor: color, opacity: isHov ? 1 : 0.75 }}
-                />
-              )
-            }
-            return (
-              <div
-                key={date}
-                className="flex-1 flex flex-col cursor-pointer"
-                onMouseEnter={() => setHovered(date)}
-                onMouseLeave={() => setHovered(null)}
-              >
-                {/* 3 grouped bars */}
-                <div className="flex-1 flex items-end gap-px">
-                  {bar(pumpTotal, PINK)}
-                  {bar(feedTotal, BLUE)}
-                  {bar(eatTotal, ORANGE)}
-                </div>
-                {/* Day label */}
-                <div
-                  className="h-[22px] flex flex-col items-center justify-end pb-0.5 gap-0"
+                  key={date}
+                  className="flex-1 flex flex-col cursor-pointer"
+                  onMouseEnter={() => setHovered(date)}
+                  onMouseLeave={() => setHovered(null)}
                 >
-                  <span className="text-[9px] leading-none font-medium" style={{ color: isToday ? PINK : 'var(--v-text-3)' }}>
-                    {dow(date)}
-                  </span>
-                  <span className="text-[8px] leading-none" style={{ color: 'var(--v-faint)' }}>
-                    {format(parseISO(date), 'd/M')}
-                  </span>
+                  <div className="flex-1 flex items-end gap-px">
+                    {bar(pumpTotal, PINK)}
+                    {bar(feedTotal, BLUE)}
+                    {bar(eatTotal, ORANGE)}
+                  </div>
+                  <div className="h-[22px] flex flex-col items-center justify-end pb-0.5">
+                    <span className="text-[9px] leading-none font-medium" style={{ color: isToday ? PINK : 'var(--v-text-3)' }}>
+                      {dow(date)}
+                    </span>
+                    <span className="text-[8px] leading-none" style={{ color: 'var(--v-faint)' }}>
+                      {format(parseISO(date), 'd/M')}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Y-axis labels — cột cố định bên phải */}
+        <div className="relative shrink-0" style={{ width: 28, height: BAR_H + 22 }}>
+          {[0.25, 0.5, 0.75, 1].map((pct) => (
+            <span
+              key={pct}
+              className="absolute right-0 text-[9px] leading-none"
+              style={{ bottom: 22 + pct * BAR_H - 5, color: 'var(--v-faint)' }}
+            >
+              {Math.round(maxVal * pct)}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -729,10 +745,10 @@ function WeekChart({ allRecords, today }: { allRecords: MilkRecord[]; today: str
               {format(parseISO(hoveredData.date), 'EEEE, d/M', { locale: vi })}
             </span>
             <div className="flex items-center gap-3">
-              <span className="text-[11px] font-medium" style={{ color: PINK }}>Hút {hoveredData.pumpTotal} ml</span>
-              <span className="text-[11px] font-medium" style={{ color: BLUE }}>Uống {hoveredData.feedTotal} ml</span>
+              <span className="text-[11px] font-medium" style={{ color: PINK }}>{t('sumy.pump')} {hoveredData.pumpTotal} ml</span>
+              <span className="text-[11px] font-medium" style={{ color: BLUE }}>{t('sumy.feed')} {hoveredData.feedTotal} ml</span>
               {hoveredData.eatTotal > 0 && (
-                <span className="text-[11px] font-medium" style={{ color: ORANGE }}>Ăn {hoveredData.eatTotal} ml</span>
+                <span className="text-[11px] font-medium" style={{ color: ORANGE }}>{t('sumy.eat')} {hoveredData.eatTotal} ml</span>
               )}
               <span className="text-[11px]" style={{ color: hoveredData.balance >= 0 ? GREEN : PINK }}>
                 {hoveredData.balance >= 0 ? '+' : ''}{hoveredData.balance} ml
@@ -766,6 +782,7 @@ function Modal({
   }) => Promise<void>
 }) {
   const isEdit = !!initial
+  const { t } = useLang()
   const [type, setType] = useState<RecordType>(initial?.type ?? 'pump')
   const [amount, setAmount] = useState(initial ? String(initial.amount) : '')
   const [leftMl, setLeftMl] = useState('')
@@ -839,7 +856,7 @@ function Modal({
       const hasL = !isNaN(L) && L > 0
       const hasR = !isNaN(R) && R > 0
       if (!hasL && !hasR) {
-        toast.error('Nhập ml ít nhất một bên (trái hoặc phải)')
+        toast.error(t('sumy.pumpRequiredError'))
         return
       }
       setSaving(true)
@@ -854,7 +871,7 @@ function Modal({
         })
         onClose()
       } catch {
-        toast.error('Lỗi khi lưu')
+        toast.error(t('sumy.saveError'))
       } finally {
         setSaving(false)
       }
@@ -868,7 +885,7 @@ function Modal({
       const hasL = !isNaN(L) && L > 0
       const hasR = !isNaN(R) && R > 0
       if (!hasL && !hasR) {
-        toast.error('Nhập ml ít nhất một bên')
+        toast.error(t('sumy.pumpRequiredError'))
         return
       }
       setSaving(true)
@@ -883,7 +900,7 @@ function Modal({
         })
         onClose()
       } catch {
-        toast.error('Lỗi khi lưu')
+        toast.error(t('sumy.saveError'))
       } finally {
         setSaving(false)
       }
@@ -897,7 +914,7 @@ function Modal({
       const hasL = !isNaN(L) && L > 0
       const hasR = !isNaN(R) && R > 0
       if (!hasL && !hasR) {
-        toast.error('Nhập ml ít nhất một bên')
+        toast.error(t('sumy.pumpRequiredError'))
         return
       }
       if (hasL && hasR && Math.round(L) !== Math.round(R)) {
@@ -930,7 +947,7 @@ function Modal({
         })
         onClose()
       } catch {
-        toast.error('Lỗi khi lưu')
+        toast.error(t('sumy.saveError'))
       } finally {
         setSaving(false)
       }
@@ -940,7 +957,7 @@ function Modal({
     // —— Bé uống / Ăn cháo (tạo / sửa) ——————————————————————————————
     const ml = Number(amount)
     if (!amount || isNaN(ml) || ml <= 0) {
-      toast.error('Nhập số ml hợp lệ')
+      toast.error(t('sumy.invalidAmountError'))
       return
     }
     setSaving(true)
@@ -954,7 +971,7 @@ function Modal({
       })
       onClose()
     } catch {
-      toast.error('Lỗi khi lưu')
+      toast.error(t('sumy.saveError'))
     } finally {
       setSaving(false)
     }
@@ -963,7 +980,7 @@ function Modal({
   /** Hai cột Trái/Phải khi loại Hút (tạo mới + chỉnh sửa) */
   const showPumpDualFields = type === 'pump'
   const isSaveDualLabel = type === 'pump' && (!isEdit || initial?.entryKind === 'pump_dual')
-  const amountLabel = type === 'eat' ? 'Số ml ăn' : 'Số ml'
+  const amountLabel = type === 'eat' ? t('sumy.eatAmountLabel') : t('sumy.amountLabel')
 
   return (
     <>
@@ -984,7 +1001,7 @@ function Modal({
           className="text-[15px] font-medium mb-1"
           style={{ color: 'var(--v-text)' }}
         >
-          {initial ? 'Chỉnh sửa' : 'Ghi chép mới'}
+          {initial ? t('sumy.editRecord') : t('sumy.newRecord')}
         </h2>
         {!isEdit && type === 'pump' && (
           <p className="text-[11px] mb-4" style={{ color: 'var(--v-text-3)' }}>
@@ -1013,17 +1030,17 @@ function Modal({
           >
             {(
               [
-                ['pump', 'Hút sữa'],
-                ['feed', 'Bé uống'],
-                ['eat', 'Ăn cháo'],
+                ['pump', t('sumy.pumpOption')],
+                ['feed', t('sumy.feedOption')],
+                ['eat', t('sumy.eatOption')],
               ] as [RecordType, string][]
-            ).map(([t, label]) => (
+            ).map(([rt, label]) => (
               <button
-                key={t}
+                key={rt}
                 type="button"
                 onClick={() => {
-                  setType(t)
-                  if (t === 'feed' || t === 'eat') {
+                  setType(rt)
+                  if (rt === 'feed' || rt === 'eat') {
                     setLeftMl('')
                     setRightMl('')
                   } else {
@@ -1032,8 +1049,8 @@ function Modal({
                 }}
                 className="flex-1 rounded-[8px] py-2 text-[12px] font-medium transition-colors"
                 style={{
-                  backgroundColor: type === t ? 'var(--v-surface)' : 'transparent',
-                  color: type === t ? (t === 'pump' ? PINK : t === 'eat' ? ORANGE : BLUE) : 'var(--v-text-3)',
+                  backgroundColor: type === rt ? 'var(--v-surface)' : 'transparent',
+                  color: type === rt ? (rt === 'pump' ? PINK : rt === 'eat' ? ORANGE : BLUE) : 'var(--v-text-3)',
                 }}
               >
                 {label}
@@ -1046,7 +1063,7 @@ function Modal({
         {showPumpDualFields ? (
           <div className="mb-4">
             <div className="text-[11px] mb-2" style={{ color: 'var(--v-text-3)' }}>
-              Số ml đã hút
+              {t('sumy.pumpedAmount')}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div
@@ -1058,7 +1075,7 @@ function Modal({
                 }}
               >
                 <div className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: PINK }}>
-                  Trái — L
+                  {t('sumy.leftLabel')}
                 </div>
                 <div className="flex items-baseline gap-1">
                   <input
@@ -1084,7 +1101,7 @@ function Modal({
                 }}
               >
                 <div className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: BLUE }}>
-                  Phải — R
+                  {t('sumy.rightLabel')}
                 </div>
                 <div className="flex items-baseline gap-1">
                   <input
@@ -1123,7 +1140,7 @@ function Modal({
         {/* Time */}
         <div className="mb-4">
           <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-text-3)' }}>
-            Thời gian
+            {t('sumy.timeLabel')}
           </div>
           <input
             type="datetime-local"
@@ -1137,12 +1154,12 @@ function Modal({
         {/* Note */}
         <div className="mb-5">
           <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-text-3)' }}>
-            Ghi chú
+            {t('sumy.noteLabel')}
           </div>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Tuỳ chọn..."
+            placeholder={t('sumy.notePlaceholder')}
             rows={2}
             className="w-full rounded-[10px] px-3 py-2.5 text-[13px] outline-none resize-none"
             style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
@@ -1157,10 +1174,10 @@ function Modal({
           style={{ backgroundColor: PINK, opacity: saving ? 0.7 : 1 }}
         >
           {saving
-            ? 'Đang lưu...'
+            ? t('common.saving')
             : isSaveDualLabel
-              ? 'Lưu ghi chép'
-              : 'Lưu'}
+              ? t('sumy.saveRecord')
+              : t('common.save')}
         </button>
       </div>
     </>
@@ -1171,6 +1188,7 @@ function Modal({
 
 export default function SumyPage() {
   const router = useRouter()
+  const { t } = useLang()
   const today = useMemo(() => todayStr(), [])
   const [allRecords, setAllRecords] = useState<MilkRecord[]>([])
   const [selectedDate, setSelectedDate] = useState(today)
@@ -1179,7 +1197,7 @@ export default function SumyPage() {
   const [editingRecord, setEditingRecord] = useState<MilkRecord | null>(null)
   const [dayPopup, setDayPopup] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showLog, setShowLog] = useState(true)
+
 
   useEffect(() => {
     if (getSessionUsername() !== 'sumy') {
@@ -1192,7 +1210,7 @@ export default function SumyPage() {
       const data = await fetchRecords()
       setAllRecords(data)
     } catch {
-      toast.error('Không thể tải dữ liệu')
+      toast.error(t('sumy.loadError'))
     } finally {
       setLoading(false)
     }
@@ -1235,7 +1253,7 @@ export default function SumyPage() {
           localDate: data.localDate,
         })
       }
-      toast.success('Đã cập nhật')
+      toast.success(t('sumy.updated'))
       setEditingRecord(null)
     } else if (
       data.type === 'pump' &&
@@ -1249,7 +1267,7 @@ export default function SumyPage() {
         recordedAt: data.recordedAt,
         localDate: data.localDate,
       })
-      toast.success('Đã lưu')
+      toast.success(t('sumy.saved'))
     } else if (data.type === 'pump' && data.amount != null) {
       await createRecord({
         type: 'pump',
@@ -1259,7 +1277,7 @@ export default function SumyPage() {
         recordedAt: data.recordedAt,
         localDate: data.localDate,
       })
-      toast.success('Đã lưu')
+      toast.success(t('sumy.saved'))
     } else if (data.type === 'eat' && data.amount != null) {
       await createRecord({
         type: 'eat',
@@ -1268,7 +1286,7 @@ export default function SumyPage() {
         recordedAt: data.recordedAt,
         localDate: data.localDate,
       })
-      toast.success('Đã lưu')
+      toast.success(t('sumy.saved'))
     } else if (data.type === 'feed' && data.amount != null) {
       await createRecord({
         type: 'feed',
@@ -1277,7 +1295,7 @@ export default function SumyPage() {
         recordedAt: data.recordedAt,
         localDate: data.localDate,
       })
-      toast.success('Đã lưu')
+      toast.success(t('sumy.saved'))
     }
     await load()
   }
@@ -1288,7 +1306,7 @@ export default function SumyPage() {
 
   const handleDelete = async (id: string) => {
     await deleteRecord(id)
-    toast.success('Đã xóa')
+    toast.success(t('sumy.deleted'))
     await load()
   }
 
@@ -1302,7 +1320,7 @@ export default function SumyPage() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <span className="text-[13px]" style={{ color: 'var(--v-text-3)' }}>
-          Đang tải...
+          {t('common.loading')}
         </span>
       </div>
     )
@@ -1313,48 +1331,41 @@ export default function SumyPage() {
       <V2Topbar />
 
       {/* ── Laptop: 2 cột | Mobile: 1 cột ── */}
-      <div className="px-4 py-4 sm:px-6 sm:py-5 max-w-[900px] mx-auto">
+      <div className="px-4 py-4 sm:px-6 sm:py-5 max-w-[900px] mx-auto pb-[max(7rem,calc(5rem+env(safe-area-inset-bottom)))]">
         <div className="text-[11px] mb-3 capitalize" style={{ color: 'var(--v-text-3)' }}>
           {format(new Date(), "EEEE, d MMMM yyyy", { locale: vi })}
         </div>
 
-        {/* 7-day chart */}
-        <div className="mb-5">
+        {/* Chart — desktop: trên hai cột; mobile: ẩn ở đây */}
+        <div className="hidden sm:block mb-5">
           <WeekChart allRecords={allRecords} today={today} />
         </div>
 
         <div className="flex flex-col sm:flex-row sm:gap-5 sm:items-start">
 
-          {/* Cột trái — detail + quick-add + log */}
+          {/* Cột trái — detail + log (+ chart mobile ở dưới log) */}
           <div className="sm:flex-1 sm:min-w-0">
             <DetailCard date={selectedDate} records={selectedRecords} />
 
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2">
               <span className="text-[11px] capitalize" style={{ color: 'var(--v-text-3)' }}>
                 {selectedDate === today
-                  ? 'Nhật ký hôm nay'
-                  : `Nhật ký · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
+                  ? t('sumy.todayLog')
+                  : `${t('sumy.todayLog')} · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
               </span>
-              <button
-                type="button"
-                onClick={() => setShowLog((v) => !v)}
-                className="text-[10px] px-2 h-[20px] rounded-[5px] transition-colors"
-                style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-3)', backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                {showLog ? 'Ẩn' : 'Hiện'}
-              </button>
             </div>
-            {showLog && (
-              <Log
-                records={selectedRecords}
-                selectedDate={selectedDate}
-                today={today}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            )}
+            <Log
+              records={selectedRecords}
+              selectedDate={selectedDate}
+              today={today}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+
+            {/* Chart — mobile only, sau log trước lịch */}
+            <div className="sm:hidden mt-5">
+              <WeekChart allRecords={allRecords} today={today} />
+            </div>
           </div>
 
           {/* Cột phải — calendar */}
@@ -1389,7 +1400,7 @@ export default function SumyPage() {
         style={{ backgroundColor: PINK, color: '#fff' }}
       >
         <Plus size={16} />
-        Ghi chép mới
+        {t('sumy.newRecord')}
       </button>
 
       {dayPopup && (

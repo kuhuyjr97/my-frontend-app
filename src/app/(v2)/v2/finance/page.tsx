@@ -22,6 +22,7 @@ import {
 } from '@/lib/v2/finance-api'
 import { clearSessionTokens } from '@/lib/v2/auth-session'
 import type { Transaction, TransactionCategory } from '@/lib/v2/types'
+import { useLang } from '@/lib/v2/i18n/context'
 
 // ─── constants ───────────────────────────────────────────────────────────────
 // ─── constants ───────────────────────────────────────────────────────────────
@@ -137,6 +138,7 @@ function SpendingHeatmap({ transactions, year, month, onDayOpen }: {
   year: number; month: number
   onDayOpen: (day: number) => void
 }) {
+  const { t } = useLang()
   const daysInMonth = getDaysInMonth(new Date(year, month))
   const firstDow = getDay(startOfMonth(new Date(year, month)))
   const offset = firstDow === 0 ? 6 : firstDow - 1
@@ -160,7 +162,7 @@ function SpendingHeatmap({ transactions, year, month, onDayOpen }: {
 
   return (
     <div className="bg-white rounded-[14px] p-4" style={{ border: '1px solid var(--v-border)' }}>
-      <div className="text-[13px] font-medium mb-3" style={{ color: 'var(--v-text)' }}>Spending Heatmap</div>
+      <div className="text-[13px] font-medium mb-3" style={{ color: 'var(--v-text)' }}>{t('finance.heatmapTitle')}</div>
       <div className="grid grid-cols-7 gap-1 mb-1">
         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
           <div key={d} className="text-center text-[10px]" style={{ color: 'var(--v-muted)' }}>{d}</div>
@@ -200,11 +202,11 @@ function SpendingHeatmap({ transactions, year, month, onDayOpen }: {
         })}
       </div>
       <div className="flex items-center gap-1.5 mt-3">
-        <span className="text-[10px]" style={{ color: 'var(--v-muted)' }}>Low</span>
+        <span className="text-[10px]" style={{ color: 'var(--v-muted)' }}>{t('finance.low')}</span>
         {HEATMAP_COLORS.map((c, i) => (
           <div key={i} className="w-4 h-2.5 rounded-sm" style={{ backgroundColor: c }} />
         ))}
-        <span className="text-[10px]" style={{ color: 'var(--v-muted)' }}>High</span>
+        <span className="text-[10px]" style={{ color: 'var(--v-muted)' }}>{t('finance.high')}</span>
       </div>
     </div>
   )
@@ -223,6 +225,7 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
 }) {
   const [page, setPage] = useState(0)
   const [flow, setFlow] = useState<CategoryFlow>('expense')
+  const { t } = useLang()
 
   const inFlow = flow === 'expense'
     ? transactions.filter((t) => t.amount < 0)
@@ -269,7 +272,7 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
     <div className="bg-white rounded-[14px] p-4 flex flex-col min-h-0" style={{ border: '1px solid var(--v-border)' }}>
       <div className="flex items-center justify-between gap-2 mb-3 shrink-0 flex-wrap">
         <div className="text-[13px] font-medium min-w-0" style={{ color: 'var(--v-text)' }}>
-          {flow === 'expense' ? 'Expense by Category' : 'Income by Category'}
+          {flow === 'expense' ? t('finance.expenseByCategory') : t('finance.incomeByCategory')}
         </div>
         <div className="flex rounded-[7px] overflow-hidden shrink-0" style={{ border: '1px solid var(--v-border)' }}>
           {(['expense', 'income'] as const).map((f) => (
@@ -283,7 +286,7 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
                 color: flow === f ? 'var(--v-btn-text)' : 'var(--v-text-2)',
               }}
             >
-              {f === 'expense' ? 'Expense' : 'Income'}
+              {f === 'expense' ? t('finance.expense') : t('finance.income')}
             </button>
           ))}
         </div>
@@ -314,7 +317,7 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
         })}
         {sorted.length === 0 && (
           <div className="text-[12px] text-center py-4" style={{ color: 'var(--v-muted)' }}>
-            {flow === 'expense' ? 'No expenses this period' : 'No income this period'}
+            {flow === 'expense' ? t('finance.noExpenses') : t('finance.noIncome')}
           </div>
         )}
       </div>
@@ -359,6 +362,11 @@ function CategoryBreakdown({ transactions, onBucketOpen }: {
   )
 }
 
+function NoTransactionsLabel() {
+  const { t } = useLang()
+  return <>{t('finance.noTransactions')}</>
+}
+
 const LOG_PAGE_SIZE = 5
 
 function TransactionsPopup({
@@ -377,6 +385,7 @@ function TransactionsPopup({
   /** When set, rows open the edit flow (e.g. from category breakdown). */
   onSelectTransaction?: (t: Transaction) => void
 }) {
+  const { t } = useLang()
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -415,14 +424,14 @@ function TransactionsPopup({
         </div>
         <div className="overflow-y-auto p-2 flex-1 min-h-0">
           {transactions.length === 0 ? (
-            <div className="text-center py-10 text-[13px]" style={{ color: 'var(--v-muted)' }}>No transactions</div>
+            <div className="text-center py-10 text-[13px]" style={{ color: 'var(--v-muted)' }}>{t('finance.noTransactions')}</div>
           ) : (
             <div className="flex flex-col gap-1">
-              {transactions.map((t) => {
-                const meta = resolveTransactionMeta(t, typeMetaMap)
+              {transactions.map((txn) => {
+                const meta = resolveTransactionMeta(txn, typeMetaMap)
                 const Icon = meta.Icon
-                const bucketLabel = t.amount < 0 ? t.expenseBucketLabel : t.incomeBucketLabel
-                const subLine = bucketLabel ? `${bucketLabel} · ${t.date}` : `${meta.label} · ${t.date}`
+                const bucketLabel = txn.amount < 0 ? txn.expenseBucketLabel : txn.incomeBucketLabel
+                const subLine = bucketLabel ? `${bucketLabel} · ${txn.date}` : `${meta.label} · ${txn.date}`
                 const inner = (
                   <>
                     <div
@@ -432,20 +441,20 @@ function TransactionsPopup({
                       <Icon size={14} style={{ color: meta.color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-medium truncate" style={{ color: 'var(--v-text)' }}>{t.name}</div>
+                      <div className="text-[13px] font-medium truncate" style={{ color: 'var(--v-text)' }}>{txn.name}</div>
                       <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>{subLine}</div>
                     </div>
-                    <span className="text-[13px] font-medium shrink-0" style={{ color: t.amount >= 0 ? '#4a7c3f' : '#b05040' }}>
-                      {fmtSigned(t.amount)}
+                    <span className="text-[13px] font-medium shrink-0" style={{ color: txn.amount >= 0 ? '#4a7c3f' : '#b05040' }}>
+                      {fmtSigned(txn.amount)}
                     </span>
                   </>
                 )
                 if (onSelectTransaction) {
                   return (
                     <button
-                      key={t.id}
+                      key={txn.id}
                       type="button"
-                      onClick={() => onSelectTransaction(t)}
+                      onClick={() => onSelectTransaction(txn)}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] w-full text-left transition-colors hover:bg-[#fbfaf8]"
                       style={{ border: '1px solid #f0eeea' }}
                     >
@@ -455,7 +464,7 @@ function TransactionsPopup({
                 }
                 return (
                   <div
-                    key={t.id}
+                    key={txn.id}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-[10px]"
                     style={{ border: '1px solid #f0eeea' }}
                   >
@@ -481,6 +490,7 @@ function TransactionLog({
   onSelectTransaction?: (t: Transaction) => void
 }) {
   const [page, setPage] = useState(0)
+  const { t } = useLang()
 
   const grouped: Record<string, Transaction[]> = {}
   transactions.forEach((t) => {
@@ -520,10 +530,10 @@ function TransactionLog({
                 {fmtSigned(net)}
               </span>
             </div>
-            {dayTxns.map((t) => {
-              const meta = resolveTransactionMeta(t, typeMetaMap)
+            {dayTxns.map((txn) => {
+              const meta = resolveTransactionMeta(txn, typeMetaMap)
               const Icon = meta.Icon
-              const bucketLabel = t.amount < 0 ? t.expenseBucketLabel : t.incomeBucketLabel
+              const bucketLabel = txn.amount < 0 ? txn.expenseBucketLabel : txn.incomeBucketLabel
               const inner = (
                 <>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -531,22 +541,22 @@ function TransactionLog({
                     <Icon size={14} style={{ color: meta.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-medium truncate" style={{ color: 'var(--v-text)' }}>{t.name}</div>
+                    <div className="text-[13px] font-medium truncate" style={{ color: 'var(--v-text)' }}>{txn.name}</div>
                     <div className="text-[11px]" style={{ color: 'var(--v-muted)' }}>
                       {bucketLabel ?? meta.label}
                     </div>
                   </div>
-                  <span className="text-[13px] font-medium shrink-0" style={{ color: t.amount >= 0 ? '#4a7c3f' : '#b05040' }}>
-                    {fmtSigned(t.amount)}
+                  <span className="text-[13px] font-medium shrink-0" style={{ color: txn.amount >= 0 ? '#4a7c3f' : '#b05040' }}>
+                    {fmtSigned(txn.amount)}
                   </span>
                 </>
               )
               if (onSelectTransaction) {
                 return (
                   <button
-                    key={t.id}
+                    key={txn.id}
                     type="button"
-                    onClick={() => onSelectTransaction(t)}
+                    onClick={() => onSelectTransaction(txn)}
                     className="flex items-center gap-3 px-4 py-2.5 w-full text-left transition-colors hover:bg-[#fbfaf8]"
                     style={{ borderBottom: '1px solid #f7f6f3' }}
                   >
@@ -555,7 +565,7 @@ function TransactionLog({
                 )
               }
               return (
-                <div key={t.id} className="flex items-center gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid #f7f6f3' }}>
+                <div key={txn.id} className="flex items-center gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid #f7f6f3' }}>
                   {inner}
                 </div>
               )
@@ -565,7 +575,7 @@ function TransactionLog({
       })}
 
       {sortedDays.length === 0 && (
-        <div className="text-center py-12 text-[13px]" style={{ color: 'var(--v-muted)' }}>No transactions</div>
+        <div className="text-center py-12 text-[13px]" style={{ color: 'var(--v-muted)' }}><NoTransactionsLabel /></div>
       )}
       </div>
 
@@ -732,6 +742,7 @@ function AddSavingModal({
   loadingTypes: boolean
 }) {
   const [submitting, setSubmitting] = useState(false)
+  const { t } = useLang()
   const initialForm = () => ({
     type: String(Types.EXPENSE),
     subtype: '',
@@ -763,16 +774,16 @@ function AddSavingModal({
     e.preventDefault()
     const token = localStorage.getItem('token')
     if (!token) {
-      toast.error('Sign in required')
+      toast.error(t('finance.signInRequired'))
       return
     }
     if (!form.subtype || !form.amount.trim() || !form.content.trim()) {
-      toast.error('Fill in type, amount, and description')
+      toast.error(t('finance.fillFormError'))
       return
     }
     const amountNum = Number(form.amount.replace(/,/g, ''))
     if (Number.isNaN(amountNum) || amountNum <= 0) {
-      toast.error('Invalid amount')
+      toast.error(t('finance.invalidAmount'))
       return
     }
     setSubmitting(true)
@@ -784,13 +795,13 @@ function AddSavingModal({
         content: form.content.trim(),
         createdAt: form.date,
       })
-      toast.success('Transaction added')
+      toast.success(t('finance.transactionAdded'))
       await onCreated()
       setForm(initialForm())
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error'
-      if (msg === 'UNAUTHORIZED') toast.error('Session expired — sign in again')
-      else toast.error('Could not create transaction')
+      if (msg === 'UNAUTHORIZED') toast.error(t('finance.sessionExpired'))
+      else toast.error(t('finance.createError'))
     } finally {
       setSubmitting(false)
     }
@@ -815,7 +826,7 @@ function AddSavingModal({
           style={{ borderBottom: '1px solid var(--v-border-2)' }}
         >
           <span className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>
-            Add transaction
+            {t('finance.addTransactionTitle')}
           </span>
           <button type="button" onClick={onClose} className="p-1 rounded-[6px] hover:bg-[#f0eeea]" aria-label="Close">
             <X size={16} style={{ color: 'var(--v-text-3)' }} />
@@ -825,7 +836,7 @@ function AddSavingModal({
           <div className="flex gap-2 flex-wrap">
             <div className="flex-1 min-w-[140px]">
               <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-                Type
+                {t('finance.typeLabel')}
               </label>
               <select
                 value={form.type}
@@ -835,13 +846,13 @@ function AddSavingModal({
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
                 style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
               >
-                <option value={String(Types.INCOME)}>Income</option>
-                <option value={String(Types.EXPENSE)}>Expense</option>
+                <option value={String(Types.INCOME)}>{t('finance.income')}</option>
+                <option value={String(Types.EXPENSE)}>{t('finance.expense')}</option>
               </select>
             </div>
             <div className="flex-[2] min-w-[180px]">
               <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-                Subcategory
+                {t('finance.subcategoryLabel')}
               </label>
               <select
                 value={form.subtype}
@@ -851,7 +862,7 @@ function AddSavingModal({
                 style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
               >
                 <option value="">
-                  {loadingTypes ? 'Loading…' : subtypeOptions.length === 0 ? 'No subcategories' : 'Select…'}
+                  {loadingTypes ? t('common.loading') : subtypeOptions.length === 0 ? t('finance.noSubcategories') : t('finance.selectPlaceholder')}
                 </option>
                 {subtypeOptions.map((row) => (
                   <option key={`${row.type}-${row.subType}`} value={String(row.subType)}>
@@ -864,7 +875,7 @@ function AddSavingModal({
           <div className="flex gap-2 flex-wrap">
             <div className="flex-1 min-w-[120px]">
               <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-                Amount
+                {t('finance.amountLabel')}
               </label>
               <input
                 type="number"
@@ -879,7 +890,7 @@ function AddSavingModal({
             </div>
             <div className="flex-1 min-w-[140px]">
               <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-                Date
+                {t('finance.dateLabel')}
               </label>
               <input
                 type="date"
@@ -892,13 +903,13 @@ function AddSavingModal({
           </div>
           <div>
             <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-              Description
+              {t('finance.descriptionLabel')}
             </label>
             <input
               type="text"
               value={form.content}
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-              placeholder="What was this for?"
+              placeholder={t('finance.descriptionPlaceholder')}
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none"
               style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
@@ -910,7 +921,7 @@ function AddSavingModal({
               className="flex-1 h-[36px] rounded-[7px] text-[13px] font-medium"
               style={{ border: '1px solid #e4e2dd', color: 'var(--v-text-2)' }}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -918,7 +929,7 @@ function AddSavingModal({
               className="flex-1 h-[36px] rounded-[7px] text-[13px] font-medium disabled:opacity-50"
               style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
             >
-              {submitting ? 'Saving…' : 'Add'}
+              {submitting ? t('common.saving') : t('common.add')}
             </button>
           </div>
         </form>
@@ -960,6 +971,7 @@ function EditSavingModal({
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [form, setForm] = useState(() => transactionToEditForm(transaction))
+  const { t } = useLang()
 
   useEffect(() => {
     setForm(transactionToEditForm(transaction))
@@ -987,20 +999,20 @@ function EditSavingModal({
     e.preventDefault()
     const token = localStorage.getItem('token')
     if (!token) {
-      toast.error('Sign in required')
+      toast.error(t('finance.signInRequired'))
       return
     }
     if (numericId == null) {
-      toast.error('This transaction cannot be edited here')
+      toast.error(t('finance.cannotEdit'))
       return
     }
     if (!form.subtype || !form.amount.trim() || !form.content.trim()) {
-      toast.error('Fill in type, amount, and description')
+      toast.error(t('finance.fillFormError'))
       return
     }
     const amountNum = Number(form.amount.replace(/,/g, ''))
     if (Number.isNaN(amountNum) || amountNum <= 0) {
-      toast.error('Invalid amount')
+      toast.error(t('finance.invalidAmount'))
       return
     }
     setSubmitting(true)
@@ -1012,35 +1024,35 @@ function EditSavingModal({
         content: form.content.trim(),
         createdAt: form.date,
       })
-      toast.success('Updated')
+      toast.success(t('finance.updated'))
       await onSaved()
       onClose()
     } catch {
-      toast.error('Could not save')
+      toast.error(t('finance.saveError'))
     } finally {
       setSubmitting(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this transaction?')) return
+    if (!window.confirm(t('finance.deleteConfirm'))) return
     const token = localStorage.getItem('token')
     if (!token) {
-      toast.error('Sign in required')
+      toast.error(t('finance.signInRequired'))
       return
     }
     if (numericId == null) {
-      toast.error('This transaction cannot be deleted here')
+      toast.error(t('finance.cannotDelete'))
       return
     }
     setDeleting(true)
     try {
       await deleteSavingTransaction(token, numericId)
-      toast.success('Deleted')
+      toast.success(t('finance.deleted'))
       await onSaved()
       onClose()
     } catch {
-      toast.error('Could not delete')
+      toast.error(t('finance.deleteError'))
     } finally {
       setDeleting(false)
     }
@@ -1067,7 +1079,7 @@ function EditSavingModal({
           style={{ borderBottom: '1px solid var(--v-border-2)' }}
         >
           <span className="text-[14px] font-medium" style={{ color: 'var(--v-text)' }}>
-            Edit transaction
+            {t('finance.editTransactionTitle')}
           </span>
           <button type="button" onClick={onClose} className="p-1 rounded-[6px] hover:bg-[#f0eeea]" aria-label="Close">
             <X size={16} style={{ color: 'var(--v-text-3)' }} />
@@ -1075,14 +1087,14 @@ function EditSavingModal({
         </div>
         {numericId == null && (
           <div className="px-5 py-2 text-[12px]" style={{ color: '#b05040', backgroundColor: '#fff5f3' }}>
-            This transaction cannot be edited via the Savings API.
+            {t('finance.cannotEdit')}
           </div>
         )}
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-3">
           <div className="flex gap-2 flex-wrap">
             <div className="flex-1 min-w-[140px]">
               <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-                Type
+                {t('finance.typeLabel')}
               </label>
               <select
                 value={form.type}
@@ -1093,13 +1105,13 @@ function EditSavingModal({
                 className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none disabled:opacity-50"
                 style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
               >
-                <option value={String(Types.INCOME)}>Income</option>
-                <option value={String(Types.EXPENSE)}>Expense</option>
+                <option value={String(Types.INCOME)}>{t('finance.income')}</option>
+                <option value={String(Types.EXPENSE)}>{t('finance.expense')}</option>
               </select>
             </div>
             <div className="flex-[2] min-w-[180px]">
               <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-                Subcategory
+                {t('finance.subcategoryLabel')}
               </label>
               <select
                 value={form.subtype}
@@ -1109,7 +1121,7 @@ function EditSavingModal({
                 style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-surface)' }}
               >
                 <option value="">
-                  {loadingTypes ? 'Loading…' : subtypeOptions.length === 0 ? 'No subcategories' : 'Select…'}
+                  {loadingTypes ? t('common.loading') : subtypeOptions.length === 0 ? t('finance.noSubcategories') : t('finance.selectPlaceholder')}
                 </option>
                 {subtypeOptions.map((row) => (
                   <option key={`${row.type}-${row.subType}`} value={String(row.subType)}>
@@ -1122,7 +1134,7 @@ function EditSavingModal({
           <div className="flex gap-2 flex-wrap">
             <div className="flex-1 min-w-[120px]">
               <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-                Amount
+                {t('finance.amountLabel')}
               </label>
               <input
                 type="number"
@@ -1138,7 +1150,7 @@ function EditSavingModal({
             </div>
             <div className="flex-1 min-w-[140px]">
               <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-                Date
+                {t('finance.dateLabel')}
               </label>
               <input
                 type="date"
@@ -1152,14 +1164,14 @@ function EditSavingModal({
           </div>
           <div>
             <label className="text-[11px] font-medium mb-1 block" style={{ color: 'var(--v-text-2)' }}>
-              Description
+              {t('finance.descriptionLabel')}
             </label>
             <input
               type="text"
               value={form.content}
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
               disabled={busy}
-              placeholder="What was this for?"
+              placeholder={t('finance.descriptionPlaceholder')}
               className="w-full rounded-[7px] px-3 py-2 text-[13px] outline-none disabled:opacity-50"
               style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)' }}
             />
@@ -1172,7 +1184,7 @@ function EditSavingModal({
               className="h-[36px] px-3 rounded-[7px] text-[13px] font-medium disabled:opacity-50"
               style={{ border: '1px solid #e8b4a8', color: '#b05040', backgroundColor: 'var(--v-surface)' }}
             >
-              {deleting ? 'Deleting…' : 'Delete'}
+              {deleting ? t('common.deleting') : t('common.delete')}
             </button>
             <div className="flex-1 flex gap-2 justify-end min-w-[200px]">
               <button
@@ -1182,7 +1194,7 @@ function EditSavingModal({
                 className="h-[36px] px-4 rounded-[7px] text-[13px] font-medium disabled:opacity-50"
                 style={{ border: '1px solid #e4e2dd', color: 'var(--v-text-2)' }}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
@@ -1190,7 +1202,7 @@ function EditSavingModal({
                 className="h-[36px] px-4 rounded-[7px] text-[13px] font-medium disabled:opacity-50 min-w-[88px]"
                 style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
               >
-                {submitting ? 'Saving…' : 'Save'}
+                {submitting ? t('common.saving') : t('common.save')}
               </button>
             </div>
           </div>
@@ -1204,6 +1216,7 @@ function EditSavingModal({
 
 export default function FinancePage() {
   const now = new Date()
+  const { t } = useLang()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<'auth' | 'network' | null>(null)
@@ -1368,9 +1381,9 @@ export default function FinancePage() {
             className="rounded-[12px] px-4 py-3 text-[13px]"
             style={{ border: '1px solid var(--v-border)', backgroundColor: 'var(--v-surface)', color: 'var(--v-text-2)' }}
           >
-            Sign in to load transactions from the server.{' '}
+            {t('finance.signInRequired')}{' '}
             <Link href="/v2/login" className="font-medium underline" style={{ color: 'var(--v-text)' }}>
-              Login
+              {t('finance.login')}
             </Link>
           </div>
         )}
@@ -1379,20 +1392,20 @@ export default function FinancePage() {
             className="rounded-[12px] px-4 py-3 text-[13px] flex items-center justify-between gap-3 flex-wrap"
             style={{ border: '1px solid var(--v-border)', backgroundColor: 'var(--v-surface)', color: 'var(--v-text-2)' }}
           >
-            <span>Could not load data. Check the backend and NEXT_PUBLIC_BACKEND_URL.</span>
+            <span>{t('finance.loadError')}</span>
             <button
               type="button"
               onClick={() => void reload()}
               className="h-[30px] px-3 rounded-[7px] text-[12px] font-medium"
               style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
             >
-              Retry
+              {t('common.retry')}
             </button>
           </div>
         )}
         {loading && (
           <div className="text-[13px]" style={{ color: 'var(--v-text-3)' }}>
-            Loading…
+            {t('common.loading')}
           </div>
         )}
 
@@ -1404,7 +1417,7 @@ export default function FinancePage() {
               <button key={s} onClick={() => setScope(s)}
                 className="px-3 h-[30px] text-[12px] font-medium transition-colors"
                 style={{ backgroundColor: scope === s ? 'var(--v-btn-bg)' : 'var(--v-surface)', color: scope === s ? 'var(--v-btn-text)' : 'var(--v-text-2)' }}>
-                {s === 'thismonth' ? 'This month' : 'All time'}
+                {s === 'thismonth' ? t('finance.thisMonth') : t('finance.allTime')}
               </button>
             ))}
           </div>
@@ -1422,9 +1435,9 @@ export default function FinancePage() {
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <StatCard label="Income" amount={income} sub="this period" accent="#4a7c3f" />
-          <StatCard label="Expenses" amount={expense} sub="this period" accent="#b05040" />
-          <StatCard label="Balance" amount={balance} sub={`${savedPct}% saved`} accent={balance >= 0 ? '#4a7c3f' : '#b05040'} />
+          <StatCard label={t('finance.income')} amount={income} sub={t('finance.thisPeriod')} accent="#4a7c3f" />
+          <StatCard label={t('finance.expense')} amount={expense} sub={t('finance.thisPeriod')} accent="#b05040" />
+          <StatCard label={t('finance.balance')} amount={balance} sub={`${savedPct}${t('finance.percentSaved')}`} accent={balance >= 0 ? '#4a7c3f' : '#b05040'} />
         </div>
 
         {/* Mid section */}
@@ -1453,7 +1466,7 @@ export default function FinancePage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search transactions…"
+                placeholder={t('finance.searchPlaceholder')}
                 className="flex-1 text-[12px] outline-none bg-transparent"
                 style={{ color: 'var(--v-text)' }}
               />
@@ -1461,11 +1474,11 @@ export default function FinancePage() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <div className="flex rounded-[7px] overflow-hidden" style={{ border: '1px solid var(--v-border)' }}>
-                {(['all', 'income', 'expense'] as const).map((t) => (
-                  <button key={t} onClick={() => setTypeFilter(t)}
+                {(['all', 'income', 'expense'] as const).map((f) => (
+                  <button key={f} onClick={() => setTypeFilter(f)}
                     className="px-2.5 h-[30px] text-[12px] font-medium capitalize transition-colors"
-                    style={{ backgroundColor: typeFilter === t ? 'var(--v-btn-bg)' : 'var(--v-surface)', color: typeFilter === t ? 'var(--v-btn-text)' : 'var(--v-text-2)' }}>
-                    {t}
+                    style={{ backgroundColor: typeFilter === f ? 'var(--v-btn-bg)' : 'var(--v-surface)', color: typeFilter === f ? 'var(--v-btn-text)' : 'var(--v-text-2)' }}>
+                    {f === 'all' ? t('common.all') : f === 'income' ? t('finance.income') : t('finance.expense')}
                   </button>
                 ))}
               </div>
@@ -1475,7 +1488,7 @@ export default function FinancePage() {
                 className="h-[30px] w-full sm:w-auto shrink-0 px-2 rounded-[7px] text-[12px] outline-none"
                 style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-2)', backgroundColor: 'var(--v-surface)' }}
               >
-                <option value="all">All categories</option>
+                <option value="all">{t('finance.allCategories')}</option>
                 {(Object.entries(CATEGORY_META) as [TransactionCategory, typeof CATEGORY_META[TransactionCategory]][]).map(([k, v]) => (
                   <option key={k} value={k}>{v.label}</option>
                 ))}

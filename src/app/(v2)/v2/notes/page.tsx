@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { V2Topbar } from '@/components/v2/layout/Topbar'
 import { fetchNotes, createNote, updateNote, deleteNote, type NoteRow } from '@/lib/v2/notes-api'
 import { fetchTypes, type TypeEnumRow } from '@/lib/v2/types-api'
+import { useLang } from '@/lib/v2/i18n/context'
 
 // ─── markdown renderer ────────────────────────────────────────────────────────
 
@@ -30,8 +31,8 @@ function renderInline(text: string): ReactNode {
   )
 }
 
-function SimpleMarkdown({ content }: { content: string }) {
-  if (!content) return <span style={{ color: 'var(--v-muted)' }}>Chưa có nội dung</span>
+function SimpleMarkdown({ content, noContentText }: { content: string; noContentText?: string }) {
+  if (!content) return <span style={{ color: 'var(--v-muted)' }}>{noContentText ?? ''}</span>
 
   const blocks: ReactNode[] = []
   const lines = content.split('\n')
@@ -98,6 +99,7 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
   const [typeId, setTypeId]   = useState(note.typeEnumId)
   const [saving, setSaving]   = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const { t } = useLang()
 
   // Cmd/Ctrl+S
   useEffect(() => {
@@ -165,7 +167,7 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
             <div className="flex items-start gap-3 px-6 pt-5 pb-4 shrink-0" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
               <div className="flex-1 min-w-0">
                 <div className="text-[20px] font-semibold leading-snug mb-2" style={{ color: 'var(--v-text)' }}>
-                  {note.title || <span style={{ color: 'var(--v-muted)' }}>Untitled</span>}
+                  {note.title || <span style={{ color: 'var(--v-muted)' }}>{t('notes.untitled')}</span>}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[11px]" style={{ color: 'var(--v-faint)' }}>
@@ -186,17 +188,17 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <Pencil size={11} />Sửa
+                  <Pencil size={11} />{t('common.edit')}
                 </button>
-                {iconBtn(() => setExpanded((v) => !v), expanded ? 'Thu nhỏ' : 'Phóng to', expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />)}
-                {iconBtn(onClose, 'Đóng', <X size={16} />)}
+                {iconBtn(() => setExpanded((v) => !v), expanded ? t('notes.minimize') : t('notes.expand'), expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />)}
+                {iconBtn(onClose, t('common.close'), <X size={16} />)}
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-8 py-6">
               {note.content
-                ? <SimpleMarkdown content={note.content} />
-                : <span className="text-[13px]" style={{ color: 'var(--v-faint)' }}>Chưa có nội dung</span>
+                ? <SimpleMarkdown content={note.content} noContentText={t('notes.noContent')} />
+                : <span className="text-[13px]" style={{ color: 'var(--v-faint)' }}>{t('notes.noContent')}</span>
               }
             </div>
           </>
@@ -212,7 +214,7 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   rows={1}
-                  placeholder="Tiêu đề"
+                  placeholder={t('notes.titlePlaceholder')}
                   className="w-full text-[18px] font-semibold resize-none outline-none bg-transparent leading-snug"
                   style={{ color: 'var(--v-text)' }}
                 />
@@ -247,36 +249,36 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
                   style={{ border: '1px solid var(--v-border)', color: 'var(--v-text-2)', backgroundColor: 'transparent' }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--v-hover)'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >Hủy</button>
+                >{t('common.cancel')}</button>
                 {dirty && (
                   <button
                     onClick={() => void doSave()}
                     disabled={saving}
                     className="h-[28px] px-3 rounded-[7px] text-[12px] font-medium disabled:opacity-50"
                     style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
-                  >{saving ? 'Đang lưu…' : 'Lưu'}</button>
+                  >{saving ? t('common.saving') : t('common.save')}</button>
                 )}
-                {iconBtn(() => setExpanded((v) => !v), expanded ? 'Thu nhỏ' : 'Phóng to', expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />)}
-                {iconBtn(onClose, 'Đóng', <X size={16} />)}
+                {iconBtn(() => setExpanded((v) => !v), expanded ? t('notes.minimize') : t('notes.expand'), expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />)}
+                {iconBtn(onClose, t('common.close'), <X size={16} />)}
               </div>
             </div>
 
             {/* Split: editor left, preview right */}
             <div className="flex-1 flex overflow-hidden min-h-0">
               <div className="flex-1 flex flex-col p-5 min-h-0" style={{ borderRight: '1px solid var(--v-border-2)' }}>
-                <div className="text-[10px] font-medium mb-2 shrink-0" style={{ color: 'var(--v-muted)' }}>NỘI DUNG</div>
+                <div className="text-[10px] font-medium mb-2 shrink-0" style={{ color: 'var(--v-muted)' }}>{t('notes.contentLabel')}</div>
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Bắt đầu viết (hỗ trợ markdown)…"
+                  placeholder={t('notes.contentPlaceholder')}
                   className="flex-1 text-[13px] resize-none outline-none leading-relaxed font-mono rounded-[8px] px-4 py-3"
                   style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-input-bg)' }}
                 />
               </div>
               <div className="flex-1 flex flex-col p-5 overflow-hidden min-h-0" style={{ backgroundColor: 'var(--v-bg)' }}>
-                <div className="text-[10px] font-medium mb-2 shrink-0" style={{ color: 'var(--v-muted)' }}>PREVIEW</div>
+                <div className="text-[10px] font-medium mb-2 shrink-0" style={{ color: 'var(--v-muted)' }}>{t('notes.previewLabel')}</div>
                 <div className="flex-1 overflow-y-auto">
-                  <SimpleMarkdown content={content} />
+                  <SimpleMarkdown content={content} noContentText={t('notes.noContent')} />
                 </div>
               </div>
             </div>
@@ -290,7 +292,7 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#b0504010')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
-                <Trash2 size={12} />Xóa ghi chú
+                <Trash2 size={12} />{t('notes.deleteNote')}
               </button>
             </div>
           </>
@@ -310,6 +312,7 @@ export default function NotesPage() {
   const [openInEdit, setOpenInEdit] = useState(false)
   const [search, setSearch]         = useState('')
   const [typeFilter, setTypeFilter] = useState<number | null>(null)
+  const { t } = useLang()
 
   const load = useCallback(async () => {
     try {
@@ -317,11 +320,12 @@ export default function NotesPage() {
       setNotes(data)
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
-      if (msg === 'UNAUTHORIZED') toast.error('Phiên đăng nhập hết hạn')
-      else toast.error('Không tải được ghi chú')
+      if (msg === 'UNAUTHORIZED') toast.error(t('common.sessionExpired'))
+      else toast.error(t('notes.loadError'))
     } finally {
       setLoading(false)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -346,12 +350,12 @@ export default function NotesPage() {
 
   const handleCreate = async () => {
     try {
-      const note = await createNote({ title: 'Untitled', content: '' })
+      const note = await createNote({ title: t('notes.untitled'), content: '' })
       setNotes((prev) => [note, ...prev])
       setSelectedId(note.id)
       setOpenInEdit(true)
     } catch {
-      toast.error('Không tạo được ghi chú')
+      toast.error(t('notes.createError'))
     }
   }
 
@@ -359,22 +363,23 @@ export default function NotesPage() {
     try {
       const updated = await updateNote(id, patch)
       setNotes((prev) => prev.map((n) => n.id === id ? updated : n))
-      toast.success('Đã lưu')
+      toast.success(t('notes.saved'))
     } catch {
-      toast.error('Không lưu được')
+      toast.error(t('notes.saveError'))
       throw new Error('save failed')
     }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t])
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Xóa ghi chú này?')) return
+    if (!window.confirm(t('notes.deleteConfirm'))) return
     try {
       await deleteNote(id)
       setNotes((prev) => prev.filter((n) => n.id !== id))
       setSelectedId(null)
       setOpenInEdit(false)
     } catch {
-      toast.error('Không xóa được')
+      toast.error(t('notes.deleteError'))
     }
   }
 
@@ -398,7 +403,7 @@ export default function NotesPage() {
             style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
           >
             <Plus size={13} />
-            Ghi chú mới
+            {t('notes.newNote')}
           </button>
         }
       />
@@ -417,7 +422,7 @@ export default function NotesPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm kiếm…"
+                placeholder={t('notes.searchPlaceholder')}
                 className="flex-1 sm:w-[140px] min-w-0 text-[11px] outline-none bg-transparent"
                 style={{ color: 'var(--v-text)' }}
               />
@@ -441,7 +446,7 @@ export default function NotesPage() {
                     backgroundColor: typeFilter === null ? 'var(--v-btn-bg)' : 'var(--v-surface)',
                     color: typeFilter === null ? 'var(--v-btn-text)' : 'var(--v-text-2)',
                   }}
-                >Tất cả</button>
+                >{t('notes.all')}</button>
                 {noteTypes.map((t) => (
                   <button
                     key={t.id}
@@ -471,7 +476,7 @@ export default function NotesPage() {
                   backgroundColor: typeFilter === null ? 'var(--v-btn-bg)' : 'var(--v-surface)',
                   color: typeFilter === null ? 'var(--v-btn-text)' : 'var(--v-text-2)',
                 }}
-              >Tất cả</button>
+              >{t('notes.all')}</button>
               {noteTypes.map((t) => (
                 <button
                   key={t.id}
@@ -492,10 +497,10 @@ export default function NotesPage() {
         {/* Note list */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="p-8 text-center text-[12px]" style={{ color: 'var(--v-muted)' }}>Đang tải…</div>
+            <div className="p-8 text-center text-[12px]" style={{ color: 'var(--v-muted)' }}>{t('common.loading')}</div>
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-[12px]" style={{ color: 'var(--v-muted)' }}>
-              {notes.length === 0 ? 'Chưa có ghi chú nào' : 'Không tìm thấy kết quả'}
+              {notes.length === 0 ? t('notes.noNotes') : t('notes.noResults')}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4 sm:p-6">
@@ -514,7 +519,7 @@ export default function NotesPage() {
                     onMouseLeave={(e) => { if (selectedId !== note.id) e.currentTarget.style.borderColor = 'var(--v-border)' }}
                   >
                     <div className="text-[13px] font-semibold mb-1.5 truncate pr-5" style={{ color: 'var(--v-text)' }}>
-                      {note.title || 'Untitled'}
+                      {note.title || t('notes.untitled')}
                     </div>
                     {preview && (
                       <div className="text-[11px] mb-3 line-clamp-3 leading-relaxed" style={{ color: 'var(--v-text-3)' }}>
@@ -555,7 +560,7 @@ export default function NotesPage() {
           style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
         >
           <Plus size={16} />
-          Ghi chú mới
+          {t('notes.newNote')}
         </button>
       </div>
 

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { getSessionUsername } from '@/lib/v2/auth-session'
+import { useLang } from '@/lib/v2/i18n/context'
 import {
   LayoutDashboard,
   ListChecks,
@@ -12,16 +13,17 @@ import {
 } from 'lucide-react'
 
 const mainModules = [
-  { href: '/v2',         icon: LayoutDashboard, label: 'Dashboard', color: 'var(--v-text)',  bg: 'var(--v-hover)' },
-  { href: '/v2/tasks',   icon: ListChecks,      label: 'Tasks',     color: '#3a5fa0', bg: '#eef3fa' },
-  { href: '/v2/notes',   icon: FileText,        label: 'Notes',     color: '#4a7c3f', bg: '#f0f5ee' },
+  { href: '/v2',         icon: LayoutDashboard, key: 'nav.dashboard', color: 'var(--v-text)',  bg: 'var(--v-hover)' },
+  { href: '/v2/tasks',   icon: ListChecks,      key: 'nav.tasks',     color: '#3a5fa0', bg: '#eef3fa' },
+  { href: '/v2/notes',   icon: FileText,        key: 'nav.notes',     color: '#4a7c3f', bg: '#f0f5ee' },
   null,
-  { href: '/v2/finance', icon: Wallet,          label: 'Finance',   color: '#a07030', bg: '#faf4ee' },
-  { href: '/v2/sumy',    icon: Droplets,        label: 'Sữa mẹ',   color: '#c97a8a', bg: '#fbeaf0' },
+  { href: '/v2/finance', icon: Wallet,          key: 'nav.finance',   color: '#a07030', bg: '#faf4ee' },
+  { href: '/v2/sumy',    icon: Droplets,        key: 'nav.sumy',      color: '#c97a8a', bg: '#fbeaf0' },
 ]
 
 export function V2Sidebar() {
   const pathname = usePathname()
+  const { t } = useLang()
   const [isSumy, setIsSumy]     = useState(false)
   const [username, setUsername] = useState('')
 
@@ -66,7 +68,7 @@ export function V2Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                title={item.label}
+                title={t(item.key)}
                 className="group relative w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
                 style={{ backgroundColor: active ? item.bg : 'transparent' }}
               >
@@ -75,7 +77,7 @@ export function V2Sidebar() {
                   className="absolute left-12 px-2 py-1 rounded text-[11px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"
                   style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)', zIndex: 100 }}
                 >
-                  {item.label}
+                  {t(item.key)}
                 </span>
               </Link>
             )
@@ -104,7 +106,7 @@ export function V2Sidebar() {
               >
                 <Icon size={17} />
               </div>
-              <span className="text-[9px] font-medium leading-none">{item.label}</span>
+              <span className="text-[9px] font-medium leading-none">{t(item.key)}</span>
             </Link>
           )
         })}

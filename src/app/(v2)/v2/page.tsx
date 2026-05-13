@@ -6,6 +6,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { V2Topbar } from '@/components/v2/layout/Topbar'
+import { useLang } from '@/lib/v2/i18n/context'
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -18,65 +19,10 @@ type ModuleCard = {
   bg: string
 }
 
-// ─── data ─────────────────────────────────────────────────────────────────────
-
-const LIVE: ModuleCard[] = [
-  {
-    href: '/v2/finance',
-    icon: Wallet,
-    label: 'Finance',
-    desc: 'Thu nhập, chi tiêu, phân loại theo subcategory',
-    color: '#a07030',
-    bg: '#faf4ee',
-  },
-  {
-    href: '/v2/sumy',
-    icon: Droplets,
-    label: 'Sữa mẹ',
-    desc: 'Theo dõi hút sữa và cho bé bú theo ngày',
-    color: '#c97a8a',
-    bg: '#fbeaf0',
-  },
-  {
-    href: '/v2/types',
-    icon: Tags,
-    label: 'Quản lý loại',
-    desc: 'Thêm, sửa, xóa các nhóm type dùng chung',
-    color: '#3a7a7a',
-    bg: '#eef5f5',
-  },
-]
-
-const PENDING: ModuleCard[] = [
-  {
-    href: '/v2/tasks',
-    icon: ListChecks,
-    label: 'Tasks',
-    desc: 'Kanban board — hiện lưu localStorage, chưa nối API',
-    color: '#3a5fa0',
-    bg: '#eef3fa',
-  },
-  {
-    href: '/v2/notes',
-    icon: FileText,
-    label: 'Notes',
-    desc: 'Ghi chú markdown — hiện lưu localStorage, chưa nối API',
-    color: '#4a7c3f',
-    bg: '#f0f5ee',
-  },
-  {
-    href: '/v2/settings',
-    icon: Settings,
-    label: 'Settings',
-    desc: 'Chưa xây dựng',
-    color: '#888',
-    bg: 'var(--v-hover)',
-  },
-]
-
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
 function Card({ item, live }: { item: ModuleCard; live: boolean }) {
+  const { t } = useLang()
   const Icon = item.icon
   return (
     <Link
@@ -104,7 +50,7 @@ function Card({ item, live }: { item: ModuleCard; live: boolean }) {
               className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
               style={{ backgroundColor: '#eaf5ea', color: '#3a7a3a' }}
             >
-              live
+              {t('dashboard.liveBadge')}
             </span>
           )}
         </div>
@@ -124,6 +70,62 @@ function Card({ item, live }: { item: ModuleCard; live: boolean }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const { t } = useLang()
+
+  const live: ModuleCard[] = [
+    {
+      href: '/v2/finance',
+      icon: Wallet,
+      label: t('pages.finance'),
+      desc: t('dashboard.financeDesc'),
+      color: '#a07030',
+      bg: '#faf4ee',
+    },
+    {
+      href: '/v2/sumy',
+      icon: Droplets,
+      label: t('pages.sumy'),
+      desc: t('dashboard.sumyDesc'),
+      color: '#c97a8a',
+      bg: '#fbeaf0',
+    },
+    {
+      href: '/v2/types',
+      icon: Tags,
+      label: t('pages.types'),
+      desc: t('dashboard.typesDesc'),
+      color: '#3a7a7a',
+      bg: '#eef5f5',
+    },
+  ]
+
+  const pending: ModuleCard[] = [
+    {
+      href: '/v2/tasks',
+      icon: ListChecks,
+      label: t('pages.tasks'),
+      desc: t('dashboard.tasksDesc'),
+      color: '#3a5fa0',
+      bg: '#eef3fa',
+    },
+    {
+      href: '/v2/notes',
+      icon: FileText,
+      label: t('pages.notes'),
+      desc: t('dashboard.notesDesc'),
+      color: '#4a7c3f',
+      bg: '#f0f5ee',
+    },
+    {
+      href: '/v2/settings',
+      icon: Settings,
+      label: t('dashboard.settingsLabel'),
+      desc: t('dashboard.settingsDesc'),
+      color: '#888',
+      bg: 'var(--v-hover)',
+    },
+  ]
+
   return (
     <>
       <V2Topbar />
@@ -135,12 +137,12 @@ export default function DashboardPage() {
         <section>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--v-text)' }}>
-              Đã nối API
+              {t('dashboard.connectedSection')}
             </span>
             <div className="flex-1 h-px" style={{ backgroundColor: 'var(--v-border)' }} />
           </div>
           <div className="flex flex-col gap-2">
-            {LIVE.map((item) => (
+            {live.map((item) => (
               <Card key={item.href} item={item} live />
             ))}
           </div>
@@ -150,12 +152,12 @@ export default function DashboardPage() {
         <section>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--v-muted)' }}>
-              Chưa nối API
+              {t('dashboard.pendingSection')}
             </span>
             <div className="flex-1 h-px" style={{ backgroundColor: 'var(--v-border)' }} />
           </div>
           <div className="flex flex-col gap-2">
-            {PENDING.map((item) => (
+            {pending.map((item) => (
               <Card key={item.href} item={item} live={false} />
             ))}
           </div>
