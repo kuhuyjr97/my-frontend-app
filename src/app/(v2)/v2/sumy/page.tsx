@@ -32,6 +32,11 @@ const ORANGE = '#c87a20'
 const PINK_BG = '#fbeaf0'
 const BLUE_BG = '#e8f0fb'
 const ORANGE_BG = '#fef4e2'
+const MINT = '#2a9d6e'
+const MINT_BG = '#e8f8f2'
+const LAVENDER = '#7b5ea7'
+const LAVENDER_BG = '#f3edfb'
+
 
 const DAY_NAMES = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
 
@@ -428,71 +433,79 @@ function DetailCard({
 
   return (
     <div
-      className="rounded-[14px] p-[14px] mb-3 bg-white"
-      style={{ border: '0.5px solid #e8e6e1' }}
+      className="rounded-[16px] mb-3 overflow-hidden"
+      style={{ border: '1px solid #f0dde8', boxShadow: '0 2px 16px rgba(201,122,138,0.10)' }}
     >
-      <div className="flex items-center justify-between mb-3">
+      {/* Gradient header */}
+      <div
+        className="px-[14px] py-[10px] flex items-center justify-between"
+        style={{ background: `linear-gradient(135deg, ${PINK_BG} 0%, ${BLUE_BG} 100%)` }}
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="text-[15px]">📝</span>
+          <span className="text-[12px] font-bold capitalize" style={{ color: PINK }}>
+            {dateLabel}
+          </span>
+        </div>
         <span
-          className="text-[12px] font-medium capitalize"
-          style={{ color: 'var(--v-text)' }}
-        >
-          {dateLabel}
-        </span>
-        <span
-          className="text-[11px] px-2 py-0.5 rounded-[20px]"
+          className="text-[11px] px-2 py-0.5 rounded-[20px] font-medium"
           style={{
-            backgroundColor: pos ? '#eaf5ea' : PINK_BG,
+            backgroundColor: pos ? '#e4f5e4' : '#ffe0e8',
             color: pos ? GREEN : PINK,
+            border: `1px solid ${pos ? '#b0d8b0' : '#f0c0cc'}`,
           }}
         >
           {pos ? '+' : ''}
           {sum.balance} ml {pos ? t('sumy.surplus') : t('sumy.shortage')}
         </span>
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div>
-          <div className="flex items-center gap-1.5 mb-1">
-            <Droplets size={14} color={PINK} />
-            <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
-              {t('sumy.pumpedLabel')}
-            </span>
+      {/* Stats */}
+      <div className="p-[14px] bg-white">
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Droplets size={14} color={PINK} />
+              <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
+                {t('sumy.pumpedLabel')}
+              </span>
+            </div>
+            <div className="text-[15px] font-medium" style={{ color: PINK }}>
+              {sum.pumpTotal} ml
+            </div>
+            <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
+              {sum.pumpTimes} lần ·{' '}
+              {sum.pumpTimes > 0 ? Math.round(sum.pumpTotal / sum.pumpTimes) : 0} ml/lần
+            </div>
           </div>
-          <div className="text-[15px] font-medium" style={{ color: PINK }}>
-            {sum.pumpTotal} ml
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Baby size={14} color={BLUE} />
+              <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
+                {t('sumy.babyFedLabel')}
+              </span>
+            </div>
+            <div className="text-[15px] font-medium" style={{ color: BLUE }}>
+              {sum.feedTotal} ml
+            </div>
+            <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
+              {sum.feedTimes} lần ·{' '}
+              {sum.feedTimes > 0 ? Math.round(sum.feedTotal / sum.feedTimes) : 0} ml/lần
+            </div>
           </div>
-          <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
-            {sum.pumpTimes} lần ·{' '}
-            {sum.pumpTimes > 0 ? Math.round(sum.pumpTotal / sum.pumpTimes) : 0} ml/lần
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5 mb-1">
-            <Baby size={14} color={BLUE} />
-            <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
-              {t('sumy.babyFedLabel')}
-            </span>
-          </div>
-          <div className="text-[15px] font-medium" style={{ color: BLUE }}>
-            {sum.feedTotal} ml
-          </div>
-          <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
-            {sum.feedTimes} lần ·{' '}
-            {sum.feedTimes > 0 ? Math.round(sum.feedTotal / sum.feedTimes) : 0} ml/lần
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5 mb-1">
-            <Utensils size={14} color={ORANGE} />
-            <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
-              {t('sumy.eatLabel')}
-            </span>
-          </div>
-          <div className="text-[15px] font-medium" style={{ color: ORANGE }}>
-            {sum.eatTotal} ml
-          </div>
-          <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
-            {sum.eatTimes} lần ·{' '}
-            {sum.eatTimes > 0 ? Math.round(sum.eatTotal / sum.eatTimes) : 0} ml/lần
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Utensils size={14} color={ORANGE} />
+              <span className="text-[11px]" style={{ color: 'var(--v-text-3)' }}>
+                {t('sumy.eatLabel')}
+              </span>
+            </div>
+            <div className="text-[15px] font-medium" style={{ color: ORANGE }}>
+              {sum.eatTotal} ml
+            </div>
+            <div className="text-[10px]" style={{ color: 'var(--v-text-3)' }}>
+              {sum.eatTimes} lần ·{' '}
+              {sum.eatTimes > 0 ? Math.round(sum.eatTotal / sum.eatTimes) : 0} ml/lần
+            </div>
           </div>
         </div>
       </div>
@@ -522,7 +535,7 @@ function Log({
   if (records.length === 0) {
     return (
       <div
-        className="rounded-[14px] p-4 bg-white mb-3 text-center"
+        className="rounded-[14px] p-4 bg-white text-center"
         style={{ border: '0.5px solid #e8e6e1' }}
       >
         <span className="text-[12px]" style={{ color: 'var(--v-muted)' }}>
@@ -538,7 +551,7 @@ function Log({
 
   return (
     <div
-      className="rounded-[14px] bg-white mb-3 overflow-hidden"
+      className="rounded-[14px] bg-white overflow-hidden"
       style={{ border: '0.5px solid #e8e6e1' }}
     >
       {sorted.map((rec, i) => {
@@ -648,12 +661,15 @@ function WeekChart({ allRecords, today }: { allRecords: MilkRecord[]; today: str
 
   return (
     <div
-      className="rounded-[16px] p-4"
-      style={{ backgroundColor: 'var(--v-surface)', border: '0.5px solid var(--v-border)' }}
+      className="rounded-[16px] p-4 overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #fff8e8 0%, #fef3e0 100%)', border: '1px solid #f0d8a0' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[12px] font-medium" style={{ color: 'var(--v-text)' }}>{t('sumy.last7Days')}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[14px]">📈</span>
+          <span className="text-[12px] font-bold" style={{ color: ORANGE }}>{t('sumy.last7Days')}</span>
+        </div>
         <div className="flex items-center gap-3">
           {[
             { color: PINK,   label: t('sumy.pump') },
@@ -756,6 +772,66 @@ function WeekChart({ allRecords, today }: { allRecords: MilkRecord[]; today: str
             </div>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ─── CompareCard ──────────────────────────────────────────────────────────────
+
+function CompareCard({ allRecords, today }: { allRecords: MilkRecord[]; today: string }) {
+  const yesterday = (() => {
+    const d = new Date(today)
+    d.setDate(d.getDate() - 1)
+    return format(d, 'yyyy-MM-dd')
+  })()
+
+  const todaySum = computeSummary(filterByDate(allRecords, today))
+  const yestSum  = computeSummary(filterByDate(allRecords, yesterday))
+  const hasYest  = filterByDate(allRecords, yesterday).length > 0
+
+  const rows = [
+    { label: 'Mẹ hút được', icon: '🩷', todayVal: todaySum.pumpTotal, yestVal: yestSum.pumpTotal, color: PINK, bg: PINK_BG },
+    { label: 'Su uống được', icon: '💙', todayVal: todaySum.feedTotal, yestVal: yestSum.feedTotal, color: BLUE, bg: BLUE_BG },
+    { label: 'Ăn được', icon: '🟠', todayVal: todaySum.eatTotal, yestVal: yestSum.eatTotal, color: ORANGE, bg: ORANGE_BG },
+  ]
+
+  return (
+    <div
+      className="rounded-[16px] mb-3 overflow-hidden"
+      style={{ border: '1px solid #ddd0f0', boxShadow: '0 2px 16px rgba(123,94,167,0.08)' }}
+    >
+      <div
+        className="px-[14px] py-[10px] flex items-center gap-2"
+        style={{ background: `linear-gradient(135deg, ${LAVENDER_BG} 0%, #fce8f8 100%)` }}
+      >
+        <span className="text-[15px]">📊</span>
+        <span className="text-[12px] font-bold" style={{ color: LAVENDER }}>
+          So sánh với hôm qua
+        </span>
+      </div>
+      <div className="p-[14px] bg-white">
+        <div className="grid grid-cols-3 gap-2">
+          {rows.map(({ label, icon, todayVal, yestVal, color, bg }) => {
+            const diff = todayVal - yestVal
+            const pos  = diff > 0
+            const zero = diff === 0
+            return (
+              <div key={label} className="rounded-[12px] p-3 text-center" style={{ backgroundColor: bg }}>
+                <div className="text-[18px] mb-1">{icon}</div>
+                <div className="text-[9px] font-medium mb-1.5" style={{ color: 'var(--v-text-3)' }}>{label}</div>
+                <div className="text-[16px] font-bold leading-none" style={{ color }}>{todayVal}</div>
+                <div className="text-[9px] mt-0.5" style={{ color: 'var(--v-text-3)' }}>ml</div>
+                <div
+                  className="mt-2 text-[9px] font-semibold"
+                  style={{ color: !hasYest ? '#ccc' : zero ? '#aaa' : pos ? GREEN : '#e05555' }}
+                >
+                  {!hasYest ? '— chưa có dữ liệu' : zero ? '= hôm qua' : pos ? `▲ +${diff} ml` : `▼ ${diff} ml`}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
@@ -990,8 +1066,12 @@ function Modal({
         onClick={onClose}
       />
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[20px] bg-white p-5"
-        style={{ maxHeight: '85vh', overflowY: 'auto' }}
+        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[20px] p-5 transition-colors duration-200"
+        style={{
+          maxHeight: '85vh',
+          overflowY: 'auto',
+          backgroundColor: type === 'pump' ? '#fef5f7' : type === 'eat' ? '#fef8f0' : '#f4f8fe',
+        }}
       >
         <div
           className="w-8 h-1 rounded-full mx-auto mb-4"
@@ -1024,17 +1104,14 @@ function Modal({
           <div className="text-[11px] mb-1.5" style={{ color: 'var(--v-text-3)' }}>
             Loại
           </div>
-          <div
-            className="flex rounded-[10px] p-1"
-            style={{ backgroundColor: 'var(--v-hover)' }}
-          >
+          <div className="flex gap-2">
             {(
               [
-                ['pump', t('sumy.pumpOption')],
-                ['feed', t('sumy.feedOption')],
-                ['eat', t('sumy.eatOption')],
-              ] as [RecordType, string][]
-            ).map(([rt, label]) => (
+                { rt: 'pump' as RecordType, label: t('sumy.pumpOption'), emoji: '🩷', color: PINK,   bg: '#fce0ea', border: '#f0a8be' },
+                { rt: 'feed' as RecordType, label: t('sumy.feedOption'), emoji: '💙', color: BLUE,   bg: '#d8e8fa', border: '#90b8e8' },
+                { rt: 'eat'  as RecordType, label: t('sumy.eatOption'),  emoji: '🟠', color: ORANGE, bg: '#fde4b8', border: '#f0b860' },
+              ]
+            ).map(({ rt, label, emoji, color, bg, border }) => (
               <button
                 key={rt}
                 type="button"
@@ -1047,13 +1124,17 @@ function Modal({
                     setAmount('')
                   }
                 }}
-                className="flex-1 rounded-[8px] py-2 text-[12px] font-medium transition-colors"
+                className="flex-1 rounded-[12px] py-3 text-[12px] font-bold transition-all flex flex-col items-center gap-0.5"
                 style={{
-                  backgroundColor: type === rt ? 'var(--v-surface)' : 'transparent',
-                  color: type === rt ? (rt === 'pump' ? PINK : rt === 'eat' ? ORANGE : BLUE) : 'var(--v-text-3)',
+                  backgroundColor: bg,
+                  color,
+                  border: type === rt ? `2px solid ${border}` : '2px solid transparent',
+                  boxShadow: type === rt ? `0 3px 10px ${color}35` : 'none',
+                  transform: type === rt ? 'translateY(-2px)' : 'none',
                 }}
               >
-                {label}
+                <span className="text-[16px] leading-none">{emoji}</span>
+                <span>{label}</span>
               </button>
             ))}
           </div>
@@ -1327,7 +1408,7 @@ export default function SumyPage() {
   }
 
   return (
-    <>
+    <div style={{ minHeight: '100vh', backgroundColor: '#edf5f0' }}>
       <V2Topbar />
 
       {/* ── Laptop: 2 cột | Mobile: 1 cột ── */}
@@ -1346,21 +1427,34 @@ export default function SumyPage() {
           {/* Cột trái — detail + log (+ chart mobile ở dưới log) */}
           <div className="sm:flex-1 sm:min-w-0">
             <DetailCard date={selectedDate} records={selectedRecords} />
+            <CompareCard allRecords={allRecords} today={today} />
 
-            <div className="mb-2">
-              <span className="text-[11px] capitalize" style={{ color: 'var(--v-text-3)' }}>
-                {selectedDate === today
-                  ? t('sumy.todayLog')
-                  : `${t('sumy.todayLog')} · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
-              </span>
+            {/* Log section — container */}
+            <div
+              className="rounded-[16px] mb-3 overflow-hidden"
+              style={{ border: '1px solid #dce8f8', boxShadow: '0 2px 16px rgba(74,114,176,0.08)' }}
+            >
+              <div
+                className="px-[14px] py-[10px] flex items-center gap-2"
+                style={{ background: `linear-gradient(135deg, ${BLUE_BG} 0%, #ecf4fd 100%)` }}
+              >
+                <span className="text-[15px]">🗒️</span>
+                <span className="text-[12px] font-bold" style={{ color: BLUE }}>
+                  {selectedDate === today
+                    ? t('sumy.todayLog')
+                    : `${t('sumy.todayLog')} · ${format(parseISO(selectedDate), 'EEEE, d/M/yyyy', { locale: vi })}`}
+                </span>
+              </div>
+              <div className="p-3">
+                <Log
+                  records={selectedRecords}
+                  selectedDate={selectedDate}
+                  today={today}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              </div>
             </div>
-            <Log
-              records={selectedRecords}
-              selectedDate={selectedDate}
-              today={today}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
 
             {/* Chart — mobile only, sau log trước lịch */}
             <div className="sm:hidden mt-5">
@@ -1371,22 +1465,33 @@ export default function SumyPage() {
           {/* Cột phải — calendar */}
           <div className="sm:w-[340px] sm:shrink-0 mt-5 sm:mt-0">
             <div
-              className="rounded-[16px] p-4"
+              className="rounded-[16px] overflow-hidden"
               style={{
-                backgroundColor: 'var(--v-surface-2)',
-                border: '0.5px solid var(--v-border)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+                border: '1px solid #b8e8d0',
+                boxShadow: '0 2px 16px rgba(45,157,110,0.10)',
               }}
             >
-              <Legend />
-              <MonthCalendar
-                currentMonth={currentMonth}
-                selectedDate={selectedDate}
-                today={today}
-                records={allRecords}
-                onSelect={handleSelectDate}
-                onMonthChange={setCurrentMonth}
-              />
+              {/* Calendar header */}
+              <div
+                className="px-4 py-[10px] flex items-center gap-2"
+                style={{ background: `linear-gradient(135deg, ${MINT_BG} 0%, #d8f5e8 100%)` }}
+              >
+                <span className="text-[15px]">📅</span>
+                <span className="text-[12px] font-bold" style={{ color: MINT }}>
+                  Lịch theo dõi
+                </span>
+              </div>
+              <div className="p-4" style={{ backgroundColor: 'var(--v-surface-2)' }}>
+                <Legend />
+                <MonthCalendar
+                  currentMonth={currentMonth}
+                  selectedDate={selectedDate}
+                  today={today}
+                  records={allRecords}
+                  onSelect={handleSelectDate}
+                  onMonthChange={setCurrentMonth}
+                />
+              </div>
             </div>
           </div>
 
@@ -1397,7 +1502,7 @@ export default function SumyPage() {
       <button
         onClick={() => setShowModal(true)}
         className="fixed right-6 z-40 bottom-[76px] sm:bottom-6 flex items-center gap-2 h-[44px] px-5 rounded-full text-[13px] font-medium shadow-lg"
-        style={{ backgroundColor: PINK, color: '#fff' }}
+        style={{ backgroundColor: MINT, color: '#fff' }}
       >
         <Plus size={16} />
         {t('sumy.newRecord')}
@@ -1421,6 +1526,6 @@ export default function SumyPage() {
           onSave={handleSave}
         />
       )}
-    </>
+    </div>
   )
 }
