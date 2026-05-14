@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import { format, parseISO } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { Plus, Search, X, Trash2, Tag, Pencil, Maximize2, Minimize2 } from 'lucide-react'
@@ -37,26 +37,117 @@ function SimpleMarkdown({ content, noContentText }: { content: string; noContent
   const blocks: ReactNode[] = []
   const lines = content.split('\n')
   let i = 0
-  let listBuf: { ordered: boolean; text: string }[] = []
+  let listBuf: { ordered: boolean; checked?: boolean; text: string }[] = []
+  let quoteBuf: string[] = []
+  let tableBuf: string[] = []
   let inCode = false
   let codeBuf: string[] = []
+  let inDetails = false
+  let detailsSummary = ''
+  let detailsContent: string[] = []
 
   const flushList = () => {
     if (!listBuf.length) return
-    const ordered = listBuf[0].ordered
-    const Tag = ordered ? 'ol' : 'ul'
-    blocks.push(
-      <Tag key={blocks.length} className={`${ordered ? 'list-decimal' : 'list-disc'} list-inside space-y-0.5 my-1`}>
-        {listBuf.map((item, j) => <li key={j}>{renderInline(item.text)}</li>)}
-      </Tag>
-    )
+    const hasCheckboxes = listBuf.some((item) => item.checked !== undefined)
+    if (hasCheckboxes) {
+      blocks.push(
+        <ul key={blocks.length} className="space-y-1.5 my-1 pl-0 list-none">
+          {listBuf.map((item, j) =>
+            item.checked !== undefined ? (
+              <li key={j} className="flex items-start gap-2">
+                <input type="checkbox" checked={item.checked} readOnly className="mt-0.5 shrink-0 cursor-default accent-[#4a7c3f]" />
+                <span style={{ textDecoration: item.checked ? 'line-through' : 'none', color: item.checked ? 'var(--v-muted)' : 'inherit' }}>{renderInline(item.text)}</span>
+              </li>
+            ) : (
+              <li key={j} className="flex items-start gap-2"><span className="mt-0.5 shrink-0 select-none">•</span>{renderInline(item.text)}</li>
+            )
+          )}
+        </ul>
+      )
+    } else {
+      const ordered = listBuf[0].ordered
+      const Tag = ordered ? 'ol' : 'ul'
+      blocks.push(
+        <Tag key={blocks.length} className={`${ordered ? 'list-decimal' : 'list-disc'} list-inside space-y-0.5 my-1`}>
+          {listBuf.map((item, j) => <li key={j}>{renderInline(item.text)}</li>)}
+        </Tag>
+      )
+    }
     listBuf = []
   }
 
+  const flushQuote = () => {
+    if (!quoteBuf.length) return
+    blocks.push(
+      <blockquote key={blocks.length} className="border-l-[3px] pl-4 my-2 italic" style={{ borderColor: 'var(--v-border-2)', color: 'var(--v-text-3)' }}>
+        {quoteBuf.map((q, j) => <p key={j} className="leading-relaxed">{renderInline(q)}</p>)}
+      </blockquote>
+    )
+    quoteBuf = []
+  }
+
+  const isTableRow = (ln: string) => /^\|.+\|/.test(ln.trim())
+  const isSeparator = (ln: string) => {
+    const cells = ln.trim().split('|').slice(1, -1)
+    return cells.length > 0 && cells.every((c) => /^[\s\-:]+$/.test(c))
+  }
+
+  const flushTable = () => {
+    if (!tableBuf.length) return
+    const parseRow = (row: string) => row.trim().split('|').slice(1, -1).map((c) => c.trim())
+    const headers = parseRow(tableBuf[0])
+    const dataRows = tableBuf.slice(tableBuf.length > 1 && isSeparator(tableBuf[1]) ? 2 : 1)
+    blocks.push(
+      <div key={blocks.length} className="overflow-x-auto my-3">
+        <table className="w-full text-[13px] border-collapse">
+          <thead>
+            <tr>
+              {headers.map((h, j) => (
+                <th key={j} className="px-3 py-2 text-left font-semibold" style={{ borderBottom: '2px solid var(--v-border-2)', color: 'var(--v-text-2)' }}>{renderInline(h)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {dataRows.map((row, ri) => (
+              <tr key={ri} style={{ borderBottom: '1px solid var(--v-border)' }}>
+                {parseRow(row).map((cell, ci) => (
+                  <td key={ci} className="px-3 py-2" style={{ color: 'var(--v-text)' }}>{renderInline(cell)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+    tableBuf = []
+  }
+
+  const flushAll = () => { flushList(); flushQuote(); flushTable() }
+
   while (i < lines.length) {
     const line = lines[i]
+
+    if (line.trim() === '<details>') {
+      flushAll(); inDetails = true; detailsSummary = ''; detailsContent = []; i++; continue
+    }
+    if (inDetails) {
+      if (line.trim() === '</details>') {
+        const body = detailsContent.join('\n'); const sumText = detailsSummary
+        blocks.push(
+          <details key={blocks.length} className="my-3 rounded-[10px]" style={{ border: '1px solid var(--v-border)' }}>
+            <summary className="px-4 py-2.5 cursor-pointer text-[13px] font-medium select-none" style={{ color: 'var(--v-text-2)' }}>{sumText || 'Details'}</summary>
+            <div className="px-4 pb-4 pt-1"><SimpleMarkdown content={body} /></div>
+          </details>
+        )
+        inDetails = false; i++; continue
+      }
+      const sm = line.match(/<summary>(.*?)<\/summary>/i)
+      if (sm) { detailsSummary = sm[1]; i++; continue }
+      detailsContent.push(line); i++; continue
+    }
+
     if (line.trimStart().startsWith('```')) {
-      if (!inCode) { flushList(); inCode = true; codeBuf = [] }
+      if (!inCode) { flushAll(); inCode = true; codeBuf = [] }
       else {
         inCode = false
         blocks.push(
@@ -68,18 +159,29 @@ function SimpleMarkdown({ content, noContentText }: { content: string; noContent
       i++; continue
     }
     if (inCode) { codeBuf.push(line); i++; continue }
-    const h3 = line.match(/^### (.+)/); if (h3) { flushList(); blocks.push(<h3 key={blocks.length} className="text-[15px] font-semibold mt-4 mb-0.5">{renderInline(h3[1])}</h3>); i++; continue }
-    const h2 = line.match(/^## (.+)/);  if (h2) { flushList(); blocks.push(<h2 key={blocks.length} className="text-[17px] font-semibold mt-5 mb-1">{renderInline(h2[1])}</h2>); i++; continue }
-    const h1 = line.match(/^# (.+)/);   if (h1) { flushList(); blocks.push(<h1 key={blocks.length} className="text-[20px] font-bold mt-5 mb-1">{renderInline(h1[1])}</h1>); i++; continue }
-    if (line.match(/^[-*_]{3,}$/)) { flushList(); blocks.push(<hr key={blocks.length} className="my-3" style={{ borderColor: 'var(--v-border)' }} />); i++; continue }
-    const ul = line.match(/^[-*+] (.+)/); if (ul) { listBuf.push({ ordered: false, text: ul[1] }); i++; continue }
-    const ol = line.match(/^\d+\. (.+)/); if (ol) { listBuf.push({ ordered: true, text: ol[1] }); i++; continue }
-    flushList()
+
+    const h3 = line.match(/^### (.+)/); if (h3) { flushAll(); blocks.push(<h3 key={blocks.length} className="text-[15px] font-semibold mt-4 mb-0.5">{renderInline(h3[1])}</h3>); i++; continue }
+    const h2 = line.match(/^## (.+)/);  if (h2) { flushAll(); blocks.push(<h2 key={blocks.length} className="text-[17px] font-semibold mt-5 mb-1">{renderInline(h2[1])}</h2>); i++; continue }
+    const h1 = line.match(/^# (.+)/);   if (h1) { flushAll(); blocks.push(<h1 key={blocks.length} className="text-[20px] font-bold mt-5 mb-1">{renderInline(h1[1])}</h1>); i++; continue }
+    if (line.match(/^[-*_]{3,}$/)) { flushAll(); blocks.push(<hr key={blocks.length} className="my-3" style={{ borderColor: 'var(--v-border)' }} />); i++; continue }
+
+    const bq = line.match(/^> (.*)/)
+    if (bq) { flushList(); flushTable(); quoteBuf.push(bq[1]); i++; continue }
+
+    if (isTableRow(line)) { flushList(); flushQuote(); tableBuf.push(line); i++; continue }
+
+    const chk = line.match(/^[-*+] \[([x ])\] (.+)/i)
+    if (chk) { flushQuote(); flushTable(); listBuf.push({ ordered: false, checked: chk[1].toLowerCase() === 'x', text: chk[2] }); i++; continue }
+
+    const ul = line.match(/^[-*+] (.+)/); if (ul) { flushQuote(); flushTable(); listBuf.push({ ordered: false, text: ul[1] }); i++; continue }
+    const ol = line.match(/^\d+\. (.+)/); if (ol) { flushQuote(); flushTable(); listBuf.push({ ordered: true, text: ol[1] }); i++; continue }
+
+    flushAll()
     if (line.trim() === '') { blocks.push(<div key={blocks.length} className="h-2" />) }
     else { blocks.push(<p key={blocks.length} className="leading-relaxed">{renderInline(line)}</p>) }
     i++
   }
-  flushList()
+  flushAll()
   return <div className="text-[13px]" style={{ color: 'var(--v-text)' }}>{blocks}</div>
 }
 
@@ -253,8 +355,9 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
                 {dirty && (
                   <button
                     onClick={() => void doSave()}
-                    disabled={saving}
-                    className="h-[28px] px-3 rounded-[7px] text-[12px] font-medium disabled:opacity-50"
+                    disabled={saving || (types.length > 0 && typeId === null)}
+                    title={types.length > 0 && typeId === null ? 'Chọn type trước khi lưu' : undefined}
+                    className="h-[28px] px-3 rounded-[7px] text-[12px] font-medium disabled:opacity-40"
                     style={{ backgroundColor: 'var(--v-btn-bg)', color: 'var(--v-btn-text)' }}
                   >{saving ? t('common.saving') : t('common.save')}</button>
                 )}
@@ -263,9 +366,9 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
               </div>
             </div>
 
-            {/* Split: editor left, preview right */}
+            {/* Split: editor left, preview right (preview ẩn trên mobile) */}
             <div className="flex-1 flex overflow-hidden min-h-0">
-              <div className="flex-1 flex flex-col p-5 min-h-0" style={{ borderRight: '1px solid var(--v-border-2)' }}>
+              <div className="flex-1 flex flex-col p-5 min-h-0 sm:border-r" style={{ borderColor: 'var(--v-border-2)' }}>
                 <div className="text-[10px] font-medium mb-2 shrink-0" style={{ color: 'var(--v-muted)' }}>{t('notes.contentLabel')}</div>
                 <textarea
                   value={content}
@@ -275,7 +378,7 @@ function NoteModal({ note, types, initialMode = 'view', onSave, onDelete, onClos
                   style={{ border: '1px solid var(--v-border)', color: 'var(--v-text)', backgroundColor: 'var(--v-input-bg)' }}
                 />
               </div>
-              <div className="flex-1 flex flex-col p-5 overflow-hidden min-h-0" style={{ backgroundColor: 'var(--v-bg)' }}>
+              <div className="hidden sm:flex flex-1 flex-col p-5 overflow-hidden min-h-0" style={{ backgroundColor: 'var(--v-bg)' }}>
                 <div className="text-[10px] font-medium mb-2 shrink-0" style={{ color: 'var(--v-muted)' }}>{t('notes.previewLabel')}</div>
                 <div className="flex-1 overflow-y-auto">
                   <SimpleMarkdown content={content} noContentText={t('notes.noContent')} />
@@ -312,6 +415,7 @@ export default function NotesPage() {
   const [openInEdit, setOpenInEdit] = useState(false)
   const [search, setSearch]         = useState('')
   const [typeFilter, setTypeFilter] = useState<number | null>(null)
+  const newNoteIdRef                = useRef<number | null>(null)
   const { t } = useLang()
 
   const load = useCallback(async () => {
@@ -354,6 +458,7 @@ export default function NotesPage() {
       setNotes((prev) => [note, ...prev])
       setSelectedId(note.id)
       setOpenInEdit(true)
+      newNoteIdRef.current = note.id
     } catch {
       toast.error(t('notes.createError'))
     }
@@ -363,6 +468,7 @@ export default function NotesPage() {
     try {
       const updated = await updateNote(id, patch)
       setNotes((prev) => prev.map((n) => n.id === id ? updated : n))
+      if (id === newNoteIdRef.current) newNoteIdRef.current = null
       toast.success(t('notes.saved'))
     } catch {
       toast.error(t('notes.saveError'))
@@ -376,6 +482,7 @@ export default function NotesPage() {
     try {
       await deleteNote(id)
       setNotes((prev) => prev.filter((n) => n.id !== id))
+      if (id === newNoteIdRef.current) newNoteIdRef.current = null
       setSelectedId(null)
       setOpenInEdit(false)
     } catch {
@@ -389,6 +496,11 @@ export default function NotesPage() {
   }
 
   const closeModal = () => {
+    if (selectedId !== null && selectedId === newNoteIdRef.current) {
+      void deleteNote(selectedId).catch(() => {})
+      setNotes((prev) => prev.filter((n) => n.id !== selectedId))
+      newNoteIdRef.current = null
+    }
     setSelectedId(null)
     setOpenInEdit(false)
   }
