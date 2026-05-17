@@ -133,7 +133,7 @@ function PayLaterModal({
     <ModalShell title={existing ? 'Sửa giao dịch thẻ' : 'Thêm giao dịch thẻ'} onClose={onClose}>
       {cards.length === 0 ? (
         <div className="p-5 text-[13px] text-center" style={{ color: 'var(--v-muted)' }}>
-          Chưa có thẻ — vào <strong>Manage Types</strong> → nhóm <strong>Credit</strong> để thêm tên thẻ trước.
+          Chưa có thẻ — vào <strong>Cài đặt</strong> → nhóm <strong>Credit</strong> để thêm tên thẻ trước.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-3">
@@ -295,7 +295,7 @@ function PayLaterTab() {
         <div className="rounded-[14px] p-8 text-center flex flex-col items-center gap-2" style={{ border: '1.5px dashed var(--v-border)' }}>
           <CreditCard size={28} style={{ color: 'var(--v-muted)' }} />
           <div className="text-[13px] font-medium" style={{ color: 'var(--v-text-2)' }}>Chưa có thẻ nào</div>
-          <div className="text-[12px]" style={{ color: 'var(--v-muted)' }}>Vào <strong>Manage Types</strong> → nhóm <strong>Credit</strong> để thêm tên thẻ.</div>
+          <div className="text-[12px]" style={{ color: 'var(--v-muted)' }}>Vào <strong>Cài đặt</strong> → nhóm <strong>Credit</strong> để thêm tên thẻ.</div>
         </div>
       ) : (
         <PayLaterLog records={allRecords} onEdit={(r) => setEditState({ rec: r })} />

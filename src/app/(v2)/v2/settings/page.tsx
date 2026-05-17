@@ -21,6 +21,7 @@ import {
 const CATEGORIES = [
   { type: 4, label: 'Income',  color: '#3a7a3a' },
   { type: 5, label: 'Expense', color: '#b05040' },
+  { type: 6, label: 'Credit',  color: '#a07030' },
   { type: 3, label: 'Task',    color: '#3a5fa0' },
   { type: 2, label: 'Plan',    color: '#7040a0' },
   { type: 1, label: 'Note',    color: '#a07030' },
