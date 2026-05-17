@@ -4,7 +4,8 @@
     "tasks": "Công việc",
     "notes": "Ghi chú",
     "finance": "Tài chính",
-    "sumy": "Su My"
+    "sumy": "Su My",
+    "extras": "Trả sau & Xăng"
   },
   "pages": {
     "dashboard": "Tổng quan",
@@ -15,11 +16,12 @@
     "time": "Theo dõi thời gian",
     "goals": "Mục tiêu",
     "analytics": "Phân tích",
-    "types": "Quản lý loại"
+    "types": "Quản lý loại",
+    "settings": "Cài đặt"
   },
   "topbar": {
     "loggedIn": "Đang đăng nhập",
-    "manageTypes": "Quản lý loại",
+    "settings": "Cài đặt",
     "language": "Ngôn ngữ",
     "logout": "Đăng xuất",
     "darkMode": "Chế độ tối",

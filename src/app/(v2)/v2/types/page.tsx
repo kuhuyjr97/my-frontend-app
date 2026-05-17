@@ -13,12 +13,16 @@ import {
 } from '@/lib/v2/types-api'
 import { ICON_LIST, getIcon } from '@/lib/v2/icon-registry'
 import { useLang } from '@/lib/v2/i18n/context'
+import { getSessionUsername } from '@/lib/v2/auth-session'
+import { getSidebarHidden, setSidebarHidden } from '@/lib/v2/sidebar-prefs'
+import { ALL_NAV_ITEMS } from '@/components/v2/layout/Sidebar'
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
   { type: 4, label: 'Income',  color: '#3a7a3a' },
   { type: 5, label: 'Expense', color: '#b05040' },
+  { type: 6, label: 'Credit',  color: '#a07030' },
   { type: 3, label: 'Task',    color: '#3a5fa0' },
   { type: 2, label: 'Plan',    color: '#7040a0' },
   { type: 1, label: 'Note',    color: '#a07030' },
@@ -434,7 +438,25 @@ export default function TypesPage() {
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [filter, setFilter] = useState<number>(FILTER_ALL)
+  const [username, setUsername] = useState('')
+  const [hiddenNav, setHiddenNav] = useState<Set<string>>(new Set())
   const { t } = useLang()
+
+  useEffect(() => {
+    const u = getSessionUsername() ?? ''
+    setUsername(u)
+    if (u) setHiddenNav(getSidebarHidden(u))
+  }, [])
+
+  const toggleNav = (href: string) => {
+    if (!username) return
+    setHiddenNav(prev => {
+      const next = new Set(prev)
+      if (next.has(href)) next.delete(href); else next.add(href)
+      setSidebarHidden(username, next)
+      return next
+    })
+  }
 
   const load = useCallback(async () => {
     try {
@@ -534,6 +556,43 @@ export default function TypesPage() {
                 onDeleted={load}
               />
             ))}
+          </div>
+        )}
+
+        {/* ── Sidebar ── */}
+        {filter === FILTER_ALL && (
+          <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--v-border)', backgroundColor: 'var(--v-surface)' }}>
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--v-border-2)' }}>
+              <div className="text-[13px] font-medium" style={{ color: 'var(--v-text)' }}>Sidebar</div>
+              <div className="text-[11px] mt-0.5" style={{ color: 'var(--v-muted)' }}>Chọn mục hiển thị trong menu điều hướng</div>
+            </div>
+            {ALL_NAV_ITEMS.map((item) => {
+              const Icon = item.icon
+              const isOn = !hiddenNav.has(item.href)
+              const isLocked = 'locked' in item && item.locked
+              return (
+                <div key={item.href} className="flex items-center gap-3 px-4 py-3"
+                  style={{ borderBottom: '1px solid var(--v-border-2)' }}>
+                  <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: isOn ? (item.bg as string) : 'var(--v-hover)' }}>
+                    <Icon size={16} style={{ color: isOn ? (item.color as string) : 'var(--v-muted)' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px]" style={{ color: isOn ? 'var(--v-text)' : 'var(--v-text-3)' }}>
+                      {t(item.key)}
+                    </div>
+                    {isLocked && <div className="text-[10px]" style={{ color: 'var(--v-muted)' }}>Luôn hiển thị</div>}
+                  </div>
+                  <button type="button" role="switch" aria-checked={isOn} disabled={isLocked}
+                    onClick={() => toggleNav(item.href)}
+                    className="relative w-10 h-6 rounded-full transition-colors shrink-0 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: isOn ? 'var(--v-btn-bg)' : '#d0ceca' }}>
+                    <span className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform"
+                      style={{ transform: isOn ? 'translateX(18px)' : 'translateX(3px)' }} />
+                  </button>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

@@ -16,7 +16,7 @@ const PAGE_KEYS: Record<string, string> = {
   '/v2/time':     'pages.time',
   '/v2/goals':    'pages.goals',
   '/v2/analytics':'pages.analytics',
-  '/v2/settings': 'pages.types',
+  '/v2/settings': 'pages.settings',
   '/v2/types':    'pages.types',
 }
 
@@ -104,9 +104,9 @@ export function V2Topbar({ actions }: TopbarProps) {
                   <div className="text-[10px] mt-0.5" style={{ color: 'var(--v-muted)' }}>{t('topbar.loggedIn')}</div>
                 </div>
 
-                {/* Manage types */}
+                {/* Settings */}
                 <Link
-                  href="/v2/types"
+                  href="/v2/settings"
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-2.5 px-3 py-2 text-[12px] transition-colors"
                   style={{ color: 'var(--v-text-2)' }}
@@ -114,7 +114,7 @@ export function V2Topbar({ actions }: TopbarProps) {
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <Settings size={13} />
-                  {t('topbar.manageTypes')}
+                  {t('topbar.settings')}
                 </Link>
 
                 {/* Language switcher */}

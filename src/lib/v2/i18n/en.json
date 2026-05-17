@@ -4,7 +4,8 @@
     "tasks": "Tasks",
     "notes": "Notes",
     "finance": "Finance",
-    "sumy": "Su My"
+    "sumy": "Su My",
+    "extras": "Extras"
   },
   "pages": {
     "dashboard": "Dashboard",
@@ -15,11 +16,12 @@
     "time": "Time Tracking",
     "goals": "Goals",
     "analytics": "Analytics",
-    "types": "Manage Types"
+    "types": "Manage Types",
+    "settings": "Settings"
   },
   "topbar": {
     "loggedIn": "Logged in",
-    "manageTypes": "Manage types",
+    "settings": "Settings",
     "language": "Language",
     "logout": "Logout",
     "darkMode": "Dark mode",
